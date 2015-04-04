@@ -1,0 +1,23 @@
+<h1 id="ctfinfosecinstitutecom-level-9">ctf.infosecinstitute.com: Level 9</h1>
+<p><strong>Bounty:</strong> $90
+<strong>Description:</strong></p>
+
+<blockquote>
+  <p>CISCO IDS WEB LOGIN SYSTEM</p>
+</blockquote>
+
+<h2 id="write-up">Write-up</h2>
+
+<p>Here we are presented with login page. Performing any SQL Injections or trying to trigger PHP Exception errors was not working. I googled CISCO default credentials and stumbled on the following page <a href="http://portforward.com/default_username_password/CISCO.htm">http://portforward.com/default_username_password/CISCO.htm</a>, trying all credentials one by one I found a working one.
+Username: root
+Password: attack</p>
+
+<p>After successfully logon we are presented with the following JavaScript alert message “alert(‘ssaptluafed_sigalf_cesofni’)”. Reading it backwards is the flag string.</p>
+
+<p><code>bash
+$ python -c "print 'ssaptluafed_sigalf_cesofni' [::-1]"
+infosec_flagis_defaultpass
+</code>
+## Links
+* <a href="http://ctf.infosecinstitute.com/levelnine.php">http://ctf.infosecinstitute.com/levelnine.php</a></p>
+

@@ -1,0 +1,43 @@
+<h1 id="ctfinfosecinstitutecom-level-12">ctf.infosecinstitute.com: Level 12</h1>
+<p><strong>Bounty:</strong> $120
+<strong>Description:</strong></p>
+
+<blockquote>
+  <p>Dig deeper! <a href="yoda.png">image</a></p>
+</blockquote>
+
+<h2 id="write-up">Write-up</h2>
+
+<p>The yoda image is a red herring. It did made me waste some time of my life :). So remembering that the image from Level 1 was pretty much the same, I decided to download both images and look for different bits.</p>
+
+<p><code>bash
+$ diff yoda.png yoda_from_level_1.png
+$
+</code>
+After confirming both images are identical, I knew the flag was not in the image, so it had to be somewhere else. Next I checked the source code from level 1 for differences.
+<code>bash
+$ curl http://ctf.infosecinstitute.com/levelone.php | head &gt; levelone_source
+$ curl http://ctf.infosecinstitute.com/leveltwelve.php | head &gt; leveltwelve_source
+$ diff leveltwelve_source levelone_source
+0a1
+&gt; &lt;!-- infosec_flagis_welcome --&gt;
+10d10
+&lt;     &lt;link href="css/design.css" rel="stylesheet"&gt;
+Home:Level 12 tchoranov$
+</code>
+We see two differences. The first one is the flag in the HTML comment field from Level 1. However Level 2 seems to have additional CSS, css/design.css.
+Let’s see what’s in there.
+<code>bash
+$ curl http://ctf.infosecinstitute.com/css/design.css
+.thisloveis{
+	color: #696e666f7365635f666c616769735f686579696d6e6f7461636f6c6f72;
+$
+</code>
+Yep, we got it. Since the hex encoded strings is actually an “id selector” in CSS, decoding it we get the flag.
+<code>bash
+$ python -c 'print("\x69\x6e\x66\x6f\x73\x65\x63\x5f\x66\x6c\x61\x67\x69\x73\x5f\x68\x65\x79\x69\x6d\x6e\x6f\x74\x61\x63\x6f\x6c\x6f\x72")'
+infosec_flagis_heyimnotacolor
+</code>
+## Links
+* <a href="http://ctf.infosecinstitute.com/leveltwelve.php">http://ctf.infosecinstitute.com/leveltwelve.php</a></p>
+
