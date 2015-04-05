@@ -1,14 +1,37 @@
-# Site settings
-title: Your awesome title
-email: your-email@domain.com
-description: > # this means to ignore newlines until "baseurl:"
-  Write an awesome description for your new site here. You can edit this
-  line in _config.yml. It will appear in your document head meta (for
-  Google search results) and in your feed.xml site description.
-baseurl: "" # the subpath of your site, e.g. /blog/
-url: "http://yourdomain.com" # the base hostname & protocol for your site
-twitter_username: jekyllrb
-github_username:  jekyll
-
-# Build settings
+##The website title
+name: Notes from my Notebook
+##Markdown processor
 markdown: kramdown
+##syntax highlighter. change it to pygments
+highlighter: pygments
+
+##define base_url for valid usage in sitemap.xml and robots.txt
+base_url: http://boaster.github.io
+sass:
+  sass_dir: _sass
+  style: :compressed
+paginate: 5
+paginate_path: "page:num"
+##The website description (to be used in meta tags)
+description: Wargames and CTFs Write-ups.
+##Some frequently used keywords on your website
+keywords: wargames, ctf, write-ups, hacking, reverse-engineering, malware analysis, debugging
+
+##define this for disqus comment support
+#disqus: forumname
+
+##set this to enable google analytics
+#ga_id: UA-60673588-1
+#ga_domain: analyticsDomain
+
+##Some commonly used links
+links:
+#  facebook: username
+#  twitter: username
+  email: tschoranov@gmail.com
+  github: boaster
+
+##put desired image in img/ directory and set the value accordingly. If not defined, a placeholder image will be used.
+about_image: image.JPG
+##comment this if you want full width posts with no sidebar
+sidebar: on
