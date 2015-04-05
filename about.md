@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: about
 title: About
 sitemap:
     priority: 1.0
@@ -8,3 +8,4 @@ sitemap:
 ---
 # About
 Contact me via mail at tschoranov@gmail.com.
+
