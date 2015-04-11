@@ -48,14 +48,12 @@ int main(void) {
 	exit(EXIT_FAILURE);
 }
 {% endhighlight %}
-
 Let me explain some of the above code.
 First we define a CANARY, "in_the_coal_mine". This is our overwrite target.
-Next we define a struct, which consists of two chunks. These chunks represent the HEAP chunks allocated by glibc gethostbyname_r function.
-First chunk is named "buffer" and it's size is 1024 bytes, which is the initial chunk size allocated by gethostbyname_r call to malloc.
+Next we define a struct, which consists of two chunks. These chunks represent a buffer that will be overflowed by the glibc gethostbyname_r function, and the data that comes after it (the CANARY).
+The first chunk is named "buffer" and its size is 1024 bytes, which is the size that will be passed to gethostbyname_r via the "buflen" argument.
 Following the "buffer" chunk is the CANARY chunk. By overflowing the "buffer" chunk into the CANARY chunk, we can confirm the PoC exploit works.
-Now that we have defined our struct representing the heap chunks, the name char array is being initialized with 999 bytes of ASCII '0' / HEX 0x30.  
-Here are more details about the gethostbyname_r arguments:  
+Now that we have defined our struct representing the buffer for gethostname_r, the name char array is being initialized with 999 bytes of ASCII ‘0’ / HEX 0x30.
 
 >**name**  
 >*The name of the Internet host whose entry you want to find.*  
