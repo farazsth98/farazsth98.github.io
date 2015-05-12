@@ -247,6 +247,19 @@ flag.close()
 
 {% endhighlight %}
 
+After running the python script with "flag.enc" as argument, we get "flag" file as output.
+
+{% highlight bash %}
+$ python ./dark_decrypt.py flag.enc 
+$ file flag
+flag: PDF document, version 1.3
+$
+$ pdftotext flag flag.txt
+$ cat flag.txt 
+ASIS{6b8dd896aaef5c60b475f92de24ca39b}
+
+{% endhighlight %}
+
 ## Links
 
 * <http://www.asis-ctf.ir/challenges/>
