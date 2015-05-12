@@ -328,7 +328,7 @@ Let's see what the puts call is.
 
 So, if (the time() - time()) > 2, print "No cheat!" and exit. Looks like this is a little bit of anti-debugging :).
 And this is implemented after each dice compare. Well, we don't care about it since we patched it and executed the patched binary outside the debugger
-but I hope somebody leaned something.
+but I hope somebody learned something.
 
 Thanks for reading.
 
