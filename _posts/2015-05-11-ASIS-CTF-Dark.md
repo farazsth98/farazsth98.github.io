@@ -171,7 +171,7 @@ rbp-0x28 will store the file descriptor from fopen("outputfile", 'wb').
    0x4008ff:	add    DWORD PTR [rbp-0x18],0x1     |                  |
    0x400903:	mov    eax,DWORD PTR [rbp-0x18]     |                  |
    0x400906:	cmp    eax,DWORD PTR [rbp-0x30]     | <================|== compare inner loop counter < 16
-   0x400909:	jl     0x400867    ,----------------|                  |
+   0x400909:	jl     0x400867    <----------------|                  |
    0x40090f:	add    DWORD PTR [rbp-0x14],0x1                        |
    0x400913:	mov    eax,DWORD PTR [rbp-0x2c]                        |
    0x400916:	mov    edx,eax                                         |
