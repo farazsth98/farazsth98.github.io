@@ -28,7 +28,7 @@ $
 
 # Main
 
-![Main_]({{site.url}}/assets/Main_.png)
+![Main_reverseme]({{site.url}}/assets/Main_reverseme.png)
 
 In main() we see just one input_processing_function and test eax, eax of the return value. Anything but 0 is going to lead us into the
 printf "flag{"... Let's see what we have in that function.
