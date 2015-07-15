@@ -47,10 +47,10 @@ with some subtraction are being compared to some static values.
 
 If the location of the stored return bytes from "obfuscated_function" start at "[ebp+eax+var_58]" with eax being our counter we see that
 exactly 15 bytes will be compared and the 16th being a null terminator. We also see that the actual comparison is being worked on the 1 index byte - 0 index byte
-followed by result - index 2 followed by result - index 3 or in other words
-solution[0] = input[1] - input[0]
-solution[1] = input[2] - input[1]
-solution[2] = input[3] - input[2]
+followed by result - index 2 followed by result - index 3 or in other words  
+solution[0] = input[1] - input[0]  
+solution[1] = input[2] - input[1]  
+solution[2] = input[3] - input[2]  
 ...
 
 Now let's see the obfuscated_function.
