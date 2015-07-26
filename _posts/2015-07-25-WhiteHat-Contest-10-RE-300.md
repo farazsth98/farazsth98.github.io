@@ -170,16 +170,16 @@ After the jump to 0x00401A63, we end up in function 0x00401160.
 ![screen10]({{site.url}}/assets/Screen Shot 2015-07-25 at 7.37.19 PM.png)
 
 Looks familiar ? Yep, it's the same function just different bytes for the comparison.
-After passing completing function 0x00401160, we see the following:
+After returning from function 0x00401160, we see the following:
 
 ![screen11]({{site.url}}/assets/Screen Shot 2015-07-25 at 7.39.45 PM.png)
 
 So it's a JUMP to "BadBoy" if EAX == 0, followed by function 0x00401B90.
-Let's see inside what's it.
+Let's step inside of it.
 
 ![screen12]({{site.url}}/assets/Screen Shot 2015-07-25 at 7.44.31 PM.png)
 
-Ha! It's an anti-debugging technique by manually checking the BeginDebugged flag in PEB, it's exactly what IsDebuggerPresent() uses but
+Ha! It's an anti-debugging technique by manually checking the BeingDebugged flag in PEB, it's exactly what IsDebuggerPresent() uses but
 in this case they are manually extracting the value. Olly Advanced and HideOD can automatically change the value of the flag so
 we don't have to worry about a thing here...
 
@@ -193,7 +193,7 @@ No surprise, it's the same check. Let's see what we have after it...
 
 Well it looks like that's it... "congratulations" gets pushed to the stack and later displayed in the MessageBoxA.
 
-Thanks to gaffe, and his solution using z3 theorem prover. We can say we have a better brute-forcer ;)
+Thanks to gaffe, and his solution using z3 theorem prover, we can say we have a better brute-forcer ;)
 
 {% highlight python %}
 #!/usr/bin/env python
