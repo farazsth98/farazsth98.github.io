@@ -5,4 +5,6 @@ category: test
 tags: Exploitation asciinema
 ---
 
-[![asciicast](https://asciinema.org/a/14.png)](https://asciinema.org/a/14)
+<p>This is some text.</p>
+<script type="text/javascript" src="https://asciinema.org/a/14.js" id="asciicast-14" async></script>
+<p>This is some other text.</p>
