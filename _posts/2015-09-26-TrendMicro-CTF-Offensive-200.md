@@ -27,7 +27,7 @@ The way I solved this is by patching the smali code and repackaging the apk file
 
 ![screen2]({{site.url}}/assets/Screen Shot 2015-09-27 at 1.49.59 AM.png)
 
-If you wonder how I knew which locations to patch. I used <www.decompileandroid.com> to get the java source code. There I basically followed the flow of execution and made whatever I could from my poor java interpretation.
+If you wonder how I knew which locations to patch. I used www.decompileandroid.com to get the java source code. There I basically followed the flow of execution and made whatever I could from my poor java interpretation.
 
 The java source code of the files that contained important for me data:
 
