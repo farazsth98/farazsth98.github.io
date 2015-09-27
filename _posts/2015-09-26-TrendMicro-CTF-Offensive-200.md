@@ -17,7 +17,7 @@ tags: Exploitation asciinema RE
 
 The Android app pops up a button on the screen and it requires us to press it 10 million times...
 
-![screen]({{site.url}}/assets/Screen Shot 2015-09-27 at 2.17.43 AM)
+![screen]({{site.url}}/assets/Screen Shot 2015-09-27 at 2.17.43 AM.png)
 
 The way I solved this is by patching the smali code and repackaging the apk file. Installing on an emulator only requires us to click 16 times (I chose 16 because it was easier for me to remember the numbers Im patching :).
 
