@@ -20,10 +20,9 @@ The Android app pops up a button on the screen and it requires us to press it 10
 ![screen]({{site.url}}/assets/Screen Shot 2015-09-27 at 2.17.43 AM.png)
 
 The way I solved this is by patching the smali code and repackaging the apk file. Installing on an emulator only requires us to click 16 times (I chose 16 because it was easier for me to remember the numbers Im patching :).
-
-<p>
+<p></p>
 <script type="text/javascript" src="https://asciinema.org/a/5qozqtwdocrobyzz0k6jaorhp.js" id="asciicast-5qozqtwdocrobyzz0k6jaorhp" data-speed="2" async></script>
-<p>
+<p></p>
 
 ![screen1]({{site.url}}/assets/Screen Shot 2015-09-27 at 1.49.45 AM.png)
 
