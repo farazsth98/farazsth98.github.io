@@ -11,16 +11,15 @@ Hello,
 
 This video/tutorial is showing an example of how information leaks can lead to bypassing stack canaries.
 The process is mostly explained via CLI comments, feel free to pause the video and look around the debugger, register values etc...
-The video is playing x3 the speed
+The video is playing x2 the speed
 
 {% highlight bash %}
 ➜  canaries/  checksec canaries
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH  FORTIFY FORTIFIED FORTIFY-able  FILE
 Partial RELRO   Canary found      NX enabled    No PIE          No RPATH   No RUNPATH   Yes 2       41  canaries
-
 {% endhighlight %}
 
-<script type="text/javascript" src="https://asciinema.org/a/b4e9ze1ftdfubwpkvuldkhdqo.js" id="asciicast-b4e9ze1ftdfubwpkvuldkhdqo" async data-speed="3"></script>
+<script type="text/javascript" src="https://asciinema.org/a/27001.js" id="asciicast-27001" async data-speed="2"></script>
 
 Source code of the binary:
 
