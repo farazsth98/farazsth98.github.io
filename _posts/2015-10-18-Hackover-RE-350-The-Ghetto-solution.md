@@ -52,7 +52,7 @@ struct sigaction {
 
 The first object is the address of the signal handler.
 
-# Solition
+# Solution
 
 <script type="text/javascript" src="https://asciinema.org/a/28259.js" id="asciicast-28259" data-speed="2" async></script>
 
