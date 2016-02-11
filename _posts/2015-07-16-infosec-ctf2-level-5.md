@@ -2,10 +2,9 @@
 layout: post
 title: Infosec Institute CTF2 Practical Web Hacking Level 5
 category: Web
-tags: CTF challenges
+tags: infosec
 ---
 
-# ctf.infosecinstitute.com: Level 5
 **Vulnerability** A7 Missing Function Level Access Control
 **Description:**
 

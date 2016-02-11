@@ -1,14 +1,13 @@
 ---
 layout: post
 title: poliCTF 2015 Reversemeplz
-category: CTF
-tags: RE CTF poliCTF
+category: Reverse Engineering
+tags: RE poliCTF
 ---
 
-# poliCTF 2015 Reversemeplz
 **Points:** 200
 **Solves:** 108
-**Category:** Reverse
+**Category:** Reverse Engineering
 **Description:**
 
 > Last month I was trying to simplify an algorithm.. and I found how to mess up a source really really bad. And then this challenge is born. Maybe is really simple or maybe is so hard that all of you will give up. Good luck!

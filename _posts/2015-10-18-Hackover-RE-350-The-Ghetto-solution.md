@@ -2,14 +2,14 @@
 layout: post
 title: Hackover CTF - RE 350
 category: Reverse Engineering
-tags: Exploitation asciinema RE
+tags: Hackover RE
 ---
 
-# Hackover CTF - Reverse Engineering 350
 **Points:** 350
 **Solves:** 11
 **Category:** Reverse Engineering
 **Description:**  
+
 > I like to move it, move it  
 > I like to move it, move it  
 > I like to move it, move it  

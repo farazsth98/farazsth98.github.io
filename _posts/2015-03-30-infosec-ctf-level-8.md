@@ -1,11 +1,10 @@
 ---
 layout: post
 title: Infosec Institute CTF Level 8
-category: write-ups
-tags: CTF challenges
+category: web
+tags: infosec
 ---
 
-# ctf.infosecinstitute.com: Level 8
 **Bounty:** $80
 **Description:**
 

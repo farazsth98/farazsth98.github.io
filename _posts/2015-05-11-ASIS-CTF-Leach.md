@@ -1,14 +1,13 @@
 ---
 layout: post
 title: ASIS 2015 CTF Leach Reverse Engineering 250
-category: CTF
-tags: RE CTF ASIS Leach
+category: Reverse Engineering
+tags: RE ASIS
 ---
 
-# ASIS 2015 Quals - Leach
 **Points:** 250
 **Solves:** 58
-**Category:** Reverse
+**Category:** Reverse Engineering
 **Description:**
 
 > Find the flag in [this]({{site.url}}/assets/leach_bc83626319ab77ade5408f6ea222920e) file.

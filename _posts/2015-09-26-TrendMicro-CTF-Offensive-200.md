@@ -1,11 +1,10 @@
 ---
 layout: post
 title: TrendMicro CTF - Offensive 200
-category: RE
-tags: Exploitation asciinema RE
+category: Exploitation
+tags: Exploitation Android TrendMicro
 ---
 
-# TrendMicro CTF - Offensive 200
 **Points:** 200
 **Solves:** 
 **Category:** Offensive

@@ -2,10 +2,9 @@
 layout: post
 title: Infosec Institute CTF2 Practical Web Hacking Level 13
 category: Web
-tags: CTF challenges
+tags: infosec
 ---
 
-# ctf.infosecinstitute.com: Level 13
 **Vulnerability** A10 Unvalidated Redirects and Forwards
 **Description:**
 

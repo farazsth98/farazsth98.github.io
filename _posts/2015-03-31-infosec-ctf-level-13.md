@@ -1,11 +1,10 @@
 ---
 layout: post
 title: Infosec Institute CTF Level 13
-category: write-ups
-tags: CTF challenges
+category: web
+tags: infosec
 ---
 
-# ctf.infosecinstitute.com: Level 13
 **Bounty:** $130
 **Description:**
 

@@ -2,10 +2,9 @@
 layout: post
 title: Infosec Institute CTF2 Practical Web Hacking Level 1
 category: Web
-tags: CTF challenges
+tags: infosec
 ---
 
-# ctf.infosecinstitute.com: Level 1
 **Vulnerability** A3 Cross-Site Scripting (XSS)
 **Description:**
 

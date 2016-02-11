@@ -2,10 +2,9 @@
 layout: post
 title: Infosec Institute CTF2 Practical Web Hacking Level 4
 category: Web
-tags: CTF challenges
+tags: infosec
 ---
 
-# ctf.infosecinstitute.com: Level 4
 **Vulnerability** A4 Insecure Direct Object References
 **Description:**
 

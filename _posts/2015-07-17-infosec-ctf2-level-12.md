@@ -2,10 +2,9 @@
 layout: post
 title: Infosec Institute CTF2 Practical Web Hacking Level 12
 category: Web
-tags: CTF challenges
+tags: infosec
 ---
 
-# ctf.infosecinstitute.com: Level 12
 **Vulnerability** Dictionary Attack
 **Description:**
 

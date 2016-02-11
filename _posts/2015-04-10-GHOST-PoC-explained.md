@@ -1,13 +1,12 @@
 ---
 layout: post
 title: CVE-2015-0235 GHOST PoC Explained
-category: Exploitation, PoC
-tags: Exploitation GHOST gethostbyname CVE-2015-0235
+category: Exploitation
+tags: Exploitation, PoC
 ---
 
 In this post we will go over the GHOST PoC under a debugger. This will visually show how the buffer overflow condition is met.
 
-# PoC C Code
 {% highlight C linenos %}
 #include <netdb.h>
 #include <stdio.h>

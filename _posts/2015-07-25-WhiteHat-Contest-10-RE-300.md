@@ -1,11 +1,10 @@
 ---
 layout: post
 title: WhiteHat CTF Contest 10 RE-300
-category: CTF
-tags: RE CTF WhiteHat
+category: Reverse Engineering
+tags: RE WhiteHat
 ---
 
-# WhiteHat Contest 10 Re300
 **Points:** 300
 **Solves:** 17
 **Category:** Reverse

@@ -1,11 +1,10 @@
 ---
 layout: post
 title: Infosec Institute CTF Level 6
-category: write-ups
-tags: CTF challenges
+category: web
+tags: infosec
 ---
 
-# ctf.infosecinstitute.com: Level 6
 **Bounty:** $60
 **Description:**
 

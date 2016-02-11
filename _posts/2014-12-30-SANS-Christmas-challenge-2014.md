@@ -1,11 +1,10 @@
 ---
 layout: post
 title: SANS Christmas Challenge 2014 Write-Up
-category: write-ups
-tags: CTF challenges
+category: PDF
+tags: SANS
 ---
 
-# SANS Christmas Challenge 2014 Write-Up
 
 This is a post to my Write-Up for the SANS Christmas Challenge 2014. The challenge is of 4 levels, including basics of exploitation, web application security and forensics.
 The challenge is still up and running for enthusiasts wanting to give it a try.  

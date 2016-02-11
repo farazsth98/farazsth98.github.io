@@ -1,207 +1,468 @@
 <!DOCTYPE html>
-<html xmlns:og="og: http://ogp.me/ns#">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <title>Home | Notes from my Notebook</title>
-        
-          <meta name="author" content="boaster">
-        
-        <meta name="title" content="Home" >
-        <link rel="icon" type="image/png" href="/favicon.png">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta property="og:title" content="Home" />
-<meta name="twitter:title" content="Home" />
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>uaf.io</title>
+	
+	<meta name="author" content="uaf.io">
 
-<meta name="keywords" content="wargames, ctf, write-ups, hacking, reverse-engineering, malware analysis, debugging" />
+	<!-- Enable responsive viewport -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+	<!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+	<!--[if lt IE 9]>
+	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
 
-<link rel="canonical" href="http://boaster.github.io/" />
-<meta property="og:site_name" content="Notes from my Notebook" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="http://boaster.github.io" />
-<meta name="description" content="Wargames and CTFs Write-ups.">
-<meta property="og:description" content="Wargames and CTFs Write-ups." />
-<meta name="twitter:description" content="Wargames and CTFs Write-ups." />
+	<!-- Le styles -->
+	<link href="/assets/resources/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link href="/assets/resources/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+	<link href="/assets/resources/syntax/syntax.css" rel="stylesheet">
+	<link href="/assets/css/style.css" rel="stylesheet">
 
-<meta property="og:image" content="http://boaster.github.io/sharer.png" />
-<meta name="twitter:card" content="summary" />
-<meta name="twitter:image" content="http://boaster.github.io/sharer.png" />
-        <!-- Custom CSS -->
-        <link rel="stylesheet" href="/css/style.css">
-        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
-    </head>
-    <body class="wrap">
-      <!--[if lt IE 8]>
-            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-      <![endif]-->
-      <header>
-  <h1 class="site-title"><a href="/">Notes from my Notebook</a></h1>
-  <nav class="main-nav">
-    <a href="#" class="opener show-on-mobiles">...</a>
-    <div class="clear-opener show-on-mobiles"></div>
-    <div class="grid">
-      <ul>
-        <li><a href="/"><i class="fa fa-home"></i>Home</a></li>
-	<li><a href="/about.html"><i class="fa fa-info-circle"></i>About</a></li>
-	<li><a href="/archive.html">Archive</a></li>
-      </ul>
-    </div>
-  </nav>
+	<!-- Le fav and touch icons -->
+	<!-- Update these with your own images
+	<link rel="shortcut icon" href="images/favicon.ico">
+	<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+	<link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+	<link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+	-->
+
+	<link rel="alternate" type="application/rss+xml" title="" href="/feed.xml">
+</head>
+
+<body>
+	<nav class="navbar navbar-default visible-xs" role="navigation">
+		<!-- Brand and toggle get grouped for better mobile display -->
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			
+			
+			
+			<a type="button" class="navbar-toggle nav-link" href="mailto:tschoranov@gmail.com">
+				<i class="fa fa-envelope"></i>
+			</a>
+			
+			<a class="navbar-brand" href="/">
+				<img src="http://www.gravatar.com/avatar/d970d0a145a12f1015c3af9979773875?s=35" class="img-circle" />
+				
+			</a>
+		</div>
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+			<ul class="nav navbar-nav">
+				<li class="active"><a href="/">Home</a></li>
+				<li><a href="/categories.html">Categories</a></li>
+				<li><a href="/tags.html">Tags</a></li>
+			</ul>
+		</div><!-- /.navbar-collapse -->
+	</nav>
+
+	<!-- nav-menu-dropdown -->
+	<div class="btn-group hidden-xs" id="nav-menu">
+		<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+			<i class="fa fa-bars"></i>
+		</button>
+		<ul class="dropdown-menu" role="menu">
+			<li><a href="/"><i class="fa fa-home"></i>Home</a></li>
+			<li><a href="/categories.html"><i class="fa fa-folder"></i>Categories</a></li>
+			<li><a href="/tags.html"><i class="fa fa-tags"></i>Tags</a></li>
+			<li class="divider"></li>
+			<li><a href="#"><i class="fa fa-arrow-up"></i>Top of Page</a></li>
+		</ul>
+	</div>
+
+	<div class="col-sm-3 sidebar hidden-xs">
+		<!-- sidebar.html -->
+<header class="sidebar-header" role="banner">
+	<a href="/">
+		<img src="http://www.gravatar.com/avatar/d970d0a145a12f1015c3af9979773875?s=150" class="img-circle" />
+	</a>
+	<h3 class="title">
+        <a href="/"></a>
+    </h3>
 </header>
 
-      <section class="content">
-        <div id="home" class="grid">
-	
-    <div class="unit whole posts">
-        
-<div class="unit whole single-post-excerpt">
-	<h2><a href="/ctf/2015/11/30/9447-CTF-RE-160.html">9447 2015 CTF Hello Joe RE 160</a></h2>
-	<div class="meta-info">
-		<span class="meta"><time class="timeago postlist-meta" datetime="2015-11-30"><i class="fa fa-calendar"></i>November 30, 2015</time></span>
+
+<div id="bio" class="text-center">
+	I do RE and PWN.
+</div>
+
+
+<div id="contact-list" class="text-center">
+	<ul class="list-unstyled list-inline">
 		
-			<div class="tags">
-				Tagged:
-				
-				<span><i class="fa fa-tag"></i>RE</span>
-				
-				<span><i class="fa fa-tag"></i>CTF</span>
-				
-				<span><i class="fa fa-tag"></i>9447</span>
-				
-			</div>
 		
+		
+		<li>
+			<a class="btn btn-default btn-sm" href="mailto:tschoranov@gmail.com">
+				<i class="fa fa-envelope fa-lg"></i>
+			</a>
+		</li>
+		
+	</ul>
+	<ul id="contact-list-secondary" class="list-unstyled list-inline">
+		
+		
+		<li>
+			<a class="btn btn-default btn-sm" href="/feed.xml">
+				<i class="fa fa-rss fa-lg"></i>
+			</a>
+		</li>
+	</ul>
+</div>
+<!-- sidebar.html end -->
+
 	</div>
-	<p class="description">9447 2015 CTF - Hello Joe
-Points: 160
-Solves: 68
-Category: Reversing
-Description:
 
-</p>
+	<div class="col-sm-9 col-sm-offset-3">
+		<div class="page-header">
+  <h1>uaf.io </h1>
 </div>
 
-<div class="unit whole single-post-excerpt">
-	<h2><a href="/exploitation/2015/11/15/RCTF-PWN-200.html">RCTF - Exploitation 200</a></h2>
-	<div class="meta-info">
-		<span class="meta"><time class="timeago postlist-meta" datetime="2015-11-15"><i class="fa fa-calendar"></i>November 15, 2015</time></span>
-		
-			<div class="tags">
-				Tagged:
-				
-				<span><i class="fa fa-tag"></i>Exploitation</span>
-				
-				<span><i class="fa fa-tag"></i>asciinema</span>
-				
-				<span><i class="fa fa-tag"></i>RE</span>
-				
-			</div>
-		
-	</div>
-	<p class="description">
-  welpwn
 
 
-</p>
-</div>
+<article class="home">
 
-<div class="unit whole single-post-excerpt">
-	<h2><a href="/reverse%20engineering/2015/10/18/Hackover-RE-350-The-Ghetto-solution.html">Hackover CTF - RE 350</a></h2>
-	<div class="meta-info">
-		<span class="meta"><time class="timeago postlist-meta" datetime="2015-10-18"><i class="fa fa-calendar"></i>October 18, 2015</time></span>
-		
-			<div class="tags">
-				Tagged:
-				
-				<span><i class="fa fa-tag"></i>Exploitation</span>
-				
-				<span><i class="fa fa-tag"></i>asciinema</span>
-				
-				<span><i class="fa fa-tag"></i>RE</span>
-				
-			</div>
-		
-	</div>
-	<p class="description">Hackover CTF - Reverse Engineering 350
-Points: 350
-Solves: 11
-Category: Reverse Engineering
-Description:
-&gt; I like to move it, move it
-&gt; I like to move it, move it
-&gt; I like to move it, move it
-&gt; You like to move it
-
-</p>
-</div>
-
-<div class="unit whole single-post-excerpt">
-	<h2><a href="/exploitation/2015/10/04/DCTF-Exploitation-300.html">DCTF - Exploitation 300</a></h2>
-	<div class="meta-info">
-		<span class="meta"><time class="timeago postlist-meta" datetime="2015-10-04"><i class="fa fa-calendar"></i>October 4, 2015</time></span>
-		
-			<div class="tags">
-				Tagged:
-				
-				<span><i class="fa fa-tag"></i>Exploitation</span>
-				
-				<span><i class="fa fa-tag"></i>asciinema</span>
-				
-				<span><i class="fa fa-tag"></i>RE</span>
-				
-			</div>
-		
-	</div>
-	<p class="description">D-CTF - Exploitation 300
-Points: 300
-Solves: 
-Category: Exploitation
-Description:
-
-</p>
-</div>
-
-<div class="unit whole single-post-excerpt">
-	<h2><a href="/exploitation/2015/09/29/Stack-CANARY-Overwrite-Primer.html">Overwriting Stack CANARY - Primer</a></h2>
-	<div class="meta-info">
-		<span class="meta"><time class="timeago postlist-meta" datetime="2015-09-29"><i class="fa fa-calendar"></i>September 29, 2015</time></span>
-		
-			<div class="tags">
-				Tagged:
-				
-				<span><i class="fa fa-tag"></i>Exploitation</span>
-				
-				<span><i class="fa fa-tag"></i>asciinema</span>
-				
-				<span><i class="fa fa-tag"></i>RE</span>
-				
-			</div>
-		
-	</div>
-	<p class="description">
-  canaries
-
-
-</p>
-</div>
-
-<div class="unit whole paginator">
-	
-	<span>Page: 1 of 10</span>
-	
-	<a href="/page2" class="next">Next</a>
-	
-</div>
-
-    </div>
+  <span class="post-date">
     
-</div>
-      </section>
-      <footer class="grid site-footer">
-        <p>&copy;&nbsp;Notes from my Notebook</p>
-        <p><small>Powered by <a href="http://jekyllrb.com" target="_blank"><em>Jekyll</em></a> using <a href="http://bitwiser.in/bitwiser/" target="_blank"><em>Bitwiser</em></a> theme.</small></p>
-      </footer>
-      
-      <script src="/js/script.js"></script>
-    </body>
+    January
+    31st,
+    
+    2016
+  </span>
+
+  <h2>
+    <a href="/exploitation/2016/01/31/HackIM-CTF-Sandman-Exploitation-200.html">HackIM 2016 CTF - Sandman Exploitation 200</a>
+  </h2>
+
+  <div>
+    
+    
+    <p><strong>Points:</strong> 200
+<strong>Solves:</strong> 
+<strong>Category:</strong> Exploitation
+<strong>Description:</strong></p>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    November
+    30th,
+    
+    2015
+  </span>
+
+  <h2>
+    <a href="/reverse%20engineering/2015/11/30/9447-CTF-RE-160.html">9447 2015 CTF Hello Joe RE 160</a>
+  </h2>
+
+  <div>
+    
+    
+    <p><strong>Points:</strong> 160
+<strong>Solves:</strong> 68
+<strong>Category:</strong> Reverse Engineering
+<strong>Description:</strong></p>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    November
+    15th,
+    
+    2015
+  </span>
+
+  <h2>
+    <a href="/exploitation/2015/11/15/RCTF-PWN-200.html">RCTF - Exploitation 200</a>
+  </h2>
+
+  <div>
+    
+    
+    <blockquote>
+  <p><a href="/assets/welpwn_932a4428ea8d4581431502ab7e66ea4b">welpwn</a></p>
+</blockquote>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    October
+    18th,
+    
+    2015
+  </span>
+
+  <h2>
+    <a href="/reverse%20engineering/2015/10/18/Hackover-RE-350-The-Ghetto-solution.html">Hackover CTF - RE 350</a>
+  </h2>
+
+  <div>
+    
+    
+    <p><strong>Points:</strong> 350
+<strong>Solves:</strong> 11
+<strong>Category:</strong> Reverse Engineering
+<strong>Description:</strong></p>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    October
+    4th,
+    
+    2015
+  </span>
+
+  <h2>
+    <a href="/exploitation/2015/10/04/DCTF-Exploitation-300.html">DCTF - Exploitation 300</a>
+  </h2>
+
+  <div>
+    
+    
+    <p><strong>Points:</strong> 300
+<strong>Solves:</strong> 
+<strong>Category:</strong> Exploitation
+<strong>Description:</strong></p>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    September
+    29th,
+    
+    2015
+  </span>
+
+  <h2>
+    <a href="/exploitation/2015/09/29/Stack-CANARY-Overwrite-Primer.html">Overwriting Stack CANARY - Primer</a>
+  </h2>
+
+  <div>
+    
+    
+    <blockquote>
+  <p><a href="/assets/canaries">canaries</a></p>
+</blockquote>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    September
+    26th,
+    
+    2015
+  </span>
+
+  <h2>
+    <a href="/exploitation/2015/09/26/TrendMicro-CTF-Offensive-200.html">TrendMicro CTF - Offensive 200</a>
+  </h2>
+
+  <div>
+    
+    
+    <p><strong>Points:</strong> 200
+<strong>Solves:</strong> 
+<strong>Category:</strong> Offensive
+<strong>Description:</strong></p>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    September
+    8th,
+    
+    2015
+  </span>
+
+  <h2>
+    <a href="/reverse%20engineering/2015/09/08/MMA-CTF-RE-80.html">MMA CTF RE 80 "This program can not be run in dos mode"</a>
+  </h2>
+
+  <div>
+    
+    
+    <p><strong>Points:</strong> 80
+<strong>Solves:</strong> 140
+<strong>Category:</strong> Reverse Engineering, warm-up
+<strong>Description:</strong></p>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    September
+    7th,
+    
+    2015
+  </span>
+
+  <h2>
+    <a href="/reverse%20engineering/2015/09/07/MMA-CTF-RE-150.html">MMA CTF RE 150 Impossible?</a>
+  </h2>
+
+  <div>
+    
+    
+    <p><strong>Points:</strong> 150
+<strong>Solves:</strong> 7
+<strong>Category:</strong> Reverse Engineering, PPC
+<strong>Description:</strong></p>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    July
+    25th,
+    
+    2015
+  </span>
+
+  <h2>
+    <a href="/reverse%20engineering/2015/07/25/WhiteHat-Contest-10-RE-300.html">WhiteHat CTF Contest 10 RE-300</a>
+  </h2>
+
+  <div>
+    
+    
+    <p><strong>Points:</strong> 300
+<strong>Solves:</strong> 17
+<strong>Category:</strong> Reverse
+<strong>Description:</strong></p>
+
+
+    
+    
+  </div>
+
+</article>
+
+<hr/>
+
+<ul class="pager"> 
+
+  
+  <li class="previous disabled">
+    <a>&larr; Newer</a>
+  </li>
+  
+  
+  <li>
+    <span class="page_number">Page: 1 of 5</span>
+  </li>
+
+  
+  <li class="next">
+    <a href="/page2">Older &rarr;</a>
+  </li>
+  
+
+</ul>
+
+
+
+
+		<footer>
+			<hr/>
+			<p>
+				&copy; 2016 uaf.io with Jekyll. Theme: <a href="https://github.com/dbtek/dbyll">dbyll</a> by dbtek.
+			</p>
+		</footer>
+	</div>
+
+	<script type="text/javascript" src="/assets/resources/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="/assets/resources/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/assets/js/app.js"></script>
+</body>
 </html>
+
+
+

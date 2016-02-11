@@ -1,14 +1,13 @@
 ---
 layout: post
 title: ASIS 2015 CTF Tera Reverse Engineering 100
-category: Reverse Engineering, CTF
-tags: RE CTF ASIS Tera
+category: Reverse Engineering
+tags: RE ASIS
 ---
 
-# ASIS 2015 Quals - Tera
 **Points:** 100
 **Solves:** 58
-**Category:** Reverse
+**Category:** Reverse Engineering
 **Description:**
 
 > Be patient and find the flag in [this]({{site.url}}/assets/tera_85021482a68d6ed21892ea99b84f13f3) file.

@@ -1,14 +1,13 @@
 ---
 layout: post
 title: Flare-on Challenge 3
-category: CTF
-tags: RE CTF Flare-on FireEye
+category: Reverse Engineering
+tags: RE Flare-on
 ---
 
-# Flare-on Challenge 3
 **Points:**
 **Solves:**
-**Category:** Reverse
+**Category:** Reverse Engineering
 **Description:**
 
 > It's simple: Analyze the [sample]({{site.url}}/assets/C3.zip), find the key. Each key is an email address.

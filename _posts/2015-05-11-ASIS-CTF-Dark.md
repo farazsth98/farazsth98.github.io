@@ -1,14 +1,13 @@
 ---
 layout: post
 title: ASIS 2015 CTF Dark Reverse Engineering 125
-category: CTF
-tags: RE CTF ASIS Dark
+category: Reverse Engineering
+tags: RE ASIS
 ---
 
-# ASIS 2015 Quals - Dark
 **Points:** 125
 **Solves:** 47
-**Category:** Reverse
+**Category:** Reverse Engineering
 **Description:**
 
 > Find the flag in [this]({{site.url}}/assets/dark_aba92f5882a156452b18b895c722cea6) file.

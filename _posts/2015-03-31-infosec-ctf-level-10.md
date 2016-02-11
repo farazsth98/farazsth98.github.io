@@ -1,11 +1,10 @@
 ---
 layout: post
 title: Infosec Institute CTF Level 10
-category: write-ups
-tags: CTF challenges
+category: web
+tags: infosec
 ---
 
-# ctf.infosecinstitute.com: Level 10
 **Bounty:** $100
 **Description:**
 

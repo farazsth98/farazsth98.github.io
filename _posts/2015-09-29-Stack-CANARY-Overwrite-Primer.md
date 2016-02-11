@@ -2,7 +2,7 @@
 layout: post
 title: Overwriting Stack CANARY - Primer
 category: Exploitation
-tags: Exploitation asciinema RE
+tags: Exploitation PoC
 ---
 
 > [canaries]({{site.url}}/assets/canaries)

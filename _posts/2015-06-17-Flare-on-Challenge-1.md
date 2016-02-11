@@ -1,14 +1,13 @@
 ---
 layout: post
 title: Flare-on Challenge 1
-category: CTF
-tags: RE CTF Flare-on FireEye
+category: Reverse Engineering
+tags: RE Flare-on
 ---
 
-# Flare-on Challenge 1
 **Points:**
 **Solves:**
-**Category:** Reverse
+**Category:** Reverse Engineering
 **Description:**
 
 > It's simple: Analyze the [sample]({{site.url}}/assets/Challenge1.exe), find the key. Each key is an email address.

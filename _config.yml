@@ -1,37 +1,33 @@
-##The website title
-name: Notes from my Notebook
-##Markdown processor
-markdown: kramdown
-##syntax highlighter. change it to pygments
-highlighter: pygments
+# visit https://github.com/mojombo/jekyll/wiki/Configuration for more settings
 
-##define base_url for valid usage in sitemap.xml and robots.txt
-base_url: http://boaster.github.io
-sass:
-  sass_dir: _sass
-  style: :compressed
-paginate: 5
+paginate: 10 # pagination based on number of posts
 paginate_path: "page:num"
-##The website description (to be used in meta tags)
-description: Wargames and CTFs Write-ups.
-##Some frequently used keywords on your website
-keywords: wargames, ctf, write-ups, hacking, reverse-engineering, malware analysis, debugging
+exclude: ["README.md"] # files to exclude
+highlighter: pygments
+markdown: kramdown
+disqus: uafio
+#google_analytics: dbyll
 
-##define this for disqus comment support
-#disqus: forumname
+defaults:
+  -
+    scope:
+      path: "" # empty string for all files
+    values:
+      title: uaf.io
 
-##set this to enable google analytics
-#ga_id: UA-60673588-1
-#ga_domain: analyticsDomain
-
-##Some commonly used links
-links:
-#  facebook: username
-#  twitter: username
+description: Stylish Jekyll Theme
+author:
+  name: uaf.io
   email: tschoranov@gmail.com
-  github: boaster
+#  github: boaster
+#  twitter:
+#  pinterest:
+#  linkedin:
+  bio: I do RE and PWN.
+  email_md5: d970d0a145a12f1015c3af9979773875
 
-##put desired image in img/ directory and set the value accordingly. If not defined, a placeholder image will be used.
-about_image: image.JPG
-##comment this if you want full width posts with no sidebar
-#sidebar: on
+rss_path: feed.xml
+categories_path: categories.html
+tags_path: tags.html
+
+BASE_PATH:
