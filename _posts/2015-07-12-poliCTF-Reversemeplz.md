@@ -3,6 +3,7 @@ layout: post
 title: poliCTF 2015 Reversemeplz
 category: Reverse Engineering
 tags: RE poliCTF
+comments: true
 ---
 
 **Points:** 200
@@ -16,7 +17,7 @@ tags: RE poliCTF
 
 ## Write-up
 
-{% highlight bash linenos %}
+{% highlight bash %}
 $ file reversemeplz 
 reversemeplz: ELF 32-bit LSB  executable, Intel 80386, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=da884e304160351da7785e93dc168eecafe770ed, stripped
 $ ./reversemeplz 
@@ -89,7 +90,7 @@ the same between all 4 'c''s, next I entered as an input each of the alphabet ch
 
 Now let's see the values of the static bytes that our input is being compared against.
 
-{% highlight bash linenos %}
+{% highlight bash %}
 
 (gdb) x/1bx $ebp+1*4-0x4c
 0xbfffef50:	0xff
@@ -154,7 +155,7 @@ for z in range(97, 123):
 
 It produces the following output:
 
-{% highlight bash linenos %}
+{% highlight bash %}
 
 $ python ./reverseplz.py 
 0x63 0x62 0x73 0x68 0x6b 0x63 0x68 0x76 0x73 0x74 0x7a 0x6f 0x75 0x6d 0x63

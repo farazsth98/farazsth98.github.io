@@ -3,6 +3,7 @@ layout: post
 title: Overwriting Stack CANARY - Primer
 category: Exploitation
 tags: Exploitation PoC
+comments: true
 ---
 
 > [canaries]({{site.url}}/assets/canaries)

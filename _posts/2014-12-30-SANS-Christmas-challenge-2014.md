@@ -3,6 +3,7 @@ layout: post
 title: SANS Christmas Challenge 2014 Write-Up
 category: PDF
 tags: SANS
+comments: true
 ---
 
 

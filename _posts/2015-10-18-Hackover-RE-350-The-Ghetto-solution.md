@@ -3,6 +3,7 @@ layout: post
 title: Hackover CTF - RE 350
 category: Reverse Engineering
 tags: Hackover RE
+comments: true
 ---
 
 **Points:** 350
@@ -40,7 +41,7 @@ We could also look at the assembly of the Exception Handlers by examining the st
 
 For the curious ones here is the sigaction struct that's passed to sigaction().
 
-{% highlight bash linenos %}
+{% highlight bash %}
 struct sigaction {
 	void     (*sa_handler)(int);
 	void     (*sa_sigaction)(int, siginfo_t *, void *);

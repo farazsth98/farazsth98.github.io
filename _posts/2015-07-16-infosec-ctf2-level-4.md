@@ -19,7 +19,7 @@ This time we are presented with a web page that has 3 links, 'Bio', 'Clients' an
 the page, 'file1.txt', 'file2.txt' and 'file3.txt' respectively. The url parameter is 'file' with one of the txt filenames as
 argument.
 
-{% highlight text linenos %}
+{% highlight text  %}
 http://ctf.infosecinstitute.com/ctf2/exercises/ex4.php?file=file1.txt
 http://ctf.infosecinstitute.com/ctf2/exercises/ex4.php?file=file2.txt
 http://ctf.infosecinstitute.com/ctf2/exercises/ex4.php?file=file3.txt

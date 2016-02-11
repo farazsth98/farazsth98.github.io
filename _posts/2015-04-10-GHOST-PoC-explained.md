@@ -3,11 +3,12 @@ layout: post
 title: CVE-2015-0235 GHOST PoC Explained
 category: Exploitation
 tags: Exploitation, PoC
+comments: true
 ---
 
 In this post we will go over the GHOST PoC under a debugger. This will visually show how the buffer overflow condition is met.
 
-{% highlight C linenos %}
+{% highlight C  %}
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,7 +68,7 @@ Now that we have defined our struct representing the buffer for gethostname_r, t
 
 Now, let's see the binary under GDB debugger.
 
-{% highlight bash linenos %}
+{% highlight bash  %}
 $ gdb -q ./GHOST 
 Reading symbols from /home/student/GHOST...done.
 (gdb) break main
@@ -123,7 +124,7 @@ Quit
 {% endhighlight %}
 Lines 24-28, are where memset initializes name char array with 999 bytes of '0'. Line 31, name char array is being null terminated. Lines 36-41, is where the arguments for gethostbyname_r are being pushed to the stack, right to left. After the gethostbyname_r function, on lines 44-49 is where strcmp confirms if the CANARY has been modified or not.  
 Let's set a breakpoint before the gethostbyname function and inspect the temp stuct.
-{% highlight bash linenos %}
+{% highlight bash  %}
 (gdb) break *main+123
 Breakpoint 3 at 0x804850f: file ghost.c, line 25.
 (gdb) c
@@ -160,7 +161,7 @@ $4 = {buffer = "buffer", '\000' <repeats 1017 times>, canary = "in_the_coal_mine
 
 As you can see, the content of temp is of two buffers named "buffer" and "canary". Content of Buffer is the name of the buffer "buffer" which is 6 bytes + 1017 bytes of '0' characters + null terminating byte = 1024 bytes. CANARY starts at memory location 0x804a440 or 1024 bytes within the temp struct, and it's content is as initialized "in_the_coal_mine".  
 Now let's move 1 instruction down, past the gethostbyname_r function and inspect the temp struct again.
-{% highlight bash linenos %}
+{% highlight bash  %}
 (gdb) nexti
 0x08048514	25	  retval = gethostbyname_r(name, &resbuf, temp.buffer, sizeof(temp.buffer), &result, &herrno);
 (gdb) disas
@@ -192,7 +193,7 @@ $5 = {buffer = '\000' <repeats 16 times>, "@\240\004\b\000\000\000\000\000\000\0
 {% endhighlight %}
 What this shows us is that now, the temp.buffer is 1028 bytes. 4 bytes from temp.buffer chunk has overflowed into the temp.canary chunk. If we inspect the 0x804a440 address, which use to be the start of the CANARY chunk, we should see the overflowed bytes followed by terminating null char.
 
-{% highlight bash linenos %}
+{% highlight bash  %}
 (gdb) x/s 0x804a440
 0x804a440 <temp+1024>:	 "000"
 (gdb) 
@@ -201,7 +202,7 @@ What this shows us is that now, the temp.buffer is 1028 bytes. 4 bytes from temp
 ## The patch
 As noted by Qualys in their report, the vulnerable code in the function is in nss/digits_dots.c. The patch mainly consists of adding 4 bytes to the size_needed object.
 
-{% highlight bash linenos %}
+{% highlight bash  %}
 vi nss/digits_dots.c
 
 From this:

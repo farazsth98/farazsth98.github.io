@@ -3,6 +3,7 @@ layout: post
 title: WhiteHat CTF Contest 10 RE-300
 category: Reverse Engineering
 tags: RE WhiteHat
+comments: true
 ---
 
 **Points:** 300
@@ -79,7 +80,7 @@ followed by input[3] + input[2] == 0xDE and so on...
 Since the local time was 05:00 am I wasn't really thinking how to properly script this, so I just copied and pasted a bunch of times a loop which
 would give me the possible solution for each byte.
 
-{% highlight python linenos %}
+{% highlight python %}
 #!/usr/bin/env python
 
 for a in range(33, 126):
@@ -149,7 +150,7 @@ for a in range(33, 126):
 Please no criticism :).  
 The "script" "cough, cough, cough"... produced the following values.
 
-{% highlight bash linenos %}
+{% highlight bash %}
 $ python ./brute.py 
 viiu2i3u1106 5l5ykmh
 whjt3h4t2015!4m4zjng

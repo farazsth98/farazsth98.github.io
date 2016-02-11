@@ -17,7 +17,7 @@ For almost all levels I will be using Burpsuite. Burpsuite is an interception pr
  
 Let's see the request in Burpsuite.
 
-{% highlight text linenos %}
+{% highlight text  %}
 GET /ctf2/exercises/ex5.php HTTP/1.1
 Host: ctf.infosecinstitute.com
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Firefox/31.0 Iceweasel/31.6.0
@@ -30,7 +30,7 @@ Connection: keep-alive
 
 Hm, no special Cookies, no function parameters. Let's take a look at the source.
 
-{% highlight text linenos %}
+{% highlight text  %}
 <p class="lead">You are not logged in. Please <a class="btn btn-sm btn-info" disabled href="login.html">login</a> to access this page.</p>
 {% endhighlight %}
 

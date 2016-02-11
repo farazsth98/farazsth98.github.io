@@ -25,7 +25,7 @@ Let's try injecting the javascript "&lt;script&gt;alert('Ex1');&lt;/script&gt;" 
 It looks like we have some input validation. Since there was no data intercepted by Burp, we can deduct that the input
 validation is done via HTML or javascript on the client side. Let's take a look at the source.
 
-{% highlight html linenos %}
+{% highlight html  %}
 <input type="text" placeholder="Name of site" maxsize="10" class="form-control" pattern="[A-Za-z]+" required="" name="name">
 <input class="form-control" placeholder="URL of site" type="url" required="" maxsize="15" name="url">
 {% endhighlight %}
@@ -45,7 +45,7 @@ This means that
 
 Let's go back to the source and look for JavaScript objects. Fair enough, we see the following .js file included in the page.
 
-{% highlight javascript linenos %}
+{% highlight javascript  %}
 /**
  * Created by Ivan on 12.3.2015 Ð³..
  */

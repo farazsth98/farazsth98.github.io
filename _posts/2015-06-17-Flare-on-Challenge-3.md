@@ -21,7 +21,7 @@ The first CALL to such_evi.004024D1 at address 0x004024CE it's a function that i
 Continuing with the code we see controlfp(), __set_app_type() and __getmainargs() from msvcrt.dll which we are not interested in.
 At address 0x0040252A, however there is a call to what seems to be the ModuleEntryPoint, let's go there.
 
-{% highlight text linenos %}
+{% highlight text %}
 004024C0 >  55              PUSH EBP
 004024C1    89E5            MOV EBP,ESP
 004024C3    81EC 2C000000   SUB ESP,2C
@@ -68,7 +68,7 @@ Once the shellcode has been installed on the stack, execution is transfered to i
 I could of copied the shellcode to a separate file and do some static analysis but I've decided to keep this POST kind of short so let's continue debugging.
 Place a BreakPoint at 0x0040249B and hit RUN.
 
-{% highlight text linenos %}
+{% highlight text %}
 00401000  /$  55                   PUSH EBP
 00401001  |.  89E5                 MOV EBP,ESP
 00401003  |.  81EC 04020000        SUB ESP,204
@@ -105,7 +105,7 @@ by the initial XOR loop. I know that the first address to be XORed is past where
 however this is how I like stepping through these loops and ensuring everything runs as expected.
 The other solution would be to place a Hardware BreakPoint on execute on the same address...
 
-{% highlight text linenos %}
+{% highlight text  %}
 0012FD7F    E8 00000000            CALL 0012FD84
 0012FD84    8B3424                 MOV ESI,DWORD PTR SS:[ESP]
 0012FD87    83C6 1C                ADD ESI,1C
@@ -130,7 +130,7 @@ If execution is going to jump to 0x0012FDB0, this address starts at raw bytes "6
 Since we are using a debugger and not static analysis we can jump step there without much to worry about. However if you are
 using static analysis, make sure to start disassembly from those instructions so the real code gets interpreted properly.
 
-{% highlight text linenos %}
+{% highlight text  %}
 0012FD7F    E8 00000000            CALL 0012FD84
 0012FD84    8B3424                 MOV ESI,DWORD PTR SS:[ESP]
 0012FD87    83C6 1C                ADD ESI,1C
@@ -162,7 +162,7 @@ Remember those are little-endan, if we convert them to ASCII just for clarity we
 Again the first XOR address is past the second JMP at 0x0012FDF3, which is 0x09 and it will be XORed with the first byte of
 "nopasaurus" which is 0x6E... and so on. Let's place a BreakPoint at 0x0012FDEE the same way as before.
 
-{% highlight text linenos %}
+{% highlight text  %}
 0012FDB0 >  68 75730000            PUSH 7375
 0012FDB5    68 73617572            PUSH 72756173
 0012FDBA    68 6E6F7061            PUSH 61706F6E
@@ -199,7 +199,7 @@ Again the first XOR address is past the second JMP at 0x0012FDF3, which is 0x09 
 
 Just as before, JMP is going to jump in the middle of an instruction. We know how to deal like that...
 
-{% highlight text linenos %}
+{% highlight text  %}
 0012FDEC  ^\EB EB                  JMP SHORT 0012FDD9
 0012FDEE >  E9 31000000            JMP 0012FE24  <----- EIP
 0012FDF3    67:65:74 20            JE SHORT 0012FE17                                       ; Superfluous prefix
@@ -233,7 +233,7 @@ Another thing I like to do is when seeing those XORing functions is to follow th
 and watch for any interesting strings... Let's not asume that only execution instruction are being obfuscated but helpful resources as well.
 Again manually go through the unpacking loop and then place a BreakPoint at 0x0012FE47 after the loop.
 
-{% highlight text linenos %}
+{% highlight text  %}
 0012FE24 >  E8 00000000            CALL 0012FE29
 0012FE29    8B3424                 MOV ESI,DWORD PTR SS:[ESP]
 0012FE2C    83C6 1E                ADD ESI,1E
@@ -250,7 +250,7 @@ The unpacked routine decrypted the next XOR key, again this is applied byte by b
 Also if we follow the data that's being decrypted in the DUMP window in Olly, we can see that the string
 "such.5h311010101@flare-on.com" is revealed.
 
-{% highlight text linenos %}
+{% highlight text  %}
 0012FE47 >  8D80 00000000          LEA EAX,DWORD PTR DS:[EAX]
 0012FE4D    8D80 00000000          LEA EAX,DWORD PTR DS:[EAX]
 0012FE53    90                     NOP

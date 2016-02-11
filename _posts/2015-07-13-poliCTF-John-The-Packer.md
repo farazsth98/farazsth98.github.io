@@ -3,6 +3,7 @@ layout: post
 title: poliCTF 2015 John the packer 350
 category: Reverse Engineering
 tags: RE poliCTF
+comments: true
 ---
 
 **Points:** 350
@@ -18,28 +19,32 @@ tags: RE poliCTF
 
 Let's see what are we presented with here. 32-bit ELF stripped and we have to find the flag by passing it as an argument.
 
-	$ file topack 
-	topack: ELF 32-bit LSB  executable, Intel 80386, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=1c3cb4e123e1be23724aa03af0b2307acb7bbe8a, stripped
-	$ ./topack 
-	Usage:
-	 ./topack flag{<key>}
-	$ ./topack AAAA
-	wrong Header for AAAA
-	wrong End for AAAA
-	Loser
-	$ 
+{% highlight bash %}
+$ file topack 
+topack: ELF 32-bit LSB  executable, Intel 80386, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=1c3cb4e123e1be23724aa03af0b2307acb7bbe8a, stripped
+$ ./topack 
+Usage:
+ ./topack flag{<key>}
+$ ./topack AAAA
+wrong Header for AAAA
+wrong End for AAAA
+Loser
+$ 
+{% endhighlight %}
  
 Notice the 'wrong Header' and 'wrong End' warnings ? Let's try passing the right flag format as it tells us.
 
-	$ ./topack flag{AAAA}
-	Loser
-	$ 
+{% highlight bash %}
+$ ./topack flag{AAAA}
+Loser
+$ 
+{% endhighlight %}
 
 This time no warnings...
 
 Let's take a look at the main function.
 
-{% highlight bash linos %}
+{% highlight bash %}
 (gdb) x/50i 0x8048bf2
 => 0x8048bf2:	lea    ecx,[esp+0x4]
    0x8048bf6:	and    esp,0xfffffff0
@@ -62,7 +67,7 @@ Let's take a look at the main function.
 
 Hm... this is a weird main function :). Anyway, let's continue with the next function, 0x80485e0.
 
-{% highlight bash linos %}
+{% highlight bash %}
 (gdb) x/50i 0x80485e0
    0x80485e0:	push   ebp
    0x80485e1:	mov    ebp,esp
@@ -114,7 +119,7 @@ Aha, here comes the unpacking routine! First it modifies 0x08048000 section with
 Next it actually does the modification and almost to the end we see call EAX, if we add a breakpoint there we actually see that EAX is the address pushed before
 we enter this unpacking function, '0x8048aa5'.
 
-{% highlight bash linos %}
+{% highlight bash %}
 (gdb) b *0x804863f
 Breakpoint 1 at 0x804863f
 (gdb) run flag{AAAA}
@@ -147,7 +152,7 @@ It looks like we have arrived at the 'real' main function. However we can't dump
 if we pay close attention, we are can recognize the 0x80485e0 function which unpacked 'main' and the address argument passed
 to it.
 
-{% highlight bash linos %}
+{% highlight bash %}
 (gdb) x/200i $eip
 => 0x8048aa5:	push   ebp
    0x8048aa6:	mov    ebp,esp
@@ -259,7 +264,7 @@ The way I organized the analysis was in sections. The unpacking routine was call
 That means we are going to have to complete 7 'levels' each one is being unpacked before execution reached there.
 So let me split the main routine in 7 sections...
 
-{% highlight bash linos %}
+{% highlight bash %}
 (gdb) x/200i $eip
 => 0x8048aa5:	push   ebp
    0x8048aa6:	mov    ebp,esp
@@ -394,7 +399,7 @@ at each address passed to 0x80485e0, starting with section number 1 with address
 
 # Section number 1
 
-{% highlight bash linos %}
+{% highlight bash %}
 (gdb) b *0x8048655
 Breakpoint 4 at 0x8048655
 (gdb) c
@@ -436,7 +441,7 @@ binary, each section will reference our input argument as [ebp+0x18]) it prints 
 
 Anyway, let's continue.
 
-{% highlight bash linos %}
+{% highlight bash %}
 (gdb) c
 Continuing.
 wrong Header for [=���s��X�
@@ -703,7 +708,7 @@ gs             0x33	51
 
 Ok, it looks like our first 'A' (0x41 in ebx) is compared with 0x70 ('p'). Cool, let's adjust our input and continue the loop.
 
-{% highlight bash linenos %}
+{% highlight bash %}
 eax            0x70	112
 eax            0x61	97
 eax            0x63	99
@@ -716,7 +721,7 @@ So the flag so far is flag{packer}...
 
 # Section 5
 
-{% highlight bash linenos %}
+{% highlight bash %}
 (gdb) hb *0x80489a9
 Hardware assisted breakpoint 9 at 0x80489a9
 (gdb) c
@@ -786,7 +791,7 @@ Breakpoint 9, 0x080489a9 in ?? ()
 It's almost the same thing here except that on line 42, the code checks if the return from 0x8048813 is equal to 0 or not.
 So this time we won't be given the values of the correct bytes. So let's see what's going on inside 0x8048813.
 
-{% highlight bash linenos %}
+{% highlight bash %}
 (gdb) hb *0x8048813
 Hardware assisted breakpoint 10 at 0x8048813
 (gdb) c
@@ -997,7 +1002,7 @@ After some tedious manual brute-forcing the input ended up being "flag{packer-15
 
 # Section number 6
 
-{% highlight bash linenos %}
+{% highlight bash %}
 (gdb) hb *0x804890b
 Hardware assisted breakpoint 12 at 0x804890b
 (gdb) run flag{packer-15-4-?41=-AAAAAAAAA}
@@ -1102,7 +1107,7 @@ gs             0x33	51
 0x2d is a dash "-" and our value in [ebp-0xe] "A". Good, just an easy comparison, however I found that I needed to restart the process
 after each time I find the correct next byte...
 
-{% highlight bash linenos %}
+{% highlight bash %}
 (gdb) x/bx $ebp-0xe
 0xbffff04a:	0x2d
 

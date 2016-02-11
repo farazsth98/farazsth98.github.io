@@ -18,7 +18,7 @@ For almost all levels I will be using Burpsuite. Burpsuite is an interception pr
 Blacklisting could be done by many variables, like IP address, User-Agent, Referer or a session token. So let's see our
 request in Burp and possibly start playing with some values.
 
-{% highlight http linenos %}
+{% highlight http  %}
 GET /ctf2/exercises/ex11.php HTTP/1.1
 Host: ctf.infosecinstitute.com
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Firefox/31.0 Iceweasel/31.6.0

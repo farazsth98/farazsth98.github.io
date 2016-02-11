@@ -19,7 +19,7 @@ Let's first create a user account to test the functionality. Again, have Burp ru
 
 When creating an account the HTTP request looks like this:
 
-{% highlight text linenos %}
+{% highlight text  %}
 POST /ctf2/exercises/ex3.php HTTP/1.1
 Host: ctf.infosecinstitute.com
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Firefox/31.0 Iceweasel/31.6.0
@@ -59,7 +59,7 @@ we should be able to inject the role attribute in the right spot.
 
 HTTP request:
 
-{% highlight text linenos %}
+{% highlight text  %}
 POST /ctf2/exercises/ex3.php HTTP/1.1
 Host: ctf.infosecinstitute.com
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Firefox/31.0 Iceweasel/31.6.0
