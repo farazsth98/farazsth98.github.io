@@ -1,8 +1,8 @@
 ---
 layout: post
 title: TrendMicro CTF - Offensive 200
-category: Exploitation
-tags: Exploitation Android TrendMicro
+category: [Exploitation]
+tags: [Exploitation, Android, TrendMicro]
 comments: true
 ---
 

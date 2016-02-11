@@ -1,8 +1,8 @@
 ---
 layout: post
 title: ASIS 2015 CTF Dark Reverse Engineering 125
-category: Reverse Engineering
-tags: RE ASIS
+category: [Reverse Engineering]
+tags: [RE, ASIS]
 ---
 
 **Points:** 125

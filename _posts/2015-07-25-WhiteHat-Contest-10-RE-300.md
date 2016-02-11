@@ -1,8 +1,8 @@
 ---
 layout: post
 title: WhiteHat CTF Contest 10 RE-300
-category: Reverse Engineering
-tags: RE WhiteHat
+category: [Reverse Engineering]
+tags: [RE, WhiteHat]
 comments: true
 ---
 

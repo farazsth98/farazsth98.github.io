@@ -1,8 +1,8 @@
 ---
 layout: post
 title: poliCTF 2015 John the packer 350
-category: Reverse Engineering
-tags: RE poliCTF
+category: [Reverse Engineering]
+tags: [RE, poliCTF]
 comments: true
 ---
 

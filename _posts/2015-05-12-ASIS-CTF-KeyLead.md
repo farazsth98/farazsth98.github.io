@@ -1,8 +1,8 @@
 ---
 layout: post
 title: ASIS 2015 CTF KeyLead Reverse Engineering 150
-category: Reverse Engineering
-tags: RE ASIS
+category: [Reverse Engineering]
+tags: [RE, ASIS]
 comments: true
 ---
 

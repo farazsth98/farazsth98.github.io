@@ -1,8 +1,8 @@
 ---
 layout: post
 title: Hackover CTF - RE 350
-category: Reverse Engineering
-tags: Hackover RE
+category: [Reverse Engineering]
+tags: [Hackover, RE]
 comments: true
 ---
 

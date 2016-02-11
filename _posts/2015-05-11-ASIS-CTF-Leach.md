@@ -1,8 +1,8 @@
 ---
 layout: post
 title: ASIS 2015 CTF Leach Reverse Engineering 250
-category: Reverse Engineering
-tags: RE ASIS
+category: [Reverse Engineering]
+tags: [RE, ASIS]
 ---
 
 **Points:** 250

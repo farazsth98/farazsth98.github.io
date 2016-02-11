@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Infosec Institute CTF Level 9
-category: web
+category: Web
 tags: infosec
 ---
 

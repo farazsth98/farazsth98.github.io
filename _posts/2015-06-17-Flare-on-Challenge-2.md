@@ -1,8 +1,8 @@
 ---
 layout: post
 title: Flare-on Challenge 2
-category: Reverse Engineering
-tags: RE Flare-on
+category: [Reverse Engineering]
+tags: [RE, Flare-on]
 ---
 
 **Points:**

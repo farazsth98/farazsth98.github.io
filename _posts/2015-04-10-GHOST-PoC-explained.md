@@ -1,8 +1,8 @@
 ---
 layout: post
 title: CVE-2015-0235 GHOST PoC Explained
-category: Exploitation
-tags: Exploitation, PoC
+category: [Exploitation]
+tags: [Exploitation, PoC]
 comments: true
 ---
 
