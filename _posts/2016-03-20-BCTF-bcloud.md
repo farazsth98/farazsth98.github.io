@@ -11,8 +11,8 @@ comments: true
 **Category:** Exploitation
 **Description:** nc 104.199.132.199 1970
 
-> [bcloud]({{site.url}}/assets/bcloud)
-> [libc-2.19.so]({{site.url}}/assets/libc-2.19.so)
+> [bcloud]({{site.url}}/assets/bcloud)  
+> [libc-2.19.so]({{site.url}}/assets/libc-2.19.so)  
 
 If we start the binary we see it's a form of note keeping application.
 
@@ -39,15 +39,15 @@ option--->>
 
 ## Leaking the heap address
 
-If we disassemble the "Input your name/Org/Host" functions we will notice the first vulnerability.
+If we disassemble the "Input your name/Org/Host" functions, we will notice the first vulnerability.
 
 ![image]({{site.url}}/assets/Screen_Shot_2016-03-20_at_9_16_22_PM.jpg)
 
-At top arrow points to the local buffer of 0x40 bytes for the _name_. Exactly 0x40 bytes after it we see a space designed to store a pointer to a heap allocated chunk, for pernament store of the name. Later we see that the _name_ is copied from the local stack buffer to the allocated heap buffer. However as we know _strcpy_ terminates on null byte and if we fill the _name_ with exactly 0x40 bytes, the ptr to the heap buffer will get copied on to the heap as well. Right after that the _printWelcome()_ function will print the heap buffer, providing us with a leak of the heap address.
+Top arrow points to the local buffer of 0x40 bytes for the _name_. Exactly 0x40 bytes after it, we see a space designed to store a pointer to a heap allocated chunk for permanent store of the name. Later, we see that the _name_ is copied from the local stack buffer to the allocated heap buffer. However, as we know _strcpy_ terminates on null byte and if we fill the _name_ with exactly 0x40 bytes, the ptr to the heap buffer will get copied on to the heap as well. Right after that the _printWelcome()_ function will print the heap buffer, providing us with a leak of the heap address.
 
 ## The overflow
 
-Now let's look at the way Org and Host are provided.
+Now let's look at the way _Org_ and _Host_ are provided.
 
 {% highlight C %}
 int getOrgAndHost() {
@@ -92,7 +92,7 @@ Fortunately we have a function that satisfies this _malloc(controlled_size)_ con
 So far we have only looked at the binary's welcome message and what we can gain/exploit via the _Name/Org/Host_ buffers.
 Here we will see how we can use the binary's functionality to leverage these vulnerabilities.
 
-After the _printWelcome()_ function we have a regular case/switch statement with 7 options.
+After the _printWelcome()_ function, we have a regular case/switch statement with 7 options.
 
 {% highlight text %}
 1.New note
@@ -202,17 +202,15 @@ So far we have a leak of a ptr on the heap. We have an overflow to control the w
 So to exploit this,
 
 1. I'm going to use House of Force to allocate a heap chunk that reaches the notes[] array on the .bss.
-2. Allocate another chunk that stretches from the beginning of the lengths[] array at 0804b0a0 to the end of the notesp[] array @ 0x804b120 on the .BSS. This way we can control everything in those 2 arrays (and something in between that we don't care about).
+2. Allocate another chunk that stretches from the beginning of the lengths[] array at 0x804b0a0 to the end of the notes[] array @ 0x804b120 on the .BSS. This way we can control everything in those 2 arrays (and something in between that we don't care about).
 3. Once we get control of the notes[] and lengths[] we can simply use _editNote()_ to write to the addresses we fill notes[] array with.
 
-We do get a lot of writes what/where this way but we still haven't leaked a libc address.
-To do that I'm doing to overwrite the _free@got_ with _printf@got_, this way we can use the _deleteNote()_ function with printf with controlled argument and leak whatever/whereever.
+4. We do get a lot of writes what/where this way, but we still haven't leaked a libc address. To do that I'm going to overwrite the _free@got_ with _printf@got_, this way we can use the _deleteNote()_ function using printf with controlled argument and leak whatever/whereever. So, 4. Replace _free@got_ with _free@got_.
 
-4. Replace _free@got_ with _free@got_.
 5. Leak the _atoi@got_.
 6. Replace _atoi_ with _system_.
 
-Once function we haven't looked at is the _getChoice()_ function. This function is used pretty much everywhere, including in the main menu for the switch/case statement.
+One function we haven't looked at is the _getChoice()_ function. This function is used pretty much everywhere, including the main menu for the switch/case statement.
 
 {% highlight C %}
 int getChoice() {
