@@ -205,7 +205,7 @@ So to exploit this,
 2. Allocate another chunk that stretches from the beginning of the lengths[] array at 0x804b0a0 to the end of the notes[] array @ 0x804b120 on the .BSS. This way we can control everything in those 2 arrays (and something in between that we don't care about).
 3. Once we get control of the notes[] and lengths[] we can simply use _editNote()_ to write to the addresses we fill notes[] array with.
 
-4. We do get a lot of writes what/where this way, but we still haven't leaked a libc address. To do that I'm going to overwrite the _free@got_ with _printf@got_, this way we can use the _deleteNote()_ function using printf with controlled argument and leak whatever/whereever. So, 4. Replace _free@got_ with _free@got_.
+4. We do get a lot of writes what/where this way, but we still haven't leaked a libc address. To do that I'm going to overwrite the _free@got_ with _printf@got_, this way we can use the _deleteNote()_ function using printf with controlled argument and leak whatever/whereever. So, 4. Replace _free@got_ with _printf@got_.
 
 5. Leak the _atoi@got_.
 6. Replace _atoi_ with _system_.
