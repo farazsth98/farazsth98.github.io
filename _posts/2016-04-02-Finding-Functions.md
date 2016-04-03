@@ -18,7 +18,7 @@ There are just a few details that I would like to put together, which are the re
 
 ## Finding GNU C Library's Base Address
 
-To find the base address of gLibc we first need to grab an address inside the gLibc's address space. We can do that by looking into the binary's Global Offset Table for an already resolved address. Next we can parse through that address space using the leak with decrements of the memory page size (0x1000) until we find the *\x7fELF* magic constant indicating the base load address. Here is example code to do that:
+To find the base address of gLibc we first need to grab an address inside the gLibc's address space. We can do that by looking into the binary's Global Offset Table for an already resolved address. Next we can parse through that address space using the leak with decrements of the memory page size (0x1000) until we find the `\x7fELF` magic constant indicating the base load address. Here is example code to do that:
 
 {% highlight python %}
 # leak func returns n number of bytes from given address
@@ -31,11 +31,11 @@ def findLibcBase(ptr):
 
 ## Finding the [Program Header](https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-83432.html#scrolltoc)
 
-The Program Header contains an array of structures (Elf32_Phdr/Elf64_Phdr), each structure holds information about existing segments in the binary. 
+The Program Header contains an array of structures `Elf32_Phdr/Elf64_Phdr`, each structure holds information about existing segments in the binary. 
 
 To find where the Program Header begins, it's simple as looking at offset 0x1c for 32bit binary or 0x20 for 64bit binary in the ELF header (module's base address).
 
-The Elf32_Phdr structure contains the following elements:
+The `Elf32_Phdr` structure contains the following elements:
 
 {% highlight text %}
 typedef struct {
