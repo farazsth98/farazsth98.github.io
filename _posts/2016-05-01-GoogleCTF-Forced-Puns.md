@@ -49,9 +49,9 @@ The main menu prints:
 ## Parse_line
 
 The IDA graph for this function is not as descriptive as the one for `main()` so I will just explain the process for each case/switch option.
-So, input goes in the 0x800 bytes buffer on the heap and processed by `parse_line()` function.
+So, input goes in the 0x800 bytes buffer on the heap and is processed by `parse_line()` function.
 `3. Quit` calls `exit()`.
-`2. Print entries` prints the content of the entries structure used to hold the ptrs or data of our buffers. It uses the following format string for each member.
+`2. Print entries` prints the content of the entries structure used to hold the ptrs and data of our buffers. It uses the following format string for each member.
 
 {% highlight text%}
 "Name: %s\n"
@@ -103,9 +103,9 @@ We can easily get the address of the `entries->large` because the format string 
 
 ## Stage 2 - Leaking the heap stored `[helper fp]`
 
-To leak the stored function pointer at the beginning of the heap, I needed to overwrite any of the pointers stored in the `entries` structure. Because they are placed before the `entries->name` buffer we need to use the House of Force method. So by overwriting the wilderness's metadata by using option number `1. Set name` we can set the size of the wilderness to `2**64` `(or 0xFFFFFFFFFFFFFFFF)`. Than we need to allocate a huge chunk via option `3. Set large` which will do something like `malloc( -0x960 );` which will wrap around the x64 bit address space and end up somewhere on the heap in the root buffer. Once we are there we can go back to the main menu and chose `Set an entry` again to cause another entries structure to be allocated right on top of the `root` buffer. Both structures are linked and we can control the pointers on the second entries structure.
+To leak the stored function pointer at the beginning of the heap, I needed to overwrite any of the pointers stored in the `entries` structure. Because they are placed before the `entries->name` buffer we need to use the House of Force method. So by overwriting the wilderness's metadata by using option number `1. Set name` we can set the size of the wilderness to `2**64-1` `(or 0xFFFFFFFFFFFFFFFF)`. Then we need to allocate a huge chunk via option `3. Set large` which will do something like `malloc( -0x960 );` which will wrap around the x64 bit address space and end up somewhere on the heap in the root buffer. Once we are there we can go back to the main menu and choose `Set an entry` again to cause another entries structure to be allocated right on top of the `root` buffer. Both structures are linked and we can control the pointers on the second entries structure.
 
-Since we control everything in the root buffer not only we can control the pointers to leak the `helper ptr` but also we can overflow again the metadata of the new wilderness :). After we allocated a negative buffer, we wrapped around 2**64 address space the size of the wilderness will be rather small.
+Since we control everything in the root buffer not only we can control the pointers to leak the `helper ptr` but also we can overflow again the metadata of the new wilderness :). After we allocated a negative buffer, we wrapped around 2**64-1 address space the size of the wilderness will be rather small.
 
 ## Stage 3 - Leak an entry from the GOT
 
