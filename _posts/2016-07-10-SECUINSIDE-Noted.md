@@ -53,14 +53,14 @@ Menu
 
 ## Main menu
 
-Let's go a short description of all the functions in the application.
+A short description of all the functions in the application.
 
 1. `List note` displays the notes the user has created
 2. `Write note` is how a user creates a note. Each note creates a file in the user's designated directory, each file/note starts with 16 bytes serving as a password for that note followed by a maximum of 1024 bytes of note's content.
 3. `Read note` reads a note
 4. `Edit note` edits a note
 5. `Delete note` deletes a note by moving the note/file in a subdirectory named `recyclecan`
-6. `Recover note` moves a deleted note from the recyclebin directory back to the user's main folder
+6. `Recover note` moves a deleted note from the recyclecan directory back to the user's main folder
 7. `Empty recyclecan` deletes all files/notes in the recyclecan folder
 8. `Logout` logs out by setting a local variable in main and presents the login menu
 
