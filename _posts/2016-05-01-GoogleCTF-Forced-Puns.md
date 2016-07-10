@@ -1,6 +1,6 @@
 ---
 layout: post
-title: GoogleCTF - Exploitation 125
+title: GoogleCTF - Forced Puns
 category: [Exploitation]
 tags: [Exploitation, GoogleCTF]
 comments: true
