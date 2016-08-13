@@ -96,6 +96,8 @@ if __name__ == "__main__":
         exploit(r)
 {% endhighlight %}
 
+For those more interested in the shellcode, the last 2 lines `push 0x8048728, ret` is basically equal `jmp 0x8048728` which is the address of printf in `main`.
+
 {% highlight text %}
 ➜  openCTF python ./shellcode.py
 [*] For remote: ./shellcode.py HOST PORT
