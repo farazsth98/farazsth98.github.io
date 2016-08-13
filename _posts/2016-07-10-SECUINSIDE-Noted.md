@@ -68,8 +68,8 @@ To exploit the application we only need to know the `Write note` and `Edit note`
 
 ## Write note
 
-It's going to be easier if I just show the decompiled psudo-code.
-What we need to do here is, create a note with arbitrary name and password and a negative content length. The goal is to create a note with it's content only it's password.
+It's going to be easier if I just show the decompiled pseudo-code.
+What we need to do here is, create a note with arbitrary name and password and a negative content length. The goal is to create a note with its content only its password.
 
 {% highlight C %}
 int write_note()
