@@ -32,7 +32,7 @@ Solution steps:
 1. Connect to the server and get the binary
 2. Drop the binary on disk and analyze it with objdump, storing the output in a variable
 3. Since the 2 password strings were exactly 32 bytes each and lowercase alphanum chars I used strings to find them
-4. Used the objdump output to find the size of the `vulnerable` function
+4. Used the objdump output to find the size of the stack frame of the `vulnerable` function
 5. Send the payload and get the flag
 
 {% highlight python %}
