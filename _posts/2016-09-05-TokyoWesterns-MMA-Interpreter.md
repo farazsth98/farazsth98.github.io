@@ -122,10 +122,10 @@ So, to find the address of the saved return pointer we follow these steps:
 1. Since the program buffer is on the .bss with the GOT located some negative offset from it we need to leak some entries in the GOT.
 2. Leaked some functions we identify the libc version and calculate the libc's base load address.
 3. With identified libc version and libc base load address, we calculate the distance to the `__environ` pointer and leak it. This will provide us with the address of the environment variables located on the stack !
-4. Calculate the offset from the beginning of the environment variables to the saved return address and write some ROP to do
-4.1 `POP RDI`
-4.2 `addr of /bin/sh in libc`
-4.3 `addr of system in libc`
+4. Calculate the offset from the beginning of the environment variables to the saved return address and write some ROP to do  
+`POP RDI`  
+`addr of /bin/sh in libc`  
+`addr of system in libc`  
 
 
 Fair warning before reading the script, it's very messy but basically the first part is sending the program code and then the second part with a lot of calculations for `x_offset` and `y_offset` to get to the right addresses.
