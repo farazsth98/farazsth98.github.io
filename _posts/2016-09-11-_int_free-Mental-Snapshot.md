@@ -15,10 +15,10 @@ Yet another explanation of glibc's `free` and `unlink` mechanism and abusing the
 Before thinking about exploitation, think about the implementation. Let's get familiar with how free works. The structure of a heap chunk is defined in malloc.c. Datatype `INTERNAL_SIZE_T` is 4 bytes on 32bit system and 8 bytes on 64bit system. The `prev_size` field contains the size in bytes of the previous chunk bordering the current chunk, ONLY if the previous chunk is free and not part of a fastbin list, since fastbins are sorted by size in the first place. The `size` field contains the current chunk's size with the 3 Least Significant Bits meaning:
 
 * bit at position 1 - `PREV_INUSE` - Turned on if previous chunk is in USE.
-* bit at position 2 - `IS_MMAPED`  - Turned on if chunk is allocated via mmap.
+* bit at position 2 - `IS_MMAPPED`  - Turned on if chunk is allocated via mmap.
 * bit at position 3 - `NON_MAIN_ARENA` - Turned on if the chunk belongs to thread arena.
 
-FD and BK are the forward and backward pointers pointing to the previous and next chunks in a doubly linked list of free chunks.
+`FD` and `BK` are the forward and backward pointers pointing to the previous and next chunks in a doubly linked list of free chunks.
 
 {% highlight C %}
 struct malloc_chunk {
@@ -35,7 +35,7 @@ struct malloc_chunk {
 };
 {% endhighlight %}
 
-The pointer returned by `malloc` to the user is pointing to `chunk->FD` which is the same address we supply to `free`. However, free internally calls to `_int_free` which takes as one of it's arguments the actual beginning of a chunk at `chunk->prev_size`. So throughout the rest of this blog post we will reference a chunk with `P`, not the address that's passed to the user by `malloc`.
+The pointer returned by `malloc` to the user is pointing to `chunk->FD` which is the same address we supply to `free`. However, free internally calls to `_int_free` which takes as one of its arguments the actual beginning of a chunk at `chunk->prev_size`. So throughout the rest of this blog post we will reference a chunk with `P`, not the address that's passed to the user by `malloc`.
 
 {% highlight text %}
 
@@ -83,7 +83,7 @@ _int_free (mstate av, mchunkptr p, int have_lock)
     {
     /* !
 
-    Yanked this whole section where it checks if the chunk can be placed in a fastbin
+    ! Yanked this whole section where it checks if the chunk can be placed in a fastbin
     If it's eligible for a fastbin the code will never reach the unlink macro because:
 
     * chunks are only single linked
@@ -95,7 +95,7 @@ _int_free (mstate av, mchunkptr p, int have_lock)
     gdb-peda$ p global_max_fast  // to check size of fastbin on your machine
     $1 = 0x80
 
-    So, if p->size <= 0x80, place p in a fastbin of it's size and return
+    So, if p->size <= 0x80, place p in a fastbin of its size and return
 
     */
     }
@@ -179,7 +179,8 @@ Ok, now that we have the required understanding of `free`, let's go through what
 
 ## Consolidate backwards
 
-The heap is a dynamic data structure that contains contigious memory chunks. Some chunks are in use, some are not and the wilderness as the last chunk for future allocations. From the figure below, say we want to free `chunk 4`. Because `p->prev_inuse == 0` malloc is making 2 assumptions.
+The heap is a dynamic data structure that contains contiguous memory chunks. Some chunks are in use, some are not and the wilderness as the last chunk for future allocations. From the figure below, say we want to free `chunk 4`. Because `p->prev_inuse == 0` malloc is making 2 assumptions.
+
 1. The previous chunk is `FREE`.
 2. Because the previous chunk is `FREE` it will be part of a free list.
 
@@ -222,7 +223,7 @@ This results in `chunk 3` unlinked from the free list, consolidated with `chunk 
 
 ## Exploitation
 
-Let's think of the what happened. We freed `chunk 4` and this caused `chunk 3` to get unlinked ? This influenced the pointers of `chunk 1` and `chunk 6` !? And remember how the distance to `chunk 3` was calculated ? `chunk 4 - chunk 4->prev_size`, because it's looking for the previous bordering chunk, right? So now, what if we control the area around `chunk 4` that we are going to free and we set `chunk 4->prev_size` to `0`, this will cause `free` to think `chunk 3`'s address is right ON TOP of `chunk 4` `(chunk 4 == chunk 3)`.
+Let's think of what happened. We freed `chunk 4` and this caused `chunk 3` to get unlinked ? This influenced the pointers of `chunk 1` and `chunk 6` !? And remember how the distance to `chunk 3` was calculated ? `chunk 4 - chunk 4->prev_size`, because it's looking for the previous bordering chunk, right? So now, what if we control the area around `chunk 4` that we are going to free and we set `chunk 4->prev_size` to `0`, this will cause `free` to think `chunk 3`'s address is right ON TOP of `chunk 4` `(chunk 4 == chunk 3)`.
 
 ![unlink2]({{site.url}}/assets/Screen Shot 2016-09-12 at 3.18.44 PM.png)
 
