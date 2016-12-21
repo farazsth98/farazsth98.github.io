@@ -227,7 +227,7 @@ Let's think of what happened. We freed `chunk 4` and this caused `chunk 3` to ge
 
 ![unlink2]({{site.url}}/assets/Screen Shot 2016-09-12 at 3.18.44 PM.png)
 
-Since we control the buffer of `chunk 4` and `free` thinks it will run `unlink` on `chunk 3`, we actually control `chunk 3's FD and BK`. These values will be written to `FD->BK` and `BK->FD`. Again, we get to write `fake chunk 3->BK to fake chunk 3->FD->BK` and `fake chunk 3->BK to fake chunk 3->FD->BK` ONLY if the `target's address->FD or BK == fake chunk 3 (which is chunk 4, which is ptr we pass to free - INTERNAL_SIZE_T * 2)` 
+Since we control the buffer of `chunk 4` and `free` thinks it will run `unlink` on `chunk 3`, we actually control `chunk 3's FD and BK`. These values will be written to `FD->BK` and `BK->FD`. Again, we get to write `fake chunk 3->BK to fake chunk 3->FD->BK` and `fake chunk 3->FD to fake chunk 3->BK->FD` ONLY if the `target's address->FD or BK == fake chunk 3 (which is chunk 4, which is ptr we pass to free - INTERNAL_SIZE_T * 2)` 
 
 ## Extras
 
