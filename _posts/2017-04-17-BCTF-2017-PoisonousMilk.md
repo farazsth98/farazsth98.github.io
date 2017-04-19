@@ -34,16 +34,16 @@ Milk Guide:
 >
 {% endhighlight %}
 
-I will try to keep the description of each of these functions short, although they can be really confusing. Let's first start with the 10,000 ft view. It's a C++ program that allows us to create milk classes. Each milk class has two properties, a `const char *` to a color constant and a `char *` to a input buffer called "flag" that we control. A max of 100 milk classes can be created and a pointer to each is stored in a dynamic array, a pointer to this dynamic array is stored on the .bss
+I will try to keep the description of each of these functions short, although they can be really confusing. Let's first start with the 10,000 ft view. It's a C++ program that allows us to create milk objects. Each milk object has two properties, a `const char *` to a color constant and a `char *` to a input buffer called "flag" that we control. A max of 100 milk objects can be created and a pointer to each is stored in a dynamic array, a pointer to this dynamic array is stored on the .bss
 
 To better illustrate the relations of these structures, here is a pretty diagram made by [rh0gue](http://blog.rh0gue.com/).
 ![pmilk diagram]({{site.url}}/assets/pmilk_diagram.png)
 
 Now to drill down to each of the options, individually.
-* `[p]` - Checks if `(arrayEnd - arrayStart) < 800` (hense the 100 classes limit). Next, it allocates a buffer of max 0x56 bytes for the `milk->flag` reads input into it (without overflow), it reads input for the color choice and compares it with a list of constants. If a match is found it populates the `milk->color_ptr` with the pointer to the constant color (not with the pointer of our color input). If a match is not found it leaves the `milk->color_ptr` uninitialized, a fact that we are going to take advantage of.
+* `[p]` - Checks if `(arrayEnd - arrayStart) < 800` (hence the 100 objects limit). Next, it allocates a buffer of max 0x56 bytes for the `milk->flag` reads input into it (without overflow), it reads input for the color choice and compares it with a list of constants. If a match is found it populates the `milk->color_ptr` with the pointer to the constant color (not with the pointer of our color input). If a match is not found it leaves the `milk->color_ptr` uninitialized, a fact that we are going to take advantage of.
 * `[v]` - Iterate through all of the milkArr and `printf("[%d] [%s] %s\n", i, milkArr[i]->color, milkArr[i]->flag)`
 * `[r]` - Without any out of bounds it simply does `delete milkArr[idx]->flag ; delete milkArr[idx]` and since the milkArr is a dynamic array it pops the index out of the array and adjusts the size, however, neither of the two pointers are nulled essentially creating a UAF.
-* `[d]` - Delete all the milk classes from the milkArr, the associated flag properties, the milkArr and the milkTable. Essentially freeing all of the dynamically allocated pointers the program knows about in its' current state. Except it won't NULL the `milkTable_ptr` located on the bss creating another UAF.
+* `[d]` - Delete all the milk objects from the milkArr, the associated flag properties, the milkArr and the milkTable. Essentially freeing all of the dynamically allocated pointers the program knows about in its current state. Except it won't NULL the `milkTable_ptr` located on the bss creating another UAF.
 * `[q]` - returns from main
 
 ## Leaking the heap
@@ -56,7 +56,7 @@ Notice how `milkArr[0]->color` is `NULL` this is not because it's being zeroed b
 
 ![pmilk mem2]({{site.url}}/assets/Screen_Shot_2017-04-17_at_10_02_12_PM.png) 
 
-All that's left now is to create a new milk class without providing a color so we keep that fastbin stored pointer. One thing to notice here is that the new milk class's flag needs to be bigger than the size of the currently free fastbin. This way we will not serve the same chunks for the same structures/buffers. Instead allocating a bigger chunk for the `flag` property will force malloc to serve a new buffer from the wilderness and serve the previous `flag` buffer as a memory for the now current milk class, exactly with the heap pointer in place of the `color` property, which we are going to keep "uninitialized" (or forcefully initialized by us :P).
+All that's left now is to create a new milk object without providing a color so we keep that fastbin stored pointer. One thing to notice here is that the new milk object's flag needs to be bigger than the size of the currently free fastbin. This way we will not serve the same chunks for the same structures/buffers. Instead allocating a bigger chunk for the `flag` property will force malloc to serve a new buffer from the wilderness and serve the previous `flag` buffer as a memory for the now current milk object, exactly with the heap pointer in place of the `color` property, which we are going to keep "uninitialized" (or forcefully initialized by us :P).
 
 {% highlight python %}
     put_milk("A"*15 + '\n', '\n')
@@ -68,9 +68,9 @@ All that's left now is to create a new milk class without providing a color so w
 
 ## Leaking libc
 
-To leak an address of libc we need to somehow place a libc address on the heap. But we can't simply free a chunk and hope for a libc pointer to end up on the heap because all of the chunks are of fastbin size. So the plan is to free a fake chunk of size of a smallbin and then leak either the FD or the BK ptrs. To free a fake chunk, we are going to target the `arrayStart` and `arrayEnd` pointers. By pointing those to a controlled heap address, we can essentially take control over the `milkArr`. For that we are going to use the `[d]rink` option which is going to free the `milkTable` and then we create a new milk class and the buffer for the `flag` property will end up getting the `milkTable`'s old buffer, essentially giving us control over the `arrayStart and arrayEnd ptrs`. Here a lot of coordination was required because the "fake" `milkArr` had to be pre-setup with not just the "fake smallbin chunk" but also with fake pointers to chunks we are going to need for later.
+To leak an address of libc we need to somehow place a libc address on the heap. But we can't simply free a chunk and hope for a libc pointer to end up on the heap because all of the chunks are of fastbin size. So the plan is to free a fake chunk of size of a smallbin and then leak either the FD or the BK ptrs. To free a fake chunk, we are going to target the `arrayStart` and `arrayEnd` pointers. By pointing those to a controlled heap address, we can essentially take control over the `milkArr`. For that we are going to use the `[d]rink` option which is going to free the `milkTable` and then we create a new milk object and the buffer for the `flag` property will end up getting the `milkTable`'s old buffer, essentially giving us control over the `arrayStart and arrayEnd ptrs`. Here a lot of coordination was required because the "fake" `milkArr` had to be pre-setup with not just the "fake smallbin chunk" but also with fake pointers to chunks we are going to need for later.
 
-{% highlight python %}
+{% highlight text %}
 gdb-peda$ x/60gx 0x555555769c20
 0x555555769c20: 0x0000555555769d38  0x0000555555769d50  <-- milkTable
 0x555555769c30: 0x0000000000000000  0x0000000000000021
@@ -106,7 +106,7 @@ gdb-peda$ x/60gx 0x555555769c20
 
 Our fake smallbin chunk here is `milkArr[0]->flag` which points to `0x0000555555769d10` with size `0xd1`. So, we free `milkArr[0]` and then `[v]iew` and we got ourselves a libc info leak :).
 
-{% highlight python %}
+{% highlight text %}
 gdb-peda$ x/60gx 0x555555769c20
 0x555555769c20: 0x0000555555769d38  0x0000555555769d48  <-- arrayEnd decremented
 0x555555769c30: 0x0000000000000000  0x0000000000000021
@@ -142,7 +142,7 @@ gdb-peda$ x/60gx 0x555555769c20
 
 ## Fastbin attack
 
-On the next part I decided to take control over the `milkArr` pointers. This way I can control each individual milk class without worrying for the size of the `milkTable`. Well, this has already been taken care of :). On the last part where I said some coordination was needed, if you notice our "fake" smallbin chunk is located on top of the `milkArr`, now I just need to request a chunk of size which does not have a corresponding free fastbin. This way malloc will serve us a chunk from the currently free smallbin at `0x555555769d10` and placing whatever is the remainder in the unsorted bin (which gave me a lot of trouble later :P). Next with some convolution, I arrange everything so the next allocation of a "flag" buffer for a new milk is going to be allocated on top of already free chunk and I can overwrite it's `FD ptr` and do fastbin attack.
+On the next part I decided to take control over the `milkArr` pointers. This way I can control each individual milk object without worrying for the size of the `milkTable`. Well, this has already been taken care of :). On the last part where I said some coordination was needed, if you notice our "fake" smallbin chunk is located on top of the `milkArr`, now I just need to request a chunk of size which does not have a corresponding free fastbin. This way malloc will serve us a chunk from the currently free smallbin at `0x555555769d10` and placing whatever is the remainder in the unsorted bin (which gave me a lot of trouble later :P). Next with some convolution, I arrange everything so the next allocation of a "flag" buffer for a new milk is going to be allocated on top of already free chunk and I can overwrite its `FD ptr` and do a fastbin attack.
 
 However ! I can't simply place a ptr of `&__malloc_hook - 0x23` in a fastbin like I did [here](http://uaf.io/exploitation/2017/03/19/0ctf-Quals-2017-BabyHeap2017.html) because the "fake" size needed to pass the fastbin size allocation will be `0x7f` and the largest heap chunk I can allocate is 0x56 bytes + 0x10 for metadata making it total 0x60 (rounded). So, what to do next ?
 
@@ -150,7 +150,7 @@ However ! I can't simply place a ptr of `&__malloc_hook - 0x23` in a fastbin lik
 
 This is my favorite trick in the book :). Instead of placing a pointer of `&__mallok_hook - 0x23` we are going to place a pointer of `&main_arena + 0x25` which will point right on top of the fastbinsY array.
 
-{% highlight python %}
+{% highlight text %}
 gdb-peda$ x/40gx &main_arena
 0x7ffff7a4fb20 <main_arena>:    0x0000000000000000  0x0000000000000000
 0x7ffff7a4fb30 <main_arena+16>: 0x0000555555769dd0  0x0000000000000000
@@ -172,9 +172,9 @@ $4 = {
 {% endhighlight %}
 
 
-What would this do, you ask ? Well, on the next allocation of the appropriate size it will give us the `0x00007ffff7a4fb55` address and the target is the `ptr to the top chunk`. Overwriting the pointer to the top chunk will point the `wilderness/top` to address we want and allocations after that will be server from that memory area ! The only requirement is for the new `top chunk` to have enough data so choosing an address with `new_top_chunk->size != NULL` is required. What about the fastbin size check you might ask again :) ? Well that's why there's an already intentionally free chunk in `0x7ffff7a4fb48` address. So the MSB `0x55` is going to serve as the size of the free fake fastbin.
+What would this do, you ask ? Well, on the next allocation of the appropriate size it will give us the `0x00007ffff7a4fb55` address and the target is the `ptr to the top chunk`. Overwriting the pointer to the top chunk will point the `wilderness/top` to address we want and allocations after that will be served from that memory area ! The only requirement is for the new `top chunk` to have enough data so choosing an address with `new_top_chunk->size != NULL` is required. What about the fastbin size check you might ask again :) ? Well that's why there's an already intentionally free chunk in `0x7ffff7a4fb48` slot. So the MSB `0x55` is going to serve as the size of the free fake fastbin.
 
-{% highlight python %}
+{% highlight text %}
 gdb-peda$ x/10gx 0x00007ffff7a4fb45
 0x7ffff7a4fb45 <main_arena+37>: 0x5555769d7000007f  0x0000000000000055  <-- fake size
 0x7ffff7a4fb55 <main_arena+53>: 0x0000000000000000  0x0000000000000000
@@ -183,9 +183,9 @@ gdb-peda$ x/10gx 0x00007ffff7a4fb45
 0x7ffff7a4fb85 <main_arena+101>:    0x5555769db0000055  0x5555769db0000055
 {% endhighlight %}
 
-OK, we control the new `top` chunk, where do we point it ? Haha, at `&__malloc_hook - 0x28` ofcourse :).
+OK, we control the new `top` chunk, where do we point it ? Haha, at `&__malloc_hook - 0x28` of-course :).
 
-{% highlight python %}
+{% highlight text %}
 gdb-peda$ x/40gx 0x00007ffff7dd1ae0
 0x7ffff7dd1ae0: 0x0000000000000000  0x0000000000000000
 0x7ffff7dd1af0: 0x00007ffff7dd0260  0x0000000000000000
@@ -207,7 +207,7 @@ As you can see if `new top` starts at `0x7ffff7dd1ae8` the pointer at `0x7ffff7d
 
 My biggest frustration with this tactic is that the unsorted bin did not point to itself meaning there is a free chunk in the unsorted bin, meaning new allocations will not be served from the top chunk. So with the overwrite of the `top` chunk I also had to NULL the `last_remainder ptr` (which is located at `0x7ffff7dd1b80`) and restore the unsorted bin ptrs to the address of `&main_arena->top`
 
-Another hic-up is the "fake size" from the MSB(yte) of one of the pointers in the fastbins. with ASLR the heap has a chance to start with either `0x55` or `0x56` address. Without ASLR it's only `0x55`. In my calculations this only worked with "fake size" of `0x56`, `0x55` fails the index of fastbin allocation check. I'm assuming "fake size" of `0x55` can pass the check if the "fake fastbin ptr" is placed 1 slot before where it's currently located.
+Another hiccup is the "fake size" from the MSB(yte) of one of the pointers in the fastbins. with ASLR the heap has a chance to start with either `0x55` or `0x56` address. Without ASLR it's only `0x55`. In my calculations this only worked with "fake size" of `0x56`, `0x55` fails the index of fastbin allocation check. I'm assuming "fake size" of `0x55` can pass the check if the "fake fastbin ptr" is placed 1 slot before where it's currently located.
 
 ## Full exploit script
 
