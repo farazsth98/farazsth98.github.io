@@ -132,6 +132,67 @@
 
   <span class="post-date">
     
+    November
+    22nd,
+    
+    2018
+  </span>
+
+  <h2>
+    <a href="/exploitation/2018/11/22/Hitb-2017-babyqemu.html">Hitb 2017 - Babyqemu</a>
+  </h2>
+
+  <div>
+    
+    
+    <p>Before we start I just want to say that I did not play this ctf and probably wouldn’t have been able to complete this challenge in time even if I did. Me and a couple teammates did this, <a href="">SCSI</a> and <a href="">q-escape</a> as exercise and I wanted to document the methods and analysis.</p>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    May
+    17th,
+    
+    2018
+  </span>
+
+  <h2>
+    <a href="/exploitation/2018/05/17/BlizzardCTF-2017-Strng.html">BlizzardCTF 2017 - Strng</a>
+  </h2>
+
+  <div>
+    
+    
+    <p><strong>Points:</strong> Legendary
+<strong>Solves:</strong> 0
+<strong>Category:</strong> Exploitation
+<strong>Description:</strong> Blizzard CTF 2017: Sombra True Random Number Generator (STRNG)
+Sombra True Random Number Generator (STRNG) is a QEMU-based challenge developed for Blizzard CTF 2017. The challenge was to achieve a VM escape from a QEMU-based VM and capture the flag located at /root/flag on the host.
+The image used and distributed with the challenge was the Ubuntu Server 14.04 LTS Cloud Image. The host used the same image as the guest. The guest was reset every 10 minutes and was started with the following command:
+./qemu-system-x86_64 -m 1G -device strng -hda my-disk.img -hdb my-seed.img -nographic -L pc-bios/ -enable-kvm -device e1000,netdev=net0 -netdev user,id=net0,hostfwd=tcp::5555-:22
+Access to the guest was provided by redirecting incoming connections to the host on port 5555 to the guest on port 22.</p>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
     May
     13th,
     
@@ -361,68 +422,6 @@
 
 </article>
 
-
-<article class="home">
-
-  <span class="post-date">
-    
-    September
-    5th,
-    
-    2016
-  </span>
-
-  <h2>
-    <a href="/exploitation/2016/09/05/TokyoWesterns-MMA-Interpreter.html">Tokyo Westerns MMA 2016 - Interpreter</a>
-  </h2>
-
-  <div>
-    
-    
-    <p><strong>Points:</strong> 200
-<strong>Solves:</strong> 21
-<strong>Category:</strong> Exploitation
-<strong>Description:</strong></p>
-
-
-    
-    
-  </div>
-
-</article>
-
-
-<article class="home">
-
-  <span class="post-date">
-    
-    August
-    5th,
-    
-    2016
-  </span>
-
-  <h2>
-    <a href="/exploitation/2016/08/05/openCTF-tyro_shellcode2.html">openCTF 2016 - tyro_shellcode2</a>
-  </h2>
-
-  <div>
-    
-    
-    <p><strong>Points:</strong> 100
-<strong>Solves:</strong> 
-<strong>Category:</strong> Exploitation
-<strong>Description:</strong> Baby’s first second problem, welcome to a beautiful risc architecture called MIPS.
-Server: 172.31.1.44:1615
-Binary: 172.31.0.10/tyro_shellcode2_53af42a29d43eff55ff3adba4cf67069</p>
-
-
-    
-    
-  </div>
-
-</article>
-
 <hr/>
 
 <ul class="pager"> 
@@ -434,7 +433,7 @@ Binary: 172.31.0.10/tyro_shellcode2_53af42a29d43eff55ff3adba4cf67069</p>
   
   
   <li>
-    <span class="page_number">Page: 1 of 7</span>
+    <span class="page_number">Page: 1 of 8</span>
   </li>
 
   
