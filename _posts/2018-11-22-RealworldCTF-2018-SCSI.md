@@ -59,7 +59,7 @@ void ctf_class_init(DeviceClass *a1, void *data) {
 }
 {% endhighlight %}
 
-The PCIDeviceClass properties are just good to help us identify the device, the `CTFState` initialization along with the MMIO and Bus creation happen in `ctf_realize`.
+The PCIDeviceClass properties are just helpful to us to identify the device. The `CTFState` initialization along with the MMIO and Bus creation happen in `ctf_realize`.
 
 {% highlight C %}
 void ctf_realize(CTFState *pdev, Error_0 **errp) {
@@ -89,7 +89,7 @@ void ctf_realize(CTFState *pdev, Error_0 **errp) {
 }
 {% endhighlight %}
 
-We see the password we will need to authenticate to the device with, the mmio region creation of 0x1000 bytes and the Bus creation with `scsi_bus_new` and it's callbacks in `ctf_scsi_info` global. Let's start with the mmio ops.
+We see the hardcoded password we will need to authenticate to the device with, the mmio region creation of 0x1000 bytes and the Bus creation with `scsi_bus_new` and it's callbacks in `ctf_scsi_info` global. Let's start with the mmio ops.
 
 ### ctf_mmio_read
 
@@ -216,7 +216,7 @@ void ctf_process_req(CTFState *pdev, uint64_t val) {
       pdev->cur_req = scsi_req_new(sdev, 0, tmp.lun, (uint8_t *)pdev->req.cmd_buf, pdev);
       if ( pdev->cur_req )
       {
-          // queue up the request
+        // queue up the request
         if ( scsi_req_enqueue(pdev->cur_req) )
           scsi_req_continue(pdev->cur_req);
       }
