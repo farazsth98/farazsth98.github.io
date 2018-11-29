@@ -6,7 +6,7 @@ exclude: ["README.md"] # files to exclude
 highlighter: rouge
 markdown: kramdown
 disqus: uafio
-#google_analytics: dbyll
+google_analytics: UA-60673588-1
 
 defaults:
   -
