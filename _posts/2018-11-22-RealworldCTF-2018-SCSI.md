@@ -7,7 +7,7 @@ comments: true
 hidden: true
 ---
 
-Just like [babyqemu]({{site.url}}/exploitation/2018/11/22/Hitb-2017-babyqemu.html) and [q-escape]() I did not play this ctf and probably wouldn't have been able to complete this challenge in time even if I did. Me and a couple teammates did these as exercise and I wanted to document the methods and analysis.
+Just like [babyqemu]({{site.url}}/exploitation/2018/11/22/Hitb-2017-babyqemu.html) and [q-escape]({{site.url}}/exploitation/2018/11/22/seccon-2018-q-escape.html) I did not play this ctf and probably wouldn't have been able to complete this challenge in time even if I did. Me and a couple teammates did these as exercise and I wanted to document the methods and analysis.
 
 > [scsi.tgz]({{site.url}}/assets/scsi.tgz)
 
