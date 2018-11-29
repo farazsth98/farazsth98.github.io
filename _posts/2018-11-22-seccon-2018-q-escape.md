@@ -4,7 +4,7 @@ title: seccon 2018 - q-escape
 category: [Exploitation]
 tags: [Exploitation, seccon]
 comments: true
-hidden: true
+hidden: false
 ---
 
 Just like [babyqemu]({{site.url}}/exploitation/2018/11/22/Hitb-2017-babyqemu.html) and [SCSI]({{site.url}}/exploitation/2018/11/22/RealworldCTF-2018-SCSI.html) I did not play this ctf and probably wouldn't have been able to complete this challenge in time even if I did. Me and a couple teammates did these as exercise and I wanted to document the methods and analysis.

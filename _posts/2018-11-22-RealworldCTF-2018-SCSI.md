@@ -4,7 +4,7 @@ title: RealworldCTF 2018 - SCSI
 category: [Exploitation]
 tags: [Exploitation, RealworldCTF]
 comments: true
-hidden: true
+hidden: false
 ---
 
 Just like [babyqemu]({{site.url}}/exploitation/2018/11/22/Hitb-2017-babyqemu.html) and [q-escape]({{site.url}}/exploitation/2018/11/22/seccon-2018-q-escape.html) I did not play this ctf and probably wouldn't have been able to complete this challenge in time even if I did. Me and a couple teammates did these as exercise and I wanted to document the methods and analysis.
@@ -89,7 +89,7 @@ void ctf_realize(CTFState *pdev, Error_0 **errp) {
 }
 {% endhighlight %}
 
-We see the hardcoded password we will need to authenticate to the device with, the mmio region creation of 0x1000 bytes and the Bus creation with `scsi_bus_new` and it's callbacks in `ctf_scsi_info` global. Let's start with the mmio ops.
+We see the hardcoded password we will need to authenticate to the device with, the mmio region creation of 0x1000 bytes and the Bus creation with `scsi_bus_new` and its callbacks in `ctf_scsi_info` global. Let's start with the mmio ops.
 
 ### ctf_mmio_read
 
