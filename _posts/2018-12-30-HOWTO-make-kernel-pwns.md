@@ -7,8 +7,6 @@ comments: true
 hidden: false
 ---
 
-## Summary
-
 Basically we will build a minimal kernel to support initramfs, user permissions and custom modules. Than we will package Busybox in a cpio archive and script init and module installation. Then we will launch it with QEMU and containerize it as a xinetd service in docker (described [here](https://github.com/OpenToAllCTF/OTA-University/tree/master/challenge_templates/pwn)).
 
 ## Compile Kernel
@@ -271,9 +269,6 @@ Boot took 0.64 seconds
       \::/  /                      /:/  /
        \/__/                       \/__/
 
-
-           Welcome to OTA-University
-                   MBE lab10C
 
 sh: can't access tty; job control turned off
 / $ id
