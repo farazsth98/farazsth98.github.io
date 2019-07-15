@@ -6,7 +6,6 @@ plugins:
   - jekyll-seo-tag
   - kramdown
   - rouge
-  - jekyll-toc
 
 markdown: kramdown
 
