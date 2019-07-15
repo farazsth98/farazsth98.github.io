@@ -1,0 +1,17 @@
+title: Syed Faraz Abrar | Security Blog
+baseurl: "/"
+
+plugins:
+  - jekyll-sitemap
+  - jekyll-seo-tag
+  - kramdown
+  - rouge
+  - jekyll-toc
+
+markdown: kramdown
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+highlighter: rouge

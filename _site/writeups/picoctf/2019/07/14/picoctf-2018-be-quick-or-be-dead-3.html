@@ -1,0 +1,227 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PicoCTF 2018 - be-quick-or-be-dead-3 (Reversing)</title>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/css/monokai.css">
+<link rel="stylesheet" href="/css/font-awesome.min.css">
+<script src="https://kit.fontawesome.com/c569d89c48.js"></script>
+</head>
+
+  <body>
+    <div id="wrapper">
+        <header>
+	<div id="home">
+		<a href="/">
+			<h1>Syed Faraz Abrar</h1>
+		</a>
+	</div>
+	<div class="header-links">
+		<a href="/writeups"><h2 class="header-link">Writeups</h2></a>
+<a href="/about"><h2 class="header-link">About</h2></a>
+	</div>
+</header>
+        <div class="container">
+            <section id="main_content">
+                <h1 id="title">PicoCTF 2018 - be-quick-or-be-dead-3 (Reversing)</h1>
+<p>14 Jul 2019</p>
+
+
+
+<ul>
+  <li><strong>Category:</strong> reversing</li>
+  <li><strong>Points:</strong> 350</li>
+</ul>
+
+<h2 id="challenge">Challenge</h2>
+
+<blockquote>
+  <p>As the song draws closer to the end, another executable be-quick-or-be-dead-3 suddenly pops up. This one requires even faster machines. Can you run it fast enough too? You can also find the executable in /problems/be-quick-or-be-dead-3_2_fc35b1f6832df902b8e2f724772d012f.</p>
+</blockquote>
+
+<h2 id="hints">Hints</h2>
+
+<blockquote>
+  <p>How do you speed up a very repetitive computation?</p>
+</blockquote>
+
+<p>The challenge archive contained the following file.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>be-quick-or-be-dead-3
+</code></pre></div></div>
+
+<h2 id="solution">Solution</h2>
+
+<p>This was a simple reversing challenge that required knowledge of dynamic programming. Dynamic programming is mainly an optimization over just plain recursion. Wherever there is a recursive algorithm that has repeated function calls with the same inputs, we can optimize it using dynamic programming by only doing the call once, storing the value, and then using the stored value for every subsequent call. More information can be found <a href="https://www.cs.cmu.edu/~avrim/451f09/lectures/lect1001.pdf">here</a>.</p>
+
+<p>Running file against the executable, we get the following.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» file be-quick-or-be-dead-3                  
+be-quick-or-be-dead-3: ELF 64-bit LSB executable, x86-64, version 1 <span class="o">(</span>SYSV<span class="o">)</span>, dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, <span class="k">for </span>GNU/Linux 2.6.32, BuildID[sha1]<span class="o">=</span>2cec6b98d9025d8dfe4a9bcb1c46500914b0fa4f, not stripped
+</code></pre></div></div>
+
+<p>Attempting to just run the program gives us the following output.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» ./be-quick-or-be-dead-3                                                                        
+Be Quick Or Be Dead 3
+<span class="o">=====================</span>
+
+Calculating key...
+You need a faster machine. Bye bye.
+</code></pre></div></div>
+
+<p>Let’s fire up ghidra and see what the decompilation of the executable looks like. The main function is as follows.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">undefined8</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">header</span><span class="p">();</span>
+  <span class="n">set_timer</span><span class="p">();</span>
+  <span class="n">get_key</span><span class="p">();</span>
+  <span class="n">print_flag</span><span class="p">();</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Looking at the code, <code class="highlighter-rouge">header()</code> simply outputs the “Be Quick Or Be Dead 3” message when the program is run.</p>
+
+<p><code class="highlighter-rouge">set_timer()</code> sets a three second timer for the program to run for. If the program exceeds the three second timer, then it just exits with the error message shown above.</p>
+
+<p><code class="highlighter-rouge">get_key()</code> looked interesting. The code is shown below.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">get_key</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Calculating key..."</span><span class="p">);</span>
+  <span class="n">key</span> <span class="o">=</span> <span class="n">calculate_key</span><span class="p">();</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Done calculating key"</span><span class="p">);</span>
+  <span class="k">return</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Following through, below is <code class="highlighter-rouge">calculate_key()</code>.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">calculate_key</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">calc</span><span class="p">(</span><span class="mh">0x19965</span><span class="p">);</span>
+  <span class="k">return</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>And then, <code class="highlighter-rouge">calc()</code>.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ulong</span> <span class="nf">calc</span><span class="p">(</span><span class="n">uint</span> <span class="n">uParm1</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">iVar1</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">iVar2</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">iVar3</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">iVar4</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">iVar5</span><span class="p">;</span>
+  <span class="n">uint</span> <span class="n">local_1c</span><span class="p">;</span>
+  
+  <span class="k">if</span> <span class="p">(</span><span class="n">uParm1</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">local_1c</span> <span class="o">=</span> <span class="n">uParm1</span> <span class="o">*</span> <span class="n">uParm1</span> <span class="o">+</span> <span class="mh">0x2345</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">else</span> <span class="p">{</span>
+    <span class="n">iVar1</span> <span class="o">=</span> <span class="n">calc</span><span class="p">((</span><span class="n">ulong</span><span class="p">)(</span><span class="n">uParm1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">));</span>
+    <span class="n">iVar2</span> <span class="o">=</span> <span class="n">calc</span><span class="p">((</span><span class="n">ulong</span><span class="p">)(</span><span class="n">uParm1</span> <span class="o">-</span> <span class="mi">2</span><span class="p">));</span>
+    <span class="n">iVar3</span> <span class="o">=</span> <span class="n">calc</span><span class="p">((</span><span class="n">ulong</span><span class="p">)(</span><span class="n">uParm1</span> <span class="o">-</span> <span class="mi">3</span><span class="p">));</span>
+    <span class="n">iVar4</span> <span class="o">=</span> <span class="n">calc</span><span class="p">((</span><span class="n">ulong</span><span class="p">)(</span><span class="n">uParm1</span> <span class="o">-</span> <span class="mi">4</span><span class="p">));</span>
+    <span class="n">iVar5</span> <span class="o">=</span> <span class="n">calc</span><span class="p">((</span><span class="n">ulong</span><span class="p">)(</span><span class="n">uParm1</span> <span class="o">-</span> <span class="mi">5</span><span class="p">));</span>
+    <span class="n">local_1c</span> <span class="o">=</span> <span class="n">iVar5</span> <span class="o">*</span> <span class="mh">0x1234</span> <span class="o">+</span> <span class="p">(</span><span class="n">iVar1</span> <span class="o">-</span> <span class="n">iVar2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">iVar3</span> <span class="o">-</span> <span class="n">iVar4</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">ulong</span><span class="p">)</span><span class="n">local_1c</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">calc()</code> looks very esoteric when set out that way. Reading the code and optimizing it, you get the following:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ulong</span> <span class="nf">calc</span><span class="p">(</span><span class="n">uint</span> <span class="n">i</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="n">uint</span> <span class="n">final_value</span><span class="p">;</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">)</span> 
+	<span class="p">{</span>
+		<span class="n">final_value</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span> <span class="mh">0x2345</span><span class="p">;</span>
+	<span class="p">}</span>
+	<span class="k">else</span> 
+	<span class="p">{</span>
+		<span class="n">final_value</span> <span class="o">=</span> <span class="n">calc</span><span class="p">((</span><span class="n">ulong</span><span class="p">)(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">-</span> <span class="n">calc</span><span class="p">((</span><span class="n">ulong</span><span class="p">)(</span><span class="n">i</span><span class="o">-</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="n">calc</span><span class="p">((</span><span class="n">ulong</span><span class="p">)(</span><span class="n">i</span><span class="o">-</span><span class="mi">3</span><span class="p">))</span> <span class="o">-</span>
+			<span class="n">calc</span><span class="p">((</span><span class="n">ulong</span><span class="p">)(</span><span class="n">i</span><span class="o">-</span><span class="mi">4</span><span class="p">))</span> <span class="o">+</span> <span class="n">calc</span><span class="p">((</span><span class="n">ulong</span><span class="p">)(</span><span class="n">i</span><span class="o">-</span><span class="mi">5</span><span class="p">))</span><span class="o">*</span><span class="mh">0x1234</span><span class="p">;</span>
+	<span class="p">}</span>
+
+	<span class="k">return</span> <span class="n">final_value</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>So it seems to be a recursive function that gets called with <code class="highlighter-rouge">calc(0x19965)</code> from <code class="highlighter-rouge">calculate_key()</code>. That is a huge number of recursions, and I don’t know of any language that will actually run this function without reaching its maximum recursion depth limit.</p>
+
+<p>The solution is to optimize it using dynamic programming. The idea is that we want to ‘save’ each calculation in memory, so that each time the function would recurse, it instead uses the saved value from memory, thus not only saving time (as the calculations are only done once), but also never reaching the maximum recursion depth limit.</p>
+
+<p>I wrote up a quick python script that demonstrates this idea.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">calc</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+	<span class="n">v</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">key</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+	<span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9029</span> <span class="c1"># 0*0 + 0x2345
+</span>	<span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9030</span> <span class="c1"># 1*1 + 0x2345
+</span>	<span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9033</span> <span class="c1"># 2*2 + 0x2345
+</span>	<span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9038</span> <span class="c1"># 3*3 + 0x2345
+</span>	<span class="n">v</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9045</span> <span class="c1"># 4*4 + 0x2345
+</span>
+	<span class="c1"># Loop until the value of key, storing all values along the way
+</span>	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">key</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+		<span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span><span class="o">*</span><span class="mh">0x1234</span> <span class="o">+</span> <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="o">-</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">4</span><span class="p">]))</span>
+		<span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="c1"># The same as v[i] = (ulong) v[i]
+</span>
+	<span class="k">return</span> <span class="n">v</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+<span class="k">print</span> <span class="nb">hex</span><span class="p">(</span><span class="n">calc</span><span class="p">(</span><span class="mh">0x19965</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>Running the script gives us the calculated value.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» python calc.py                                                                                
+0x9e22c98e
+</code></pre></div></div>
+
+<p>Now that we know the calculated value, we can use gdb to make <code class="highlighter-rouge">calculate_key()</code> return this value at runtime, instead of making the call to <code class="highlighter-rouge">calc()</code>. This is demonstrated below.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>gdb<span class="o">)</span> handle SIGALRM ignore
+Signal        Stop      Print   Pass to program Description
+SIGALRM       No        No      No              Alarm clock
+<span class="o">(</span>gdb<span class="o">)</span> disass calculate_key
+Dump of assembler code <span class="k">for function </span>calculate_key:
+   0x0000000000400792 &lt;+0&gt;:     push   rbp
+   0x0000000000400793 &lt;+1&gt;:     mov    rbp,rsp
+   0x0000000000400796 &lt;+4&gt;:     mov    edi,0x19965
+   0x000000000040079b &lt;+9&gt;:     call   0x400706 &lt;calc&gt;
+   0x00000000004007a0 &lt;+14&gt;:    pop    rbp
+   0x00000000004007a1 &lt;+15&gt;:    ret    
+End of assembler dump.
+<span class="o">(</span>gdb<span class="o">)</span> <span class="nb">break</span> <span class="k">*</span>calculate_key+9
+Breakpoint 1 at 0x40079b
+<span class="o">(</span>gdb<span class="o">)</span> run
+Starting program: /home/faithlesss/Documents/ctfs/picoctf2018/be-quick-or-be-dead-3/be-quick-or-be-dead-3 
+Be Quick Or Be Dead 3
+<span class="o">=====================</span>
+
+Calculating key...
+
+Breakpoint 1, 0x000000000040079b <span class="k">in </span>calculate_key <span class="o">()</span>
+<span class="o">(</span>gdb<span class="o">)</span> <span class="nb">set</span> <span class="nv">$eax</span> <span class="o">=</span> 0x9e22c98e
+<span class="o">(</span>gdb<span class="o">)</span> jump <span class="k">*</span>calculate_key+14
+Continuing at 0x4007a0.
+Done calculating key
+Printing flag:
+picoCTF<span class="o">{</span>dynamic_pr0gramming_ftw_b5c45645<span class="o">}</span>
+<span class="o">[</span>Inferior 1 <span class="o">(</span>process 23499<span class="o">)</span> exited normally]
+<span class="o">(</span>gdb<span class="o">)</span> 
+
+</code></pre></div></div>
+
+<p>We first set the SIGALRM handler to ignore. This will cause the program to ignore any SIGALRM interrupts, which is what the <code class="highlighter-rouge">set_timer()</code> function was doing. We then break just at the call to the <code class="highlighter-rouge">calc()</code> function. Once the breakpoint is hit, we set <code class="highlighter-rouge">eax</code> to <code class="highlighter-rouge">0x9e22c98e</code>, then jump to the <code class="highlighter-rouge">pop rbp</code> instruction. This causes <code class="highlighter-rouge">calculate_key()</code> to skip the <code class="highlighter-rouge">calc()</code> call and return the value in <code class="highlighter-rouge">eax</code>.</p>
+
+<p>Flag: <code class="highlighter-rouge">picoCTF{dynamic_pr0gramming_ftw_b5c45645}</code></p>
+
+            </section>
+        </div>
+    </div>
+    <footer>
+  <a href="https://creativecommons.org/licenses/by-nc/3.0/deed.en_US">
+    <span>
+        <b>Creative Commons 3.0</b>
+    </span>
+    
+    <span> - 2019</span>
+  </a>
+</footer>
+  </body>
+</html>

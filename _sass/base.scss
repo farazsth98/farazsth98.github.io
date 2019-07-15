@@ -1,0 +1,160 @@
+* {
+	font-family: "FontAwesome";
+	font-size: 15px
+}
+
+html, body {
+	height: 100%;
+	margin: 0;
+	background-color: #dde4f0;
+	padding: 0;
+}
+
+header {
+	padding: 20px;
+	margin: 0 0 40px 0;
+	border-bottom: 1px dashed #537fcf;
+}
+
+#wrapper {
+    min-height: calc(100vh - 100px);
+}
+
+section {
+	display: block;
+	margin: 0 0 20px 0;
+}
+
+.header-links{
+	text-align: center;
+}
+
+.header-link {
+	font-size: 19px;
+	display: inline;
+	padding: 4px;
+	margin: 5px;
+	color: #377099;
+	font-weight: 300;
+}
+
+.header-link:hover {
+	color: #874323;
+}
+
+#home {
+	text-align: center;
+}
+
+#home a h1 {
+	font-size: 35px;
+	font-family: "FontAwesome";
+	font-weight: 400;
+	letter-spacing: 0.001em;
+}
+
+#home a h1:hover {
+	color: #874323;
+}
+
+footer {
+	line-height: 50px;
+	height: 50px;
+	text-align: center;
+}
+
+.container {
+	width: 90%;
+	max-width: 1000px;
+	margin: 70px auto;
+}
+
+a {
+	text-decoration: none;
+	color: #476ca6;
+}
+
+a:visited {
+	text-decoration: none;
+}
+
+a:hover {
+	color: #263a59
+}
+
+h1, h2, h3, h4, h5, h6 {
+	color: #000000;
+	font-weight: 600;
+}
+
+h1 {
+	font-size: 30px;
+}
+
+h3 {
+	font-size: 20px;
+	color: #064dbf;
+}
+
+#title {
+	font-size: 40px;
+	font-weight: 400;
+	color: #3c5904;
+}
+
+blockquote {
+	background-color: #cad2e0;
+	padding: 10px;
+	border-radius: 5px;
+	box-shadow: 0 0 5px #a0b6de;
+
+}
+
+pre {
+	overflow: auto;
+	word-wrap: normal;
+	white-space: pre;
+}
+
+#index {
+	font-size: 25px;
+	font-weight: 300;
+}
+
+#post-title {
+	font-weight: 400;
+	font-size: 25px;
+	margin: 0;
+}
+
+ul li h2 a{
+	font-size: 18px;
+	font-weight: 400;
+}
+
+.posts li {
+	line-height: 1em;
+}
+
+#about li {
+	font-size: 20px;
+	font-weight: 300;
+}
+
+#about li a {
+	font-size: 20px;
+	font-weight: 400;
+}
+
+.highlighter-rouge {
+	background: #272822; 
+	color: #f8f8f2;
+	padding-left: 3px;
+	padding-right: 3px;
+	padding-top: 1px;
+	padding-bottom: 1px;
+	border-radius: 3px;
+	font-family: "Hack";
+	font-size: 13px;
+	letter-spacing: 0.01px;
+}
