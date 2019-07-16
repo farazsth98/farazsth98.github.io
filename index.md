@@ -5,7 +5,9 @@ permalink: /
 ---
 
 <div id="index-wrapper">
-	<img id="index-img" src="/images/index-img.jpg" alt="avatar">
+	<a href="{{ "/about" | prepend: site.baseurl | replace: '//', '/' }}">
+		<img id="index-img" src="/images/index-img.jpg" alt="avatar">
+	</a>
 
 	<div id="index-text">
 		<h2>Faraz's Blog</h2>
