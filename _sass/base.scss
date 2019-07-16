@@ -190,15 +190,21 @@ ul li h2 a{
 	font-weight: 400;
 }
 
-.toc {
+#markdown-toc {
 	border: 2px solid #d3dce3;
 	width: 500px;
-	border-radius: 4px;
+	border-radius: 5px;
 	display: inline-block;
 	text-align: left;
 	list-style: none;
+	padding: 10px;
+	list-style: none;
 }
 
-#toc-container {
+#markdown-toc ul {
+	list-style: none;
+}
+
+.toc-container {
 	text-align: center;
 }
