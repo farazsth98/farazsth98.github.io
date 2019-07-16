@@ -4,4 +4,13 @@ title: Syed Faraz Abrar | Security Blog
 permalink: /
 ---
 
-<p id="index">A cyber security blog dedicated to CTF writeups.</p>
+<div id="index-wrapper">
+	<img id="index-img" src="/images/index-img.jpg" alt="avatar">
+
+	<div id="index-text">
+		<h2>Faraz's Blog</h2>
+		<p id="author-title">Student, Hacker, Creator</p>
+		<p id="index-text">A cyber security blog dedicated to CTF writeups.</p>
+	</div>
+
+</div>
