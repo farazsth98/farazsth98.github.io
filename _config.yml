@@ -1,6 +1,6 @@
 title: Syed Faraz Abrar | Security Blog
 baseurl: "/"
-url: "https://www.syedfarazabrar.com"
+url: "https://syedfarazabrar.com"
 
 plugins:
   - jekyll-sitemap
