@@ -41,6 +41,7 @@ categories: writeups rop-emporium
 * gdb gef
 * pwntools
 * ropper
+* radare2
 
 The challenges are all listed in sequential order as shown on ROP Emporium's website. It is ordered by increasing difficulty.
 
