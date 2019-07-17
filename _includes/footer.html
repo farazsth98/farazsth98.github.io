@@ -1,9 +1,10 @@
 <footer>
-  <a href="https://creativecommons.org/licenses/by-nc/3.0/deed.en_US">
-    <span>
-        <b>Creative Commons 3.0</b>
-    </span>
-    {% capture currentyear %}{{ 'now' | date: "%Y" }}{% endcapture %}
-    <span> - {{ currentyear }}</span>
-  </a>
+	<a href="{{ page.url }}#title">Back to top ↑<br/></a>
+  	<a href="https://creativecommons.org/licenses/by-nc/3.0/deed.en_US">
+    	<span>
+        	<b>Creative Commons 3.0</b>
+    	</span>
+    	{% capture currentyear %}{{ 'now' | date: "%Y" }}{% endcapture %}
+    	<span> - {{ currentyear }}</span>
+  	</a>
 </footer>

@@ -48,10 +48,12 @@ The challenges are all listed in sequential order as shown on ROP Emporium's web
 Disclaimer: I will make an assumption that anyone reading this is familiar with the basics of binary exploitation, and will skip explaining a lot of the very simple things. You should also know how to read assembly.
 
 # ret2win
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 This level starts us off with a very simple buffer overflow.
 
 ### 32-bit
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 To start off with, let's run a checksec on the given binary:
 
@@ -293,6 +295,7 @@ $
 ```
 
 ### 64-bit
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 Running checksec.
 ```shell
@@ -409,10 +412,12 @@ $
 ```
 
 # split
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 This level takes it up a notch, and has us set up the stack such that we call `system()` ourselves and supply our own argument of '/bin/cat flag.txt'.
 
 ### 32-bit
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 Running checksec.
 ```shell
@@ -581,6 +586,7 @@ $
 ```
 
 ### 64-bit
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 The 64-bit version is slightly more difficult because function arguments don't get passed through the stack anymore.
 
@@ -688,25 +694,31 @@ $
 ```
 
 # callme
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 To be added.
 
 # write4
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 To be added.
 
 # badchars
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 To be added.
 
 # fluff
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 To be added.
 
 # pivot
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 To be added.
 
 # ret2csu
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 To be added.
