@@ -125,7 +125,7 @@ pre {
 	white-space: pre;
 }
 
-#index-text {
+#index-text, #err-text, #err-text a{
 	font-size: 18px;
 	font-weight: 300;
 }
@@ -134,7 +134,7 @@ pre {
 	border-radius: 50%;
 }
 
-#index-wrapper {
+#index-wrapper, #err-wrapper {
 	text-align: center;
 	line-height: 10px;
 }
