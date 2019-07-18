@@ -9,5 +9,14 @@ plugins:
   - kramdown
   - rouge
 
+author: "Syed Faraz Abrar"
+description: "A blog dedicated to CTF writeups"
+logo: "/images/index-img.jpg"
+social:
+  name: Syed Faraz Abrar
+  links:
+    - https://github.com/farazsth98
+    - https://www.linkedin.com/in/faraz-abrar/
+
 markdown: kramdown
 highlighter: rouge
