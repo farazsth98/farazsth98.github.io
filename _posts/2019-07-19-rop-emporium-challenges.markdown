@@ -552,6 +552,8 @@ gef➤
 
 `"/bin/cat flag.txt" is at 0x0804a030`
 
+Using the same technique detailed in ret2win, I used gdb gef to find that the offset to overwrite EIP is 44 bytes.
+
 Writing a simple exploit script with the given information.
 ```python
 #!/usr/bin/env python
@@ -658,6 +660,8 @@ gef➤  print 'system@plt'
 $1 = {<text variable, no debug info>} 0x4005e0 <system@plt>
 gef➤  
 ```
+
+Using the same technique detailed in ret2win, I used gdb gef to find that the offset to overwrite RIP is 40 bytes.
 
 Writing an exploit script.
 ```python
