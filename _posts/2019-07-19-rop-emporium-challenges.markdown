@@ -377,7 +377,7 @@ gef➤
 
 We see that we don't overwrite RIP at all. This is because we overwrote RIP with an invalid address greater than `0x00007fffffffffff`, which is the maximum address size of a 64 bit system. This causes the OS to raise an exception and thus not update RIP's value at all.
 
-However, we did overwrite RBP, and we know that the RIP exists 8 bytes past RBP's address. Finding the offset for RBP (32) then adding 8 to it, gives us the offset for RIP, which is 32+8=40.
+However, we did overwrite RBP, and we know that the return address exists 8 bytes past RBP's address. Finding the offset for RBP (32) then adding 8 to it, gives us the offset for overwriting RIP, which is 32+8=40.
 
 Note that we still have control of RIP, it's just that we can't write an invalid address to it. Fortunately, the address to the `ret2win()` function *is* a valid address, so the following script does the job.
 
