@@ -1071,7 +1071,7 @@ Explanation for the above ROP chain:
 3. The next value on the stack will be the string "/bin". This is popped into EBP.
 4. The pop edi gadget returns into the `mov [edi], ebp; ret;` gadget, which moves the string stored in EBP to the memory location stored in EDI.
 5. We repeat the exact same thing for the remainder of the string "/sh ", except this time we have to ensure to add 0x4 to the address of the .data section so that we don't overwrite the already written string "/bin".
-6. The final `ret;` in the mov gadget will then return into `system()`, and we set up the stack so that the argument to system is the address to the .data section where our "/bin/sh " string is stored.
+6. The final `ret`; in the mov gadget will then return into `system()`, and we set up the stack so that the argument to system is the address to the .data section where our "/bin/sh " string is stored.
 
 Using the above information, we write the exploit script.
 ```python
