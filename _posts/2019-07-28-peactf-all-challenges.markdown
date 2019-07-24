@@ -887,7 +887,7 @@ I then checked to see if it was a blind SQLi by doing the following.
 
 Since 1 does not equal 2, the right side of the query ends up being false so the entire query returns false, causing the server to tell us that the User does not exist. Otherwise, it would tell us that it has sent an email to notify the admin about this. So we have a blind SQLi. Question is, how do we exploit it?
 
-There are two types of blind SQLi attacks that can be employed to get the password here. The first would be to use a time-based attack, and the second one would be a regexp-based attack. I used the regexp-based attack. For more information a blind SQLi attack that is regexp-based, please see my tutorial [here]().
+There are two types of blind SQLi attacks that can be employed to get the password here. The first would be to use a time-based attack, and the second one would be a regexp-based attack. I used the regexp-based attack. For more information about how a regexp-based blind SQLi works, please see my tutorial [here](/guides/2019/07/25/test.html).
 ```python
 #!/usr/bin/env python3
 
