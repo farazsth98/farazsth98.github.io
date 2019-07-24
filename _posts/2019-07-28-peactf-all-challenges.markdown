@@ -887,18 +887,7 @@ I then checked to see if it was a blind SQLi by doing the following.
 
 Since 1 does not equal 2, the right side of the query ends up being false so the entire query returns false, causing the server to tell us that the User does not exist. Otherwise, it would tell us that it has sent an email to notify the admin about this. So we have a blind SQLi. Question is, how do we exploit it?
 
-There are two types of blind SQLi attacks that can be employed to get the password here. The first would be to use a time-based attack, and the second one would be a regexp-based attack. I used the regexp-based attack, so I will explain that in depth now.
-
-The back-end is running SQLite3, which we know from the error above. In SQLite3, in a WHERE clause, you can use the LIKE query to check whether a column begins with a certain character. For example, `WHERE password LIKE 'a%'` would return true if the password started with an 'a' and ended with any number of characters.
-
-What we can do in this case is the following:
-
-* We pass it a query like `admin' AND 1=(SELECT 1 FROM users WHERE password LIKE 'a%') --.`. This will return true if the password starts with the character 'a', and false otherwise.
-* We repeat the above for every letter and number. For every single character, the response body will have "User does not exist". Only for the correct character will the response body have "Your answer to the security..."
-* Let's assume we find that the letter the password starts with is a 'b'. We can change our query to `admin' AND 1=(SELECT 1 FROM users WHERE password LIKE 'ba%') --.`. Again, we constantly change the second letter this time from a-z, A-Z, 0-9, etc until we find the one where the response body has "Your answer to the security...". Let's assume it gets this response on the character '5'. From then on, we know that the first two letters of the password are 'b5'.
-* We repeat this over and over again until none of the letters work.
-
-That is what a regexp-based attack looks like. I wrote a python script that does it.
+There are two types of blind SQLi attacks that can be employed to get the password here. The first would be to use a time-based attack, and the second one would be a regexp-based attack. I used the regexp-based attack. For more information a blind SQLi attack that is regexp-based, please see my tutorial [here]().
 ```python
 #!/usr/bin/env python3
 
