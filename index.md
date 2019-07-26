@@ -9,7 +9,7 @@ permalink: /
 		<img id="index-img" src="/images/index-img.jpg" alt="avatar">
 	</a>
 
-	<div id="index-text">
+	<div id="index-main">
 		<h2>Faraz's Blog</h2>
 		<p id="author-title">Student, Hacker, Creator</p>
 		<p id="index-text">A cyber security blog dedicated to CTF writeups.</p>
