@@ -113,8 +113,9 @@ h3 {
 
 blockquote {
 	background-color: #cad2e0;
-	padding: 10px;
 	border-radius: 5px;
+	padding: 10px;
+	margin: 10px;
 	box-shadow: 0 0 5px #a0b6de;
 
 }
@@ -128,6 +129,10 @@ pre {
 #index-text, #err-text, #err-text a{
 	font-size: 18px;
 	font-weight: 300;
+}
+
+#index-main {
+	line-height: 1.3em;
 }
 
 #index-img {
@@ -185,14 +190,14 @@ ul li h2 a{
 }
 
 #markdown-toc {
-	border: 2px solid #d3dce3;
-	width: 500px;
 	border-radius: 5px;
 	display: inline-block;
-	text-align: left;
 	list-style: none;
 	padding: 10px;
-	list-style: none;
+	text-align: left;
+	line-height: 1.5em;
+	border: 2px solid #d3dce3;
+	width: 350px;
 }
 
 #markdown-toc ul {
