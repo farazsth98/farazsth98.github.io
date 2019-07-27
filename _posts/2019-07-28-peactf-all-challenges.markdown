@@ -865,25 +865,25 @@ Flag: `{3_thousand_spaces_371}`
 
 ### Solution
 
-I first started by looking through the website. I tried SQL injection in the login form, in the forgot-your-password form, and just general source code viewing. I stumbled upon the following in the forgot password form.
+I first started by looking through the website. I tried SQL injection in the login form, in the forgot-your-password form, and just general source code viewing. I stumbled upon the following in the forgot password form. There's a hidden 'debug' input form.
 
-![](/images/peactf/forgot-password-debug.png)
+![](/images/peactf/forgot-password-debug.png){:width="550px"}
 
 I removed `type="hidden"`, then set debug to 1, used 'admin' as the username and 'asd' as the answer and got the following.
 
-![](/images/peactf/sql-query-discover.png)
+![](/images/peactf/sql-query-discover.png){:width="550px"}
 
 I first made sure it was actually SQL injectable.
 
-![](/images/peactf/sql-error.png)
+![](/images/peactf/sql-error.png){:width="550px"}
 
 We see that the query is definitely injectable, however trying to inject it does not give us any output.
 
-![](/images/peactf/no-output.png)
+![](/images/peactf/no-output.png){:width="550px"}
 
 I then checked to see if it was a blind SQLi by doing the following.
 
-![](/images/peactf/blind-sqli.png)
+![](/images/peactf/blind-sqli.png){:width="550px"}
 
 Since 1 does not equal 2, the right side of the query ends up being false so the entire query returns false, causing the server to tell us that the User does not exist. Otherwise, it would tell us that it has sent an email to notify the admin about this. So we have a blind SQLi. Question is, how do we exploit it?
 
@@ -931,6 +931,6 @@ Note that we remove the last character as that was the final character that the 
 
 Now we just login and we get the flag.
 
-![](/images/peactf/flag.png)
+![](/images/peactf/flag.png){:width="550px"}
 
 Flag: `flag{peactf_E_>_A_119d352c970e04cedb8450d036094227}`
