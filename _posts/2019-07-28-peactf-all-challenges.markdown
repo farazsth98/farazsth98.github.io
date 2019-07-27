@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 	"PeaCTF Round 1: All Challenges"
+title: 	"PeaCTF Qualifier Round: All Challenges"
 date:	2019-07-28 12:00:00 +0000
 categories: writeups peactf
 ---
