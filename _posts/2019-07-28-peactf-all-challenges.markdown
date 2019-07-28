@@ -631,7 +631,7 @@ if (!empty($_COOKIE['user'])) {
 </html>
 ```
 
-It takes a cookie named 'user', first makes sure it's not empty, the unserializes it, calls `$user->is_admin()` and gives us the flag only if it returns true. This tells me that the cookie is actually an object that is serialized and stored as the cookie (in its 'value' field). 
+It takes a cookie named 'user', first makes sure it's not empty, then unserializes it, calls `$user->is_admin()` and gives us the flag only if it returns true. This tells me that the cookie is actually an object that is serialized and stored as the cookie (in its 'value' field). 
 
 I used [writephponline](http://www.writephponline.com/) to write my own class for this object. I had to make an 'educated guess' on how the `is_admin()` function worked as well as what the class field was called. My first guess of $admin turned out working. The hint of the challenge also helps a lot.
 ```php
@@ -811,7 +811,7 @@ Knowing this, I used ghex to view the hexdump of the png file to see if it match
 
 ![](/images/peactf/hexdump-1.png){:width="1200px"}
 
-As you can see in the section highlighted above, the four bytes before the PLTE section (which should be the length of the PLTE section in hex) is 0x48454c50, which is "HELP" in ascii. This length is very obviously too large from what we can see as the PLTE chunk's length.
+As you can see in the section highlighted above, the four bytes before the PLTE section (which should be the length of the PLTE section in hex) is 0x48454c50, which is "HELP" in ascii. This length is very obviously too large based on a visual inspection of the PLTE chunk length.
 
 We can see the very next chunk after the PLTE chunk is the tRNS chunk. We know the following.
 
