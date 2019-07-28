@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 	"ROP Emporium: All Challenges (Detailed Explanations)"
+title: 	"ROP Emporium Challenges"
 date:	2019-07-19 20:52:55 +0800
 categories: writeups rop-emporium
 ---
@@ -30,14 +30,6 @@ categories: writeups rop-emporium
         <li><a href="#32-bit-3" id="markdown-toc-h3-header">32-bit</a></li>
         <li><a href="#64-bit-3" id="markdown-toc-h3-header">64-bit</a></li>
     </ul>
-    </li>
-    <li><a href="#badchars" id="markdown-toc-h1-header">badchars</a>
-    </li>
-    <li><a href="#fluff" id="markdown-toc-h1-header">fluff</a>
-    </li>
-    <li><a href="#pivot" id="markdown-toc-h1-header">pivot</a>
-    </li>
-    <li><a href="#ret2csu" id="markdown-toc-h1-header">ret2csu</a>
     </li>
   </ul>
 </div>
@@ -1215,23 +1207,3 @@ $ cat flag.txt
 ROPE{a_placeholder_32byte_flag!}
 $  
 ```
-
-# badchars
-<a href="{{ page.url }}#title">Back to top ↑</a>
-
-To be added.
-
-# fluff
-<a href="{{ page.url }}#title">Back to top ↑</a>
-
-To be added.
-
-# pivot
-<a href="{{ page.url }}#title">Back to top ↑</a>
-
-To be added.
-
-# ret2csu
-<a href="{{ page.url }}#title">Back to top ↑</a>
-
-To be added.

