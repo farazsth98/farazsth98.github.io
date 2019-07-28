@@ -204,8 +204,8 @@ Flag: `flag{peactf_440}`
 This challenge is meant to be done on the shell server that they provide. The output below is very confusing to read, but basically, there's a bunch of folders in the problem directory with md5 hashes as their names. I just ran `grep -r "flag"` to do a recursive search in all files for the string "flag" and found the flag.
 
 ```shell
-redacted@peactf-2019-shell-1:~$ cd /problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948 
-redacted@peactf-2019-shell-1:/problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948$ ls
+faithlesss@peactf-2019-shell-1:~$ cd /problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948 
+faithlesss@peactf-2019-shell-1:/problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948$ ls
 0d25b16b914709741369b819945b0bf0  729f8ea0d5411ba9ace8ab81b85dfeeb  c7aedbdcaf676f8d2c09442e52cfafaa
 1669f36b1ac7090bd856260ce43218a5  78d34b9d02d92171a474ec1da4bcb00e  c7ea4c7f95347f4df35db14baf36a7b3
 1d605b2d651f64d92b08806e81ed628e  80c61a18ebf26a9879459c019d3f7c53  ce1dd5c46ece18fe24e7831bcc3ec30c
@@ -224,8 +224,8 @@ redacted@peactf-2019-shell-1:/problems/hide-and-seek_25_0e640bba38cc92e6d15b3135
 6d8283aae25d1f48cd08a0e71c9e6fb7  c276bddb69f0e6546ae2ff489cdfbaf9  fbec866af69d37e4b0eed978347ec10f
 7153a0a051f591b7cd54cac433c4ca2c  c525832a0b2cf142569e9206e907c2e2
 
-redacted@peactf-2019-shell-1:/problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948$ grep -r "peaCTF"
-redacted@peactf-2019-shell-1:/problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948$ grep -r "flag"
+faithlesss@peactf-2019-shell-1:/problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948$ grep -r "peaCTF"
+faithlesss@peactf-2019-shell-1:/problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948$ grep -r "flag"
 6d8283aae25d1f48cd08a0e71c9e6fb7/62c213fe3df128148aab4613a639f423/e090b6868d74a6255d763d6660d8117e/435d968d9d03
 d21df3a2cf50f1bae280/e28de84641381790a1aad0ea7b532da1/5aff2f46968759edf769a6c2dbd0ce6f/c8572610a56e9afece38b304
 610649ed/73c633c0ef2b0e2b3dad75752c8ae5a1/eead523c9655f13983275e77eaee48ae/1a05ff8f68e5c5da8339224209d1ae2e/d7c
@@ -233,7 +233,7 @@ d21df3a2cf50f1bae280/e28de84641381790a1aad0ea7b532da1/5aff2f46968759edf769a6c2db
 5d9b7c1b0f49fa533/c4a88c081884012f1ab6b9a41fbee8ad/bfe0dc1a7d0280af6192d7dd5d423bf7/7decc2b55d454de7d822f5840a5
 b19b7/ac85917d5adae905367a3b2f82e2d148/e8a193af8b23e08e506cc0a93a067265/5ef7122e5df6d550cbc00b5ac54d0de0/flag.t
 xt:flag{peactf_linux_is_fun_bb6f529aa108b7d7021c00833742fe7a}
-redacted@peactf-2019-shell-1:/problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948$ 
+faithlesss@peactf-2019-shell-1:/problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948$ 
 ```
 
 Flag: `flag{peactf_linux_is_fun_bb6f529aa108b7d7021c00833742fe7a}`
