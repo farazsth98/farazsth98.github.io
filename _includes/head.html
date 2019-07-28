@@ -9,5 +9,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 {% seo %}
-{% include analytics.html %}
+{% if jekyll.environment == 'production' %}
+    {% include analytics.html %}
+{% endif %}
 </head>
