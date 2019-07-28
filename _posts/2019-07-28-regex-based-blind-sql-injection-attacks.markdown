@@ -154,12 +154,12 @@ print("Password found!: " + password)
 ```
 
 Note that the script just automates what I explained above. It will start by creating the following query.
-```
+```python
 "admin' AND 1=(SELECT 1 FROM users WHERE password LIKE '" + k + "%') --."
 ```
 Where 'k' is the variable containing each letter we are testing. After each character, it checks to see if a TRUE query is returned by checking whether the text 'Your answer to the security' is in the page. If it is, it will store it in the password variable, as well as add it to the query. Otherwise, it just continues with the next character.
 
-The 'adding it to the query' bit is the most important here, as that is what will make the query start at the next character. Running the script will give is the following output.
+The 'adding it to the query' bit is the most important here, as that is what will make the query start at the next character. Running the script will give us the following output.
 ```
 » ./sqli.py
 Password: 70725064+
