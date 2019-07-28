@@ -822,6 +822,8 @@ Therefore, I counted up until just before the PLTE chunk's CRC manually by hand.
 
 ![](/images/peactf/hexdump-2.png){:width="1200px"}
 
+I also wrote a script that will fix all critical chunk sizes it finds. The script can be found at [this link](https://github.com/farazsth98/ctf-png-chunksize-fixer/blob/master/png-chunksize-fixer.py) on my github.
+
 Once that was done, the image could be opened.
 
 ![](/images/peactf/uncorrupted.png){:width="800px"}
