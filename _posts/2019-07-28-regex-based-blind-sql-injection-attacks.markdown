@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 	"Regex-based Blind SQL Injection Attacks"
-date:	2019-07-25 01:53:00 +0800
+date:	2019-07-28 12:00:00 +0000
 categories: guides
 ---
 
