@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Syed Faraz Abrar | Security Blog
+title: Cyber Security Blog
 permalink: /
 ---
 
