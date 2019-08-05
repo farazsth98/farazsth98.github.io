@@ -112,12 +112,9 @@ h3 {
 }
 
 blockquote {
-	background-color: #cad2e0;
-	border-radius: 5px;
 	padding: 10px;
 	margin: 10px;
-	box-shadow: 0 0 5px #a0b6de;
-
+	border-left: 5px solid #c5c5c5;
 }
 
 pre {
@@ -173,6 +170,19 @@ ul li h2 a{
 	font-weight: 400;
 }
 
+div.highlight {
+	background: #f5f5f5;
+	box-shadow: 0 0 2px #a0b6de;
+	border-radius: 5px;
+	padding-left: 5px;
+}
+
+code.highlighter-rouge {
+	color: red;
+	background-color: #f5f5f5;
+}
+
+/*
 .highlighter-rouge {
 	background: #272822; 
 	color: #f8f8f2;
@@ -183,6 +193,7 @@ ul li h2 a{
 	font-size: 12px;
 	letter-spacing: 0.01px;
 }
+*/
 
 #toc-title {
 	margin: 0;
