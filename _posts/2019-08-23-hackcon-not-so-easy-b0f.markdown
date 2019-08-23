@@ -2,7 +2,7 @@
 layout: post
 title:  "HackCon 2019: Not So Easy Bof"
 date:   2019-08-23 19:00:00 +0800
-categories: writeups hackcon2019
+categories: writeups hackcon-2019
 ---
 
 # Not So Easy Bof
