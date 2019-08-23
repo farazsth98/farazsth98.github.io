@@ -12,7 +12,7 @@ permalink: /
 	<div id="index-main">
 		<h2>Faraz's Blog</h2>
 		<p id="author-title">Student, Hacker, Creator</p>
-		<p id="index-text">A cyber security blog dedicated to CTF writeups.</p>
+		<p id="index-text">I love pwn and reverse engineering challenges.</p>
 	</div>
 
 </div>

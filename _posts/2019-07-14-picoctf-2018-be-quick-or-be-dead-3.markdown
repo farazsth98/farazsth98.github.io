@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 	"PicoCTF 2018 Writeup: be-quick-or-be-dead-3 (Reversing)"
+title: 	"PicoCTF 2018 be-quick-or-be-dead-3 (Reversing)"
 date:	2019-07-14 18:54:00 +0800
 categories: writeups picoctf
 ---
