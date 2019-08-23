@@ -5,8 +5,6 @@ date:   2019-08-23 19:00:00 +0800
 categories: writeups hackcon
 ---
 
-# Not So Easy Bof
-
 ### Challenge
 
 * **Category:** pwn
