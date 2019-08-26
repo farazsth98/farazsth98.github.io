@@ -51,8 +51,8 @@ Okay, let's get onto disassembling the binary and see what we can find. The bina
 
 So we see two vulnerabilities right off the bat.
 
-* A format string vulnerability at `0x000007ea`, where the string we enter as our name is output using `printf(format);`. No buffer overflow here since the `read()` call only reads 0x10 bytes of input.
-* A buffer overflow vulnerability at `0x00000810`, where the `read()` call reads 0x100 bytes of input, resulting in a buffer overflow.
+* A format string vulnerability at `0x000007ea`, where the string we enter as our name is output using `printf(format);`. No buffer overflow here since the `fgets()` call before it only reads 0x10 bytes of input.
+* A buffer overflow vulnerability at `0x00000810`, where the `fgets()` call reads 0x100 bytes of input, resulting in a buffer overflow.
 
 Before we get started, we need to deal with the stack canary. My initial plan was to use the format string vulnerability to leak the stack canary, and then use it to call `puts()` with its own GOT entry to leak the libc address of `puts`. However, I realized pretty quickly that this will not work, simply because the binary has PIE enabled, thus unless we somehow get the base address of the binary, jumping to `puts()` or anywhere in the binary is not going to work.
 
