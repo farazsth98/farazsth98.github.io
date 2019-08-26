@@ -90,7 +90,7 @@ Nope, seems like it sanitizes our input. Alright, let's get to reverse engineeri
 0x00400a09      xor  rax, qword fs:[0x28]
 ```
 
-Okay, so to begin with we see at instruction `0x00400943`, the address of the `nope()` function gets loaded into `var_40h` which is basically at `rbp-0x40`. We then see a `mov rax, qword [var_40h]` followed by a `call rax` at `0x004009fe`. If we look at the disassembly for the `nope()` function, we will see that it outputs the string 'Naaa  , Try HArder', so we have to somehow be able to control this value at `rbp-0x40` and change it to something, because we know this `call rax` is what prints that string after taking our input 5 times. What do we change it to? Well, the binary also has a convenient `win()` function which outputs the flag. Simple as that, but how do we control this value at `rbp-0x40`?
+Okay, so to begin with, at instruction `0x00400943` the address of the `nope()` function gets loaded into `var_40h` which is located at `rbp-0x40`. We then see a `mov rax, qword [var_40h]` followed by a `call rax` at `0x004009fe`. If we look at the disassembly for the `nope()` function, we will see that it outputs the string 'Naaa  , Try HArder', so we have to somehow be able to control this value at `rbp-0x40` and change it to something, because we know this `call rax` is what prints that string after taking our input 5 times. What do we change it to? Well, the binary also has a convenient `win()` function which outputs the flag. Simple as that, but how do we control this value at `rbp-0x40`?
 
 Below is the section right after the binary has initialized all variables. We see that the `fgets()` call will read 0x11 bytes into the `var_50h` buffer (located at `rbp-0x50`, easily figured out by looking at the top of the disassembly for `main`, or with gdb).
 ```
@@ -112,17 +112,17 @@ Below is the section right after the binary has initialized all variables. We se
 
 So let's break it down shall we. Remember that our input is going to be `0x11` bytes big, stored at `rbp-0x50`, and the last byte will be set as `\0` by `fgets` (which isn't that important, but just pointing it out now).
 
-1. `mov edx, dword [var_44h]` will move four bytes from `rbp-0x44` to edx. `rbp-0x50 - rbp-0x44` is 12, therefore we know that it will take the 4 bytes right after the initial 12 bytes of our input, and move it into edx (which is basically the last four bytes of our input not counting the byte that gets converted to `\0`). To elaborate, if we typed in `ABCDEFGHIJKLMNOP\n`, it would move `MNOP` (which is just `\x4d\x4e\x4f\x50`, so `edx` will contain `0x504f4e4d` because of little endianness) into `edx`.
+1. `mov edx, dword [var_44h]` will move four bytes from `rbp-0x44` to `edx`. Our input starts at `rbp-0x50`, so calculating the offset, we get `(rbp-0x50) - (rbp-0x44) = 0x50 - 0x44 = 12`, therefore we know that it will take the 4 bytes right after the initial 12 bytes of our input, and move it into edx (which is basically the last four bytes of our input not counting the byte that gets converted to `\0`). To elaborate, if we typed in `ABCDEFGHIJKLMNOP\n`, it would move `MNOP` (which is just `\x4d\x4e\x4f\x50`, so `edx` will contain `0x504f4e4d` because of little endianness) into `edx`.
 
 2. Following that, it loads the effective address of `var_30h` (located at `rbp-0x30`) into `rax`.
 
-3. It will then do `movsxd rdx, edx`, which will (in this case) move the value from `edx` (a 32 bit register) to `rdx` (a 64 bit register). This just means `0xffffffff`, which is 32 bit, would be sign extended to the 64 bit version `0xffffffffffffffff`. The value in `edx` in this case is the last 4 bytes of our input.
+3. It will then do `movsxd rdx, edx`, which will (in this case) move the value from `edx` (a 32 bit register) to `rdx` (a 64 bit register), literally moving it in place in the same register, except that it will `sign-extend` the value from 32 bit to 64 bit. As an example: Given a value of `0xffffffff` in `edx`, it would be sign extended to the 64 bit version `0xffffffffffffffff` and stored in `rdx`. The value in `edx` in this case is the last 4 bytes of our input.
 
 4. Then, `shl rdx, 3` will left shift the sign extended version of our input by 3.
 
 5. Then, `lea rcx, [rax + rdx]` loads whatever is stored in the address `rax + rdx` into `rcx`. Since we control `rdx`, in a way, we also control what gets moved into `rcx` here, which is important.
 
-6. Then, `lea rax, [var_50h]` (again, same as `lea rax, rbp-0x50`) simply moves the first 8 bytes of our input into `rax`.
+6. Then, `lea rax, [var_50h]` (again, same as `lea rax, rbp-0x50`) simply loads the address of our input into `rax`.
 
 7. Then, `strncpy((rax+rdx), rbp-0x50, 8)` is called, moving the first 8 bytes of our input into the address given by `rax+rdx`
 
@@ -146,6 +146,8 @@ $rcx   : 0x00007ffff7af4081  →  0x5777fffff0003d48 ("H="?)
 $rdx   : 0x212121210
 $rsp   : 0x00007fffffffdac0  →  "AAAAAAAABBBBBBBB"
 $rbp   : 0x00007fffffffdb10  →  0x0000000000400a20  →  <__libc_csu_init+0> push r15
+
+<-- TRUNCATED -->
 
 gef➤  p ($rbp-0x40) - $rax
 $3 = (void *) 0xfffffffffffffff0
