@@ -51,12 +51,10 @@ The challenges are all listed in sequential order as shown on ROP Emporium's web
 Disclaimer: I will make an assumption that anyone reading this is familiar with the basics of binary exploitation, and will skip explaining a lot of the very simple things. You should also know how to read assembly.
 
 # ret2win
-<a href="{{ page.url }}#title">Back to top ↑</a>
 
 This level starts us off with a very simple buffer overflow.
 
 ### 32-bit
-<a href="{{ page.url }}#title">Back to top ↑</a>
 
 To start off with, let's run a checksec on the given binary:
 
@@ -296,7 +294,7 @@ Thank you! Here's your flag:ROPE{a_placeholder_32byte_flag!}
 ```
 
 ### 64-bit
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 Running checksec.
 ```shell
@@ -411,12 +409,12 @@ Thank you! Here's your flag:ROPE{a_placeholder_32byte_flag!}
 ```
 
 # split
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 This level takes it up a notch, and has us set up the stack such that we call `system()` ourselves and supply our own argument of '/bin/cat flag.txt'.
 
 ### 32-bit
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 Running checksec.
 ```shell
@@ -579,7 +577,7 @@ ROPE{a_placeholder_32byte_flag!}
 ```
 
 ### 64-bit
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 The 64-bit version is slightly more difficult because function arguments don't get passed through the stack anymore.
 
@@ -687,12 +685,12 @@ ROPE{a_placeholder_32byte_flag!}
 ```
 
 # callme
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 For this challenge, the description tells us we have to call `callme_one(1, 2, 3)`, `callme_two(1, 2, 3)` and `callme_three(1, 2, 3)`, in that order, to get the flag.
 
 ### 32-bit
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 Running checksec.
 ```shell
@@ -850,7 +848,7 @@ ROPE{a_placeholder_32byte_flag!}
 ```
 
 ### 64-bit
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 The 64-bit version is the same, except now instead of popping three values off the stack everytime, we just have to pop those three values into the three registers RDI (first argument), RSI (second argument), and RDX (third argument), in that order. The functions will use the values in those registers as their arguments. I will skip everything except the exploit script since I've already explained how to find the addresses required for the functions and the gadget.
 
@@ -905,7 +903,7 @@ ROPE{a_placeholder_32byte_flag!}
 ```
 
 # write4
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 The challenge description tells us that this time, the string "/bin/cat flag.txt" doesn't actually exist anywhere in the binary. It hints at the fact that we have to write the string ourselves somewhere into the binary first, in order to be able to pass it to `system()`. It also tells us we need a gadget of the form `mov [reg1], reg2` to move a value stored in `reg2` to a memory address stored in `reg1`.
 
@@ -914,7 +912,7 @@ I took a little bit of a different route. Instead of writing the string "/bin/ca
 Enough with the description, lets get down to business.
 
 ### 32-bit
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 Running checksec.
 ```shell
@@ -1144,7 +1142,7 @@ $
 ```
 
 ### 64-bit
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 The way the challenges have been going, we know that we have to do the exact same thing that we did in the 32-bit version with some slight changes. First, we have to change the ROP chain to ensure it confines with what a 64-bit ROP chain should look like. Secondly, we have to change the way we call `system()` since we have to pop the argument (the address to the .data section) into RDI first.
 

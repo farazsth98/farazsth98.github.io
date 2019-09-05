@@ -102,7 +102,7 @@ PeaCTF ran from the 22nd of July until the 28th of July. The following are my wr
 A quick note before we begin: If you intend on following each writeup, make sure you do the challenges yourself. Different accounts get different "instances" of the challenges and will therefore have different flags.
 
 # Breakfast
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Cryptography
 * **Points:** 50
@@ -127,7 +127,7 @@ The challenge description has 'bacon' in bold, so my first thought was to try [B
 Flag: `peaCTF{eggwaffles}`
 
 # Broken Keyboard
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Cryptography
 * **Points:** 50
@@ -164,7 +164,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 Flag: `peaCTF{4sc11isc00l}`
 
 # Worth
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** General Skills
 * **Points:** 50
@@ -191,7 +191,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 Flag: `flag{peactf_440}`
 
 # Hide and Seek
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** General Skills
 * **Points:** 100
@@ -241,7 +241,7 @@ faithlesss@peactf-2019-shell-1:/problems/hide-and-seek_25_0e640bba38cc92e6d15b31
 Flag: `flag{peactf_linux_is_fun_bb6f529aa108b7d7021c00833742fe7a}`
 
 # School
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Cryptography
 * **Points:** 100
@@ -278,7 +278,7 @@ We have to make sure to capitalize the 'ctf' in 'peactf' since I called `lower()
 Flag: `peaCTF{orangejuice}`
 
 # Choose your Pokemon
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Forensics
 * **Points:** 150
@@ -342,7 +342,7 @@ I used unrtf to convert the rtf file to normal text.
 Flag: `{wild_type}`
 
 # Coffee Time
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Reversing
 * **Points:** 250
@@ -405,7 +405,7 @@ We can see the flag hardcoded into the code.
 Flag: `peaCTF{nice_cup_of_coffee}`
 
 # We are E.xtr
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Forensics
 * **Points:** 350
@@ -451,7 +451,7 @@ I know my file formats, and that looks an awful lot like PNG to me. I opened the
 Flag: `{read_banned_it}`
 
 # Crack the Key
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Cryptography
 * **Points:** 450
@@ -517,7 +517,7 @@ So I just guessed the key was "redpineapples"
 Flag: `peaCTF{redpineapples}`
 
 # RSA
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Cryptography
 * **Points:** 500
@@ -584,7 +584,7 @@ Combining the outputs, we get the flag.
 Flag: `peaCTF{f4ct0r1ng1sfun}`
 
 # Educated Guess
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Web Exploitation
 * **Points:** 600
@@ -669,7 +669,7 @@ flag{peactf_follow_conventions_4022940cb27774f618aa62fe8be202bc}</body>
 Flag: `flag{peactf_follow_conventions_4022940cb27774f618aa62fe8be202bc}`
 
 # The Wonderful Wizard
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Forensics
 * **Points:** 750
@@ -701,7 +701,7 @@ flag{peactf_where_the_wind_blows}
 Flag: `flag{peactf_where_the_wind_blows}`
 
 # Song of My People
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Forensics
 * **Points:** 800
@@ -856,7 +856,7 @@ And I got lucky, because I got the flag on the third try.
 Flag: `{3_thousand_spaces_371}`
 
 # Philips and Over
-<a href="{{ page.url }}#title">Back to top ↑</a>
+
 
 * **Category:** Web Exploitation
 * **Points:** 900
