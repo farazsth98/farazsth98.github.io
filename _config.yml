@@ -15,7 +15,7 @@ defaults:
     values:
       title: Syed Faraz Abrar
 
-description: Stylish Jekyll Theme
+description: CTF Writeups
 author:
   name: syedfarazabrar.com
   email: faraz.abrar9@gmail.com
@@ -23,7 +23,7 @@ author:
 #  twitter:
 #  pinterest:
 #  linkedin:
-  bio: I love doing pwn and RE challenges :D
+  bio: Cyber Security Student at Curtin University. I regularly participate in CTFs and bug bounties. I love pwn and RE challenges :D
   email_md5: 6be70bef138ac815dbdb9354b71230f3
 
 rss_path: feed.xml
