@@ -5,7 +5,7 @@ paginate_path: "page:num"
 exclude: ["README.md"] # files to exclude
 highlighter: rouge
 markdown: kramdown
-disqus: uafio
+disqus:
 google_analytics: UA-60673588-1
 
 defaults:
@@ -13,18 +13,18 @@ defaults:
     scope:
       path: "" # empty string for all files
     values:
-      title: uaf.io
+      title: Syed Faraz Abrar
 
 description: Stylish Jekyll Theme
 author:
-  name: uaf.io
-  email: tschoranov@gmail.com
-#  github: boaster
+  name: syedfarazabrar.com
+  email: faraz.abrar9@gmail.com
+  github: farazsth98
 #  twitter:
 #  pinterest:
 #  linkedin:
-  bio: I do RE and PWN.
-  email_md5: d970d0a145a12f1015c3af9979773875
+  bio: I love doing pwn and RE challenges :D
+  email_md5: 6be70bef138ac815dbdb9354b71230f3
 
 rss_path: feed.xml
 categories_path: categories.html
