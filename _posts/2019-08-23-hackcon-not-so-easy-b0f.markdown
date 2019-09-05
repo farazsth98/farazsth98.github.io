@@ -3,6 +3,7 @@ layout: post
 title:  "HackCon 2019: Not So Easy Bof"
 date:   2019-08-23 19:00:00 +0800
 categories: pwn
+tags: Hackcon-2019
 ---
 
 A binary with a format string and a stack buffer overflow vulnerability with all protection mechanisms enabled.

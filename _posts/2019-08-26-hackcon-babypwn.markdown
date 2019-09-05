@@ -3,6 +3,7 @@ layout: post
 title:  "HackCon 2019: babypwn"
 date:   2019-08-26 14:00:00 +0800
 categories: pwn
+tags: Hackcon-2019
 ---
 
 A binary that doesn't require EIP control to exploit it. It has none of the obvious vulnerabilities (buffer overflow, format string, etc) but does have a very specific vulnerability that you had to find through reverse engineering.

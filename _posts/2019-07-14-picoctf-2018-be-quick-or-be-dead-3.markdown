@@ -3,6 +3,7 @@ layout: post
 title: 	"PicoCTF 2018 be-quick-or-be-dead-3 (Reversing)"
 date:	2019-07-14 18:54:00 +0800
 categories: re
+tags: PicoCTF-2018
 ---
 
 I thought this was an interesting challenge as I had to learn a new concept called dynamic programming which is used to optimize many different algorithms.

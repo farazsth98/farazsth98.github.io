@@ -3,6 +3,7 @@ layout: post
 title: 	"ROP Emporium Challenges"
 date:	2019-07-19 20:52:55 +0800
 categories: pwn
+tags: rop-emporium
 ---
 
 I started doing the challenges from ROP Emporium because I wanted to start really learning about Return Oriented Programming. These are my writeups for the challenges. More will be added as I do them.
