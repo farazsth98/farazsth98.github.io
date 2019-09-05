@@ -13,7 +13,7 @@ defaults:
     scope:
       path: "" # empty string for all files
     values:
-      title: Syed Faraz Abrar
+      title: Cyber Security Blog
 
 description: CTF Writeups
 author:
