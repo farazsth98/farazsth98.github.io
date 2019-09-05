@@ -61,6 +61,9 @@ article .share .twitter:hover {
 #contact-list li:hover .fa-envelope {
 	color: #E93E30;
 }
+#contact-list li:hover .fa-hackthebox {
+	color: #1C913B;
+}
 #contact-list li:hover .fa-pinterest {
 	color: #CC2127;
 }
