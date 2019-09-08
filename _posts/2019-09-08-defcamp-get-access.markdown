@@ -11,8 +11,8 @@ A classic blind format string challenge where you had to dump the entire binary 
 ### Challenge
 
 * **Category:** pwn
-* **Points:** 123
-* **Solves:** 64
+* **Points:** 114
+* **Solves:** 66
 
 > Can you pwn this?
 >

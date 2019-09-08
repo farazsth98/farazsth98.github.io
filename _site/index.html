@@ -158,6 +158,33 @@
   </span>
 
   <h2>
+    <a href="/pwn/2019/09/08/defcamp-secret.html">DefCamp Qualifiers 2019: secret</a>
+  </h2>
+
+  <div>
+    
+    
+    <p>This binary had a format string vulnerability + a stack buffer overflow vulnerability. We use the format string vulnerability to leak the stack canary and a libc address from the stack. Calculate libc base address then find the address of <code class="highlighter-rouge">system</code> and a <code class="highlighter-rouge">/bin/sh</code> string, then call <code class="highlighter-rouge">system("/bin/sh")</code> to get a shell.</p>
+
+
+    
+    
+  </div>
+
+</article>
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    September
+    8th,
+    
+    2019
+  </span>
+
+  <h2>
     <a href="/pwn/2019/09/08/defcamp-get-access.html">DefCamp Qualifiers 2019: get-access</a>
   </h2>
 
