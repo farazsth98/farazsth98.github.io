@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "DefCamp Qualifiers 2019: secret"
-date:   2019-09-08 17:00:01 +0800
+date:   2019-09-08 17:00:00 +0800
 categories: pwn
 tags: DefCamp-Qualifiers-2019
 ---
@@ -11,8 +11,8 @@ This binary had a format string vulnerability + a stack buffer overflow vulnerab
 ### Challenge
 
 * **Category:** pwn
-* **Points:** 176
-* **Solves:** 52
+* **Points:** 162
+* **Solves:** 55
 
 > Target: 206.81.24.129:1339
 >

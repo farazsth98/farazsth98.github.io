@@ -11,8 +11,8 @@ A classic blind format string challenge where you had to dump the entire binary 
 ### Challenge
 
 * **Category:** pwn
-* **Points:** 114
-* **Solves:** 66
+* **Points:** 105
+* **Solves:** 68
 
 > Can you pwn this?
 >
@@ -120,7 +120,7 @@ while True:
         base += len(leak)
 ```
 
-After running this binary for around 5-10 minutes (I didn't keep count), I checked the binary with `xxd` and saw this.
+After running this script for around 5-10 minutes (I didn't keep count), I checked the binary with `xxd` and saw this.
 ```c
 vagrant@ubuntu-bionic:/ctf/pwn-and-rev/defcamp-2019/pwn/get-access$ xxd output.raw
 00000000: 7f45 4c46 0101 0100 0000 286e 756c 6c29  .ELF......(null)
