@@ -49,6 +49,10 @@
 			</a>
 			
 			
+			<a type="button" class="navbar-toggle nav-link" href="http://twitter.com/farazsth98">
+				<i class="fa fa-twitter"></i>
+			</a>
+			
 			
 			<a type="button" class="navbar-toggle nav-link" href="mailto:faraz.abrar9@gmail.com">
 				<i class="fa fa-envelope"></i>
@@ -118,6 +122,12 @@
 		</li>
 
 		
+		<li>
+			<a class="btn btn-default btn-sm" href="https://twitter.com/farazsth98">
+				<i class="fa fa-twitter fa-lg"></i>
+			</a>
+		</li>
+		
 		
 		<li>
 			<a class="btn btn-default btn-sm" href="mailto:faraz.abrar9@gmail.com">
@@ -145,6 +155,33 @@
   <h1>Cyber Security Blog </h1>
 </div>
 
+
+
+<article class="home">
+
+  <span class="post-date">
+    
+    October
+    12th,
+    
+    2019
+  </span>
+
+  <h2>
+    <a href="/pwn/2019/10/12/picoctf-2019-ghostdiary.html">picoCTF 2019: Ghost_Diary</a>
+  </h2>
+
+  <div>
+    
+    
+    <p>A heap exploitation challenge on glibc 2.27. The only vulnerability is a single null byte overflow when editing the contents of a malloc’d chunk. I used that null byte overflow to call <code class="highlighter-rouge">malloc_consolidate()</code> and get overlapped chunks, followed by a libc leak. Then it was just a normal tcache poisoning attack to get a chunk onto <code class="highlighter-rouge">__free_hook</code>, overwrite it with a one gadget, then call <code class="highlighter-rouge">free()</code> to get a shell. The hardest part about this challenge is that its glibc 2.27, meaning the tcache is enabled. We get past that in a very novel (not really) way, as shown in the writeup.</p>
+
+
+    
+    
+  </div>
+
+</article>
 
 
 <article class="home">
@@ -381,33 +418,6 @@
     
     
     <p>I started doing the challenges from ROP Emporium because I wanted to start really learning about Return Oriented Programming. These are my writeups for the challenges. More will be added as I do them.</p>
-
-
-    
-    
-  </div>
-
-</article>
-
-
-<article class="home">
-
-  <span class="post-date">
-    
-    July
-    14th,
-    
-    2019
-  </span>
-
-  <h2>
-    <a href="/re/2019/07/14/picoctf-2018-be-quick-or-be-dead-3.html">PicoCTF 2018 be-quick-or-be-dead-3 (Reversing)</a>
-  </h2>
-
-  <div>
-    
-    
-    <p>I thought this was an interesting challenge as I had to learn a new concept called dynamic programming which is used to optimize many different algorithms.</p>
 
 
     
