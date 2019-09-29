@@ -125,7 +125,7 @@ void sub_DA2(char *chunk_ptr, int size)
 
 The vulnerability is obvious now. If we read the maximum amount of bytes possible, then we will have a single null byte overflow that will overflow into (possibly) the metadata of the next chunk. How do we use this to our advantage?
 
-You may immediately have an *idea* as to how this vulnerability could be used exploited, but it definitely requires a very in-depth knowledge of the heap to know exactly how to exploit it. I'll take a quick detour now and provide a brief overview of the heap and its internals now. Experienced readers can skip this part and go straight to the "Exploitation" section.
+You may immediately have an *idea* as to how this vulnerability could be used exploited, but it definitely requires a very in-depth knowledge of the heap to know exactly how to exploit it. I'll take a quick detour now and provide a brief overview of ptmalloc2, the heap in glibc, and its internals now. Experienced readers can skip this part and go straight to the "Exploitation" section.
 
 I will also skip explaining any information that isn't required for this challenge, such as the concept of arenas amongst other things.
 
@@ -133,7 +133,7 @@ It will be assumed that the reader has prior knowledge of how stack buffer overf
 
 * [Understanding the glibc malloc](https://sploitfun.wordpress.com/2015/02/10/understanding-glibc-malloc/)
 
-#### **Overview of the glibc heap**
+### **Overview of the glibc heap**
 
 #### What is the heap?
 
