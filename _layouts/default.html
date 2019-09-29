@@ -1,17 +1,9 @@
 ---
-theme :
-  name : dbyll
+layout: base
 ---
-{% include default.html %}
 
-{% if site.google_analytics %}
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-144659970-1"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+<div class="intro-header"></div>
 
-  gtag('config', 'UA-144659970-1');
-</script>
-{% endif %}
+<div role="main" class="container">
+  {{ content }}
+</div>
