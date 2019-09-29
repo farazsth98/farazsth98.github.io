@@ -240,6 +240,8 @@ There is also a special chunk called the "top chunk". This is the chunk that bor
 
 When chunks are allocated, there is usually an extra 0x08 or 0x10 bytes added to the size to store the metadata for the chunk. The metadata includes the `prev_size` and `size` fields of the chunk.
 
+When a chunk is freed, if the chunk ends up in a bin that is ***not*** a fast bin nor a tcache bin, then the chunk that comes after it in memory will have its `PREV_INUSE` bit set to 0. If it does end up in a tcache bin or a fast bin, the next chunk's `PREV_INUSE` bit does not get set to 0.
+
 #### Introduction to Tcache
 
 I will be referring to the source code of `malloc.c` from glibc 2.27, found [here](https://ftp.gnu.org/gnu/glibc/glibc-2.27.tar.bz2).
@@ -319,7 +321,9 @@ The unsorted bin is an optimizing cache layer that got added based on two simple
 
 Whenever a small or a large chunk is freed, they will initially be inserted into the unsorted bin. In glibc versions 2.26+, the only constraint is that if a small chunk is freed, the corresponding sized tcache bin must be full, otherwise the chunk will just end up in that tcache bin.
 
-The reason the unsorted bin is important to us is because as soon as a chunk goes into the unsorted bin, a pointer to the unsorted bin (which exists within libc) is inserted into the forward and back pointers of that free chunk. We can easily cause this by first filling up a tcache bin of a small size with 7 chunks, before freeing an 8th time. If you then have a UAF vulnerability, you can read this libc pointer and get an info leak, which lets you defeat both PIE and ASLR. An example is given below.
+The reason the unsorted bin is important to us is because as soon as a chunk goes into the unsorted bin, a pointer to the unsorted bin (which exists within libc) is inserted into the forward and back pointers of that free chunk.
+
+We can easily cause this by first filling up a tcache bin of a small size (i.e <= 0x200 bytes in size) with 7 chunks, then freeing a chunk of that same size one more time. This 8th and final free will cause the chunk to go into the unsorted bin due to the tcache bin being full. If you then have a UAF vulnerability, you can read this libc pointer and get an info leak, which lets you defeat both PIE and ASLR. An example is given below.
 
 If you want to demo the code below, you must use either glibc version 2.26 or 2.27:
 ```c
@@ -362,9 +366,9 @@ vagrant@ubuntu-bionic:/ctf/pwn-and-rev/picoctf-2019/ghost_diary$ ./a.out
 
 This is very important. If we can somehow read this pointer (using a use-after-free, or overlapped chunks, by any means), then we have an information leak that we can use to find the base address of libc. This defeats both PIE and ASLR in one shot. This characteristic of the unsorted bin is used in the exploit for this challenge.
 
-#### The tcache poisoning attack
+#### The Tcache Poisoning Attack
 
-Given a double free vulnerability, we can get `malloc` to return an arbitrary pointer. It abuses the fact that a double free will cause two of the same chunk to be inserted into the tcache bin, meaning that this chunk will have its `fd` pointer pointing to itself.
+Given a double free vulnerability, we can get `malloc` to return an arbitrary pointer which lets us have an arbitrary read/write primitive. It abuses the fact that a double free will cause two of the same chunk to be inserted into the tcache bin, meaning that this chunk will have its `fd` pointer pointing to itself.
 
 This is shown below, as well as utilized in our exploit. Credits to shellphish's [how2heap](https://github.com/shellphish/how2heap/blob/master/glibc_2.26/tcache_dup.c) for part of the code:
 ```c
@@ -398,7 +402,7 @@ int main()
     a[0] = (unsigned long long) &arbitrary_pointer;
 
     fprintf(stderr, "And now, the free list has [ %p %p ].\n\n", a, &arbitrary_pointer);
-    fprintf(stderr, "Two more mallocs, and the second malloc gives us a chunk right on top of arbitrary_pointer\n");
+    fprintf(stderr, "Two more mallocs, and the second malloc gives us a chunk right on top of arbitrary_pointer\n\n");
 
     malloc(8);
     our_pointer = malloc(8);
@@ -428,18 +432,19 @@ Now we overwrite a's fd pointer to the address of arbitrary_pointer
 And now, the free list has [ 0x555e20bac260 0x555e1efe1030 ].
 
 Two more mallocs, and the second malloc gives us a chunk right on top of arbitrary_pointer
+
 arbitrary_pointer: 0x555e1efe1030, our_pointer: 0x555e1efe1030
 ```
 
 #### **Exploitation**
 
-Now, hopefully I've explained everything clearly enough for everyone to be able to follow through with the writeup. If I haven't, please do consider spending a little bit more time skim-reading through the links I've provided above. I will try to explain the exploitation steps as clearly and concisely as possible.
+Now, hopefully I've explained everything clearly enough for everyone to be able to follow through with the writeup. If I haven't, please do consider spending a little bit more time skim-reading through the links I've provided above. I will try to explain the exploitation steps as clearly and as concisely as possible.
 
 The challenge itself took me about 3.5 hours to figure out. The exploitation steps I used are laid out below. Please follow my exploit script (shown at the end) alongside each step to help visualise the heap at each step:
 
 ##### **Step 1**
 
-* Set up three chunks that we will use for our exploit. These chunks will be A, B, and C respectively. A's size will be 0x128 (0x131 in memory due to metadata, `PREV_INUSE` bit set to 1), while B and C's sizes will be 0x118 (0x121 in memory due to metadata, `PREV_INUSE` bit set to 1).
+* Set up three chunks that we will use for our exploit. These chunks will be A, B, and C respectively. A's size will be 0x128 (0x131 in memory due to metadata, `PREV_INUSE` bit set to 1), while B and C's sizes will be 0x118 (0x121 in memory due to metadata, `PREV_INUSE` bits set to 1).
 
 * The idea is that we want to use the single NULL byte overflow to set C's `PREV_INUSE` bit to 0, meaning we change C's size from 0x131 to 0x100. As we do that, we also want to set C's `prev_size` field to 0x250. More information about that is given below.
 
@@ -470,7 +475,7 @@ Tcachebins[idx=14, size=0xf0] count=7  ←  Chunk(addr=0x55a7bc254bd0, size=0x10
 Tcachebins[idx=17, size=0x120] count=7  ←  Chunk(addr=0x55a7bc2553f0, size=0x130, flags=PREV_INUSE)  ←  Chunk(addr=0x55a7bc2552c0, size=0x130, flags=PREV_INUSE)  ←  ...
 ```
 
-* We don't want either of the chunks A or C to go into the tcache bins, as there is no consolidation in the tcache bins. The exploit relies on `malloc_consolidate` being called.
+* We don't want either of the chunks A or C to go into the tcache bins, as there is no consolidation in the tcache bins. The exploit relies on the fact that chunk C will coalesce backwards with chunks A and B provided we set up the heap correctly.
 
 ##### **Step 3**
 
@@ -484,7 +489,7 @@ gef➤  x/40gx 0x000055a7bc254250
 ...
 ```
 
-* We do this free here in order to set B's `PREV_INUSE` bit to 0, otherwise we would get an error when chunk C gets freed later on, as `malloc_consolidate` would try to consolidate with a chunk that is already in-use (which would be chunk A, had we not freed it).
+* We do this free here in order to get some valid pointers inserted into A's `fd` and `bk` fields. This is important later because when we free chunk C and have it coalesce backwards with chunks A and B, there are some security checks that will ensure that chunk A's `fd` and `bk` pointers are valid. More information will be given below when chunk C is being freed.
 
 * Using gdb, we can calculate the difference between the leaked pointers and the libc base now. This offset remains constant every time we run the program. This offset is found to be `0x3ebca0`.
 
@@ -492,7 +497,9 @@ gef➤  x/40gx 0x000055a7bc254250
 
 * Edit chunk B's contents to cause a NULL byte overflow into chunk C's size. This changes chunk C's total size (including metadata) from 0x121 to 0x100. Notice that the `PREV_INUSE` bit gets set to 0 in the process, due to the NULL byte overflow, which causes chunk B to appear to be free when we free chunk C later on.
 
-* In the process of doing the NULL byte overflow, we also set chunk C's `prev_size` field to 0x250. This causes the `prev_size` field to encompass both chunks A and B. Later when we free chunk C, `malloc_consolidate` is called which causes chunks A, B, and C to be consolidated into one large chunk, which is put into the unsorted bin.
+* In the process of doing the NULL byte overflow, we also set chunk C's `prev_size` field to 0x250. This causes the `prev_size` field to encompass both chunks A and B. Later when we free chunk C, the `unlink` macro is called using chunk A ***because*** of the fact that we set chunk C's `prev_size` such that it encompasses up to chunk A. This causes chunks A, B, and C to be consolidated into one large chunk, which is then put into the unsorted bin.
+
+* The code for the unlink macro will be shown a bit further down.
 
 ```c
 gef➤  x/80gx 0x55a7bc254380
@@ -530,9 +537,9 @@ gef➤  x/50gx 0x55a7bc2544a0
 
 * Now, after all this preparation, we free chunk C. This calls `_int_free()`. First, the tcache bin 0xf0 is checked to see if there is space in it, but it's already full, so chunk C is then placed into the unsorted bin.
 
-* While this is done, chunk C's size is checked, and it is seen to be 0x100. `_int_free()` will then check for a chunk 0x100 bytes after chunk C to ensure that that chunk's `PREV_INUSE` bit is set to 1. If it is not, then `int_free()` will error out saying `"double free or corruption (!prev)"`, since chunk C will appear to be free if the next chunk's `PREV_INUSE` bit is not set to 1.  
+* While this is done, chunk C's size is checked, and it is seen to be 0x100. `_int_free()` will then check for a chunk 0x100 bytes after chunk C to ensure that that chunk's `PREV_INUSE` bit is set to 1. If it is not, then `_int_free()` will error out saying `"double free or corruption (!prev)"`, since chunk C will appear to be free if the next chunk's `PREV_INUSE` bit is not set to 1.  
 
-* Since we changed chunk C's size from 0x121 to 0x100, there isn't a chunk 0x100 bytes after chunk C, which is why we place a chunk there ourselves with its `PREV_INUSE` bit set to 1. This check is documented [here](https://github.com/lunaczp/glibc-2.27/blob/master/malloc/malloc.c#L4290):
+* Since we changed chunk C's size from 0x121 to 0x100, there isn't a chunk 0x100 bytes after chunk C, which is why we place a chunk there ourselves with its `PREV_INUSE` bit set to 1. This check is documented [here](https://github.com/lunaczp/glibc-2.27/blob/master/malloc/malloc.c#L4279):
 
 ```c
 /* Or whether the block is actually not marked used.  */
@@ -551,6 +558,45 @@ if (!prev_inuse(p)) {
 	unlink(av, p, bck, fwd);
 }
 ```
+
+* Now, remember when we freed chunk A initially? I said the reason behind it was so that chunk A's `fd` and `bk` fields get filled with valid pointers. From the code snippet above, you can see that when `_int_free()` attempts to perform backwards consolidating, it will call the `unlink` macro with chunk A as its second parameter. Within the unlink macro (the code for which can be found [here](https://github.com/lunaczp/glibc-2.27/blob/master/malloc/malloc.c#L1403)), we can see following code along with its extensive security checks:
+
+```c
+/* Take a chunk off a bin list */
+#define unlink(AV, P, BK, FD) {                                            \
+    if (__builtin_expect (chunksize(P) != prev_size (next_chunk(P)), 0))      \
+      malloc_printerr ("corrupted size vs. prev_size");			      \
+    FD = P->fd;								      \
+    BK = P->bk;								      \
+    if (__builtin_expect (FD->bk != P || BK->fd != P, 0))		      \
+      malloc_printerr ("corrupted double-linked list");			      \
+    else {								      \
+        FD->bk = BK;							      \
+        BK->fd = FD;							      \
+        if (!in_smallbin_range (chunksize_nomask (P))			      \
+            && __builtin_expect (P->fd_nextsize != NULL, 0)) {		      \
+	    if (__builtin_expect (P->fd_nextsize->bk_nextsize != P, 0)	      \
+		|| __builtin_expect (P->bk_nextsize->fd_nextsize != P, 0))    \
+	      malloc_printerr ("corrupted double-linked list (not small)");   \
+            if (FD->fd_nextsize == NULL) {				      \
+                if (P->fd_nextsize == P)				      \
+                  FD->fd_nextsize = FD->bk_nextsize = FD;		      \
+                else {							      \
+                    FD->fd_nextsize = P->fd_nextsize;			      \
+                    FD->bk_nextsize = P->bk_nextsize;			      \
+                    P->fd_nextsize->bk_nextsize = FD;			      \
+                    P->bk_nextsize->fd_nextsize = FD;			      \
+                  }							      \
+              } else {							      \
+                P->fd_nextsize->bk_nextsize = P->bk_nextsize;		      \
+                P->bk_nextsize->fd_nextsize = P->fd_nextsize;		      \
+              }								      \
+          }								      \
+      }									      \
+}
+```
+
+* It is evident that the line `if (__builtin_expect (FD->bk != P || BK->fd != P, 0))` will use the two pointers from chunk A's `fd` and `bk` fields to perform some security checks. If we didn't free chunk A initially, those pointers would be `NULL`, and this check here would attempt to dereference these `NULL` pointers, and thus seg fault immediately. Freeing chunk A initially prevents that as well as lets us get past these security checks.
 
 * Finally, this entire consolidated chunk (size 0x350) is placed into the unsorted bin, and its `fd` and `bk` pointers are set to point into the unsorted bin in the `main_arena` which is in libc. This entire chunk essentially is placed right on top of chunks A, B, and C:
 
