@@ -142,8 +142,26 @@
     </p>
 
 <!--    <div class="post-entry">
-      A heap exploitation challenge on glibc 2.27. The only vulnerability is a single null byte overflow when editing the contents of a malloc’d chunk. I used that null byte overflow to call malloc_consolidate() and get overlapped chunks, followed by a libc leak. Then it was just a normal tcache poisoning...
+      I wasn’t initially planning on playing picoCTF 2019, as the challenges are generally extremely easy. Imagine my surprise when someone from OpenToAll messaged me asking for a hint about this challenge. A heap exploitation challenge on picoCTF? With only a single null byte overflow vulnerability? AND with the tcache enabled?...
 	  <a href="/2019-10-12-picoctf-2019-ghostdiary/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-09-29-bsides-delhi-message-saver/">
+	  <h2 class="post-title">BSides Delhi 2019: message_saver</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on September 29, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      vagrant@ubuntu-xenial:/ctf/pwn-and-rev/bsides_delhi2019/message_saver$ ./exploit.py REMOTE [*] '/ctf/pwn-and-rev/bsides_delhi2019/message_saver/message_saver' Arch: amd64-64-little RELRO: Full RELRO Stack: Canary found NX: NX enabled PIE: PIE enabled [*] '/ctf/pwn-and-rev/bsides_delhi2019/message_saver/libc-2.23.so' Arch: amd64-64-little RELRO: Partial RELRO Stack: Canary found NX: NX enabled PIE: PIE enabled [+] Opening connection to 35.226.111.216 on port 4444: Done [*] Libc leak: 0x7f8fca9d0b78 [*] Libc...
+	  <a href="/2019-09-29-bsides-delhi-message-saver/" class="post-read-more">[Read&nbsp;More]</a>
     </div>
 --!>
    </article>
@@ -198,24 +216,6 @@
 <!--    <div class="post-entry">
       This binary had a format string vulnerability + a stack buffer overflow vulnerability. We use the format string vulnerability to leak the stack canary and a libc address from the stack. Calculate libc base address then find the address of system and a /bin/sh string, then call system(&quot;/bin/sh&quot;) to get...
 	  <a href="/2019-09-08-defcamp-secret/" class="post-read-more">[Read&nbsp;More]</a>
-    </div>
---!>
-   </article>
-  
-  <article class="post-preview">
-    <a href="/2019-09-08-defcamp-get-access/">
-	  <h2 class="post-title">DefCamp Qualifiers 2019: get-access</h2>
-
-	  
-    </a>
-
-    <p class="post-meta">
-      Posted on September 8, 2019
-    </p>
-
-<!--    <div class="post-entry">
-      A classic blind format string challenge where you had to dump the entire binary to get the flag. Challenge Category: pwn Points: 105 Solves: 68 Can you pwn this? Target: 206.81.24.129:1337 Author: Andrei Solution Before continuing, I highly suggest watching LiveOverflow’s video of the ESPR challenge from 33c3ctf if you...
-	  <a href="/2019-09-08-defcamp-get-access/" class="post-read-more">[Read&nbsp;More]</a>
     </div>
 --!>
    </article>
