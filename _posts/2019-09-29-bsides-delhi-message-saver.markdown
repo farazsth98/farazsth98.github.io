@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "BSides Delhi 2019: message_saver"
-date:   2019-09-29 00:19:30 +0800
+date:   2019-09-30 00:12:30 +0800
 categories: pwn
 tags: BSides-Delhi-2019
 ---
