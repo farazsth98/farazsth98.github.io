@@ -1,7 +1,7 @@
 ---
 layout: page
 title: About
-subtitle: Exploit Development and Reverse Engineering
+subtitle: Vulnerability Research and Exploit Development
 ---
 
 * I am a Cyber Security Student at Curtin University.
