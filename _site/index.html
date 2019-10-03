@@ -131,8 +131,26 @@
       <div class="posts-list">
   
   <article class="post-preview">
+    <a href="/2019-10-12-picoctf-2019-sice-cream/">
+	  <h2 class="post-title">picoCTF 2019: sice_cream (Glibc-2.23 Heap Exploitation)</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on October 12, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      Disclaimer: I didn’t actually participate in picoCTF 2019. r4j from JHDiscord sent me the binary for this challenge so I could give it a shot. The solution is absolutely mind blowing. I’m still not sure if it’s the intended solution. I usually put a TL;DR here, but no TL;DR will...
+	  <a href="/2019-10-12-picoctf-2019-sice-cream/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
     <a href="/2019-10-12-picoctf-2019-ghostdiary/">
-	  <h2 class="post-title">picoCTF 2019: Ghost_Diary</h2>
+	  <h2 class="post-title">picoCTF 2019: Ghost_Diary (Glibc-2.27 Heap Exploitation)</h2>
 
 	  
     </a>
@@ -150,7 +168,7 @@
   
   <article class="post-preview">
     <a href="/2019-09-30-bsides-delhi-message-saver/">
-	  <h2 class="post-title">BSides Delhi 2019: message_saver</h2>
+	  <h2 class="post-title">BSides Delhi 2019: message_saver (Glibc-2.23 Heap Exploitation)</h2>
 
 	  
     </a>
@@ -198,24 +216,6 @@
 <!--    <div class="post-entry">
       This binary had a very simple stack buffer overflow with NX enabled. It required a ret2libc attack, however calling system once didn’t work because of the condition the stack was in, so I had to add more input into the payload to create a valid stack frame. More information in...
 	  <a href="/2019-09-16-csaw-quals-baby-boi/" class="post-read-more">[Read&nbsp;More]</a>
-    </div>
---!>
-   </article>
-  
-  <article class="post-preview">
-    <a href="/2019-09-08-defcamp-secret/">
-	  <h2 class="post-title">DefCamp Qualifiers 2019: secret</h2>
-
-	  
-    </a>
-
-    <p class="post-meta">
-      Posted on September 8, 2019
-    </p>
-
-<!--    <div class="post-entry">
-      This binary had a format string vulnerability + a stack buffer overflow vulnerability. We use the format string vulnerability to leak the stack canary and a libc address from the stack. Calculate libc base address then find the address of system and a /bin/sh string, then call system(&quot;/bin/sh&quot;) to get...
-	  <a href="/2019-09-08-defcamp-secret/" class="post-read-more">[Read&nbsp;More]</a>
     </div>
 --!>
    </article>

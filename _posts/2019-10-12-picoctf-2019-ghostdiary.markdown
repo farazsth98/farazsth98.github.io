@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  "picoCTF 2019: Ghost_Diary"
+title:  "picoCTF 2019: Ghost_Diary (Glibc-2.27 Heap Exploitation)"
 date:   2019-10-12 00:00:00 +0800
 categories: pwn
-tags: CSAW-Qualifiers-2019
+tags: picoCTF-2019
 ---
 
 I wasn't initially planning on playing picoCTF 2019, as the challenges are generally extremely easy. Imagine my surprise when someone from OpenToAll messaged me asking for a hint about this challenge. A heap exploitation challenge on picoCTF? With only a single null byte overflow vulnerability? ***AND*** with the tcache enabled? Count me in.

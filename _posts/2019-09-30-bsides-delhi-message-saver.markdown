@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "BSides Delhi 2019: message_saver"
+title:  "BSides Delhi 2019: message_saver (Glibc-2.23 Heap Exploitation)"
 date:   2019-09-30 00:12:30 +0800
 categories: pwn
 tags: BSides-Delhi-2019
