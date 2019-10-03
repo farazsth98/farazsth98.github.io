@@ -192,7 +192,7 @@ log.info('system: ' + hex(system))
 log.info('__free_hook: ' + hex(free_hook))
 ```
 
-#### Step 2: **Mind = blown**
+#### Step 2: **Overwrite __free_hook, but HOW?**
 
 Here is where the exploit gets very interesting. Here is what I tried initially:
 
