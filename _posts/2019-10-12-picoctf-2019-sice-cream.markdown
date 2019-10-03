@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "picoCTF 2019: sice_cream (Glibc-2.23 Heap Exploitation)"
-date:   2019-10-12 00:00:01 +0800
+date:   2019-10-12 00:00:02 +0800
 categories: pwn
 tags: picoCTF-2019
 ---
@@ -16,7 +16,7 @@ I usually put a TL;DR here, but no TL;DR will sufficiently show how amazing this
 
 * **Category:** pwn
 * **Points:** 500
-* **Solves:** 15-20 is what I would guess. Did not have the challenge unlocked to check
+* **Solves:** 15-20 is what I would guess. Did not have the challenge unlocked to check.
 
 >Just pwn this [program](https://2019shell1.picoctf.com/static/b53566a7a55dd9ef5954e859d56c143d/sice_cream) and get a flag. Connect with `nc 2019shell1.picoctf.com` 6552 . [libc.so.6](https://2019shell1.picoctf.com/static/b53566a7a55dd9ef5954e859d56c143d/libc.so.6) [ld-2.23.so](https://2019shell1.picoctf.com/static/b53566a7a55dd9ef5954e859d56c143d/sice_cream)
 

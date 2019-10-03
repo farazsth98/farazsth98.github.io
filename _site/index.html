@@ -149,6 +149,24 @@
    </article>
   
   <article class="post-preview">
+    <a href="/2019-10-12-picoctf-2019-zero-to-hero/">
+	  <h2 class="post-title">picoCTF 2019: zero_to_hero (Glibc-2.29 Heap Exploitation)</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on October 12, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      Disclaimer: I didn’t actually participate in picoCTF 2019. r4j from JHDiscord sent me the binary for this challenge so I could give it a shot. This is essentially a tcache poisoning attack using a double free. We just have to bypass the new double free security check introduced in glibc...
+	  <a href="/2019-10-12-picoctf-2019-zero-to-hero/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
     <a href="/2019-10-12-picoctf-2019-ghostdiary/">
 	  <h2 class="post-title">picoCTF 2019: Ghost_Diary (Glibc-2.27 Heap Exploitation)</h2>
 
@@ -198,24 +216,6 @@
 <!--    <div class="post-entry">
       Very tiny binary. I used SigReturn Oriented Programming (SROP) to exploit it. Challenge Category: pwn Points: 100 Solves: ~150 you were a baby boi earlier, can you be a small boi now? nc pwn.chal.csaw.io 1002 Solution We get given a very tiny binary with only three functions. We have start...
 	  <a href="/2019-09-16-csaw-quals-small-boi/" class="post-read-more">[Read&nbsp;More]</a>
-    </div>
---!>
-   </article>
-  
-  <article class="post-preview">
-    <a href="/2019-09-16-csaw-quals-baby-boi/">
-	  <h2 class="post-title">CSAW Qualifiers 2019: baby_boi</h2>
-
-	  
-    </a>
-
-    <p class="post-meta">
-      Posted on September 16, 2019
-    </p>
-
-<!--    <div class="post-entry">
-      This binary had a very simple stack buffer overflow with NX enabled. It required a ret2libc attack, however calling system once didn’t work because of the condition the stack was in, so I had to add more input into the payload to create a valid stack frame. More information in...
-	  <a href="/2019-09-16-csaw-quals-baby-boi/" class="post-read-more">[Read&nbsp;More]</a>
     </div>
 --!>
    </article>
