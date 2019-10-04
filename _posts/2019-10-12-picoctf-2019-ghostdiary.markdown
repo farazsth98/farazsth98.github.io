@@ -802,7 +802,7 @@ for i in range(7):
 
 # Make chunk A go into unsorted bin
 # This is important because we are consolidating chunk C back with both chunks A and B
-# Meaning that unlink will be called
+# Meaning that unlink will be called with chunk A as it's second argument
 # unlink has some security checks, one being that A's fd and bk must have valid pointers
 # This free will put the pointers to `main_arena+0x58` into the fd and bk of A
 free(0)
