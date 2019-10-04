@@ -6,15 +6,13 @@ categories: pwn
 tags: picoCTF-2019
 ---
 
-Disclaimer: I didn't actually participate in picoCTF 2019. `r4j` from JHDiscord sent me the binary for this challenge so I could give it a shot.
-
 This is essentially a tcache poisoning attack using a double free. We just have to bypass the new double free security check introduced in glibc 2.28. Of course, just a double free is not enough to solve it, so the author `poortho` (amazing challenge author by the way) also conveniently put in a single NULL byte overflow vulnerability.
 
 ### **Challenge**
 
 * **Category:** pwn
 * **Points:** 500
-* **Solves:** 20-30 is what I would guess. Did not have the challenge unlocked to check.
+* **Solves:** 15
 
 >Now you're really cooking. Can you pwn [this](https://2019shell1.picoctf.com/static/40beb534349dda031d3c84a1ac1b4710/zero_to_hero) service?. Connect with `nc 2019shell1.picoctf.com 49929`. [libc.so.6](https://2019shell1.picoctf.com/static/40beb534349dda031d3c84a1ac1b4710/libc.so.6) [ld-2.29.so](https://2019shell1.picoctf.com/static/40beb534349dda031d3c84a1ac1b4710/ld-2.29.so)
 
@@ -57,7 +55,7 @@ For an introduction on how the tcache works, I would suggest reading my writeup 
 
 #### Tcache double free mitigation post glibc-2.28
 
-Before glibc-2.28, you could double free tcache chunks as many times as you'd want so long as the corresponding tcache bin didn't fill up to its max limit of 7. This starting becoming such a huge problem, that a mitigation was added in glibc-2.28, as follows:
+Before glibc-2.28, you could double free tcache chunks as many times as you'd want so long as the corresponding tcache bin didn't fill up to its max limit of 7. This started being used so much for exploits, that a mitigation was added in glibc-2.28, as follows:
 ```c
 /* We overlay this structure on the user-data portion of a chunk when
    the chunk is stored in the per-thread cache.  */
@@ -71,7 +69,7 @@ typedef struct tcache_entry
 
 Since the `bk` pointer isn't actually used in the tcache, a `key` attribute was added to the `tcache_entry` struct, whose primary reason for existence was to detect double frees. How does it work?
 
-In order to understand we, we must look at the code for the `tcache_get` and `tcache_put` functions
+In order to understand it completely, we must look at the code for the `tcache_get` and `tcache_put` functions:
 ```c
 /* Caller must ensure that we know tc_idx is valid and there's room
    for more chunks.  */
@@ -105,9 +103,9 @@ tcache_get (size_t tc_idx)
 }
 ```
 
-Essentially, whenever we free a tcache chunk, `tcache_put` will be called, and the chunk's `bk` field will be set to the address of the `tcache_perthread_struct` on the heap. [1]
+Essentially, whenever we free a tcache chunk, `tcache_put` will be called, and `e->key` (the chunk's `bk` field) will be set to the address of the `tcache_perthread_struct` on the heap (amongst other things). [1]
 
-Likewise, whenever we get a tcache chunk out of a tcache bin, `tcache_get` will be called which will null out this `bk` field.
+Likewise, whenever we get a tcache chunk out of a tcache bin, `tcache_get` will be called which will null `e->key`.
 
 As the comment says, the chunk is marked as "in the tcache" so that `_int_free` can make sure the chunk isn't being double freed. The check in `_int_free` is as follows:
 ```c
@@ -162,7 +160,7 @@ Knowing all this, we can double free in the following two ways:
 
 1. Free the chunk, then use a UAF to overwrite `chunk->key` to any other value, and we will be able to free it again.
 
-2. Free the chunk into one tcache bin, then change its size. You can immediately free it again and put it into a different tcache bin. You can then get the chunk back from the old tcache bin (prior to its size change), and then free the chunk you just got back again. Now the new (second) tcache bin will have a double freed chunk in it.
+2. Free the chunk into one tcache bin, then change its size. You can immediately free it again and put it into a different tcache bin. You can then get the chunk back from the old tcache bin (prior to its size change) and immediately free it again due to the `e->key` field being nulled out. Now the new (second) tcache bin will have a double freed chunk in it.
 
 For this challenge, we utilize the single NULL byte overflow to do it the second way.
 
@@ -215,7 +213,7 @@ if not args.REMOTE and args.GDB:
     debug([])
 ```
 
-Now, we do the following steps in order using our knowledge of how the new mitigation works.
+Now, we do the following steps in order, using our knowledge of how the new mitigation works.
 
 First, we answer the initial question with a 'y'. We then use the leaked address of `system` to calculate the libc base address and subsequently the address of `__free_hook`:
 ```python
@@ -232,7 +230,7 @@ log.info('system: ' + hex(system))
 log.info('__free_hook: ' + hex(free_hook))
 ```
 
-Next we need to add two chunks. The first chunk's size doesn't matter, I arbitrarily choose 0x58 (chunk 0). The second chunk though has to be a size >= 0x110. I arbitrarily chose 0x180 (chunk 1).
+Next we need to add two chunks. The first chunk's size doesn't matter, I arbitrarily choose 0x58 (chunk 0). The second chunk though has to be a size >= 0x100. I arbitrarily chose 0x180 (chunk 1).
 
 We will free chunk 0, then chunk 1. Chunk 0 will go into the 0x50 tcache bin, while chunk 1 will go into the 0x180 tcache bin. I then get back chunk 0, and use the single NULL byte overflow to overwrite chunk 1's size from 0x191 to 0x100. I also set the first 8 bytes of chunk 0 to `'/bin/sh\x00'` for later use.
 
@@ -250,7 +248,8 @@ free(1) # Goes into 0x180 tcache bin
 # Also put in /bin/sh\x00 into it for later use
 add(0x58, '/bin/sh\x00' + 'A'*0x50) # Chunk A
 
-# The 0x180 chunk's size is now actually 0x100 (due to null byte overflow), so we can free it again
+# The 0x180 chunk's size is now actually 0x100 (due to null byte overflow)
+# This means we can free it again immediately
 free(1) # Goes into 0xf0 tcache bin
 ```
 

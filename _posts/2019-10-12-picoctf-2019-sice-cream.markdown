@@ -6,9 +6,9 @@ categories: pwn
 tags: picoCTF-2019
 ---
 
-Disclaimer: I didn't actually participate in picoCTF 2019. `r4j` from JHDiscord sent me the binary for this challenge so I could give it a shot.
+The solution that I came up with (including some help :P) for this challenge is absolutely mind blowing. I'm still not sure if it's the intended solution.
 
-The solution is absolutely mind blowing. I'm still not sure if it's the intended solution.
+There is also what I think is the official solution (`NotDeGhost` from redpwn told me about it after I solved it), so I will showcase that at the end of this writeup as well.
 
 I usually put a TL;DR here, but no TL;DR will sufficiently show how amazing this challenge is. Huge props to the author `poortho`.
 
@@ -16,15 +16,13 @@ I usually put a TL;DR here, but no TL;DR will sufficiently show how amazing this
 
 * **Category:** pwn
 * **Points:** 500
-* **Solves:** 15-20 is what I would guess. Did not have the challenge unlocked to check.
+* **Solves:** 14
 
 >Just pwn this [program](https://2019shell1.picoctf.com/static/b53566a7a55dd9ef5954e859d56c143d/sice_cream) and get a flag. Connect with `nc 2019shell1.picoctf.com` 6552 . [libc.so.6](https://2019shell1.picoctf.com/static/b53566a7a55dd9ef5954e859d56c143d/libc.so.6) [ld-2.23.so](https://2019shell1.picoctf.com/static/b53566a7a55dd9ef5954e859d56c143d/sice_cream)
 
 ### **Solution**
 
-Note that there is my solution (which is pretty insane), but there's also a much easier solution that I will showcase at the end.
-
-Disclaimer 2: I won't cover the basics of heap exploitation in this post. I have one post relating to a very easy glibc 2.23 heap exploitation challenge ([BSides Delhi 2019: message_saver](/2019-09-30-bsides-delhi-message-saver/)), and another going much more in-depth with regards to how `malloc` and `free` kind of function, as well as what chunks and bins are ([picoCTF 2019: Ghost_Diary](/2019-10-12-picoctf-2019-ghostdiary/)). If the terminology is unfamiliar to you, I suggest going through those writeups.
+Disclaimer: I won't cover the basics of heap exploitation in this post. I have one post relating to a very easy glibc 2.23 heap exploitation challenge ([BSides Delhi 2019: message_saver](/2019-09-30-bsides-delhi-message-saver/)), and another going much more in-depth with regards to how `malloc` and `free` kind of function, as well as what chunks and bins are ([picoCTF 2019: Ghost_Diary](/2019-10-12-picoctf-2019-ghostdiary/)). If the terminology is unfamiliar to you, I suggest going through those writeups.
 
 #### Reverse Engineering the binary
 
@@ -124,7 +122,7 @@ The way I got the libc leak was to do the following steps:
 
 5. Now we reintroduce ourselves again and make the chunk header a size of 0x91 and create a bunch of fake chunks
 
-6. Free the chunk, and it places the address of `main_arena + 0x58` into the fd and bk
+6. Free the chunk, and it places the address of `main_arena + 0x58` into the `fd` and `bk` fields of our "fake" chunk
 
 7. Leak it by reintroducing ourselves and typing in enough characters
 
@@ -202,7 +200,9 @@ Here is where the exploit gets very interesting. Here is what I tried initially:
 
 3. Then, I tried to do the House of Orange attack. However, I've actually never done that attack before, and from my limited knowledge of it, it seemed like the 0x58 size constraint prevented me from doing that attack as well (FAILED).
 
-I spent about a day and a half doing all of that, and kept trying to look for similar writeups. I was then told by NotDeGhost from redpwn that the author `poortho` had made a similar challenge in the past. A little bit of doxxing and I found this one writeup of `hard_heap` from HSCTF-6, which had a broken link, but I could go on the author's github and download the `index.html` file that was used for the writeup and then view it in Firefox. This person did this brilliant attack where they overwrote the top chunk pointer in the `main_arena` to `__malloc_hook - 0x15`. What happens then is that any request for memory that has to be serviced using the top chunk will give a chunk at `__malloc_hook - 0x15`, which can be used to overwrite `__malloc_hook`.
+I spent about a day and a half doing all of that, and kept trying to look for similar writeups. I was then told by NotDeGhost from redpwn that the author `poortho` had made a similar challenge in the past. A little bit of doxxing and I found this one writeup of `hard_heap` from HSCTF-6, which had a broken link, but I could go on the author's github and download the `index.html` file that was used for the writeup and then view it in Firefox.
+
+This person did this brilliant attack where they overwrote the top chunk pointer in the `main_arena` to `__malloc_hook - 0x15`. What happens then is that any request for memory that has to be serviced using the top chunk will give a chunk at `__malloc_hook - 0x15`, which can be used to overwrite `__malloc_hook`.
 
 The only constraint here is that the address we overwrite the top chunk pointer with must have chunk metadata right above it that makes it look like the top chunk. If you are unsure what that looks like, you may view my writeup of [message_saver](/2019-09-30-bsides-delhi-message-saver/) to see how it looks like in memory.
 ```c
@@ -224,7 +224,7 @@ struct malloc_state
 	...
 ```
 
-Of course none of the one gadgets worked. It would be a bad challenge if it was exactly the same as his previous challenge right? So I had to come up with something else. NotDeGhost had also told me that it was possible to overwrite `__free_hook` somehow, and after a while, this is the solution I came up with:
+Of course when I tried to do the same thing, none of the one gadgets worked. It would be a bad challenge if it was exactly the same as his previous challenge right? So I had to come up with something else. NotDeGhost had also told me that it was possible to overwrite `__free_hook` somehow, and after a while, this is the solution I came up with:
 
 First, using the leaked `__free_hook` address, I tried to see if there was a place above `__free_hook` where I could point the top chunk pointer to. After a bunch of trial and error, I found this:
 ```c
@@ -298,9 +298,9 @@ fake_chunk_top = main_arena + 0x10 - 0x6
 gef➤  x/12gx 0x7f19ee5d4b20          .--------------------- Our freed 0x20 chunk
 0x7f19ee5d4b20: 0x0000000000000000   |  0x0000000000000000
 0x7f19ee5d4b30: 0x0000000000602040 <-   0x0000000000000000
-0x7f19ee5d4b40: 0x0000000000000000      0x0000000000602040
-0x7f19ee5d4b50: 0x0000000000000000      0x0000000000000000
-0x7f19ee5d4b60: 0x0000000000000000      0x0000000000000000
+0x7f19ee5d4b40: 0x0000000000000000      0x0000000000602040 <-.
+0x7f19ee5d4b50: 0x0000000000000000      0x0000000000000000 Freed 0x60 chunk in preparation
+0x7f19ee5d4b60: 0x0000000000000000      0x0000000000000000 for the fastbin attack
 0x7f19ee5d4b70: 0x0000000000000000      0x00000000011e3120
 gef➤  x/12gx 0x7f19ee5d4b20 + 0x10 - 0x6
 0x7f19ee5d4b2a: 0x2040000000000000      0x0000000000000060 <- looks like a fake chunk
@@ -824,7 +824,7 @@ Then, just overwrite `__malloc_hook` with our working one gadget, and cause
 a double free error. The double free error will call these functions in order:
 
 free -> __libc_free -> _int_free -> malloc_printerr -> __libc_message
--> backtrace_and_maps -> init() -> dlerror_run -> _dl_catch_error
+-> backtrace_and_maps -> init -> dlerror_run -> _dl_catch_error
 -> _dl_open -> _dl_catch_error -> dl_open_worker -> _dl_map_object
 -> _dl_load_cache_lookup -> __strdup
 
@@ -855,11 +855,10 @@ fake_chunk_top = main_arena + 0x10 - 0x6
 # We set our fake chunk's fd pointer to point to our fake chunk in main arena
 reintroduce(p64(0) + p64(0x61) + p64(fake_chunk_top) + p64(0))
 
-# Chunk 9 will be in main arena, we overwrite it with malloc_hook-0x15
-# If you look at that address-0x10, it looks like the top chunk header
+# Chunk 9 will be in main arena, we overwrite the top chunk ptr with malloc_hook-0x15
+# If you look at that malloc_hook-0x25, it looks like the top chunk header
 # So we set the top chunk pointer to that address (malloc_hook-0x15)
 add(0x50, 'B'*0x50) # 8
-#add(0x50, '\x00'*0x3e + p64(free_hook - 0x1100 + 0x70 - 0x5)) # 9
 add(0x50, '\x00'*0x3e + p64(malloc_hook - 0x15))
 
 # Now overwrite with one gadget
