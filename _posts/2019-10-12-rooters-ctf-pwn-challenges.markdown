@@ -166,6 +166,7 @@ Just a simple SROP (SigReturn Oriented Programming) challenge. I did two `rt_sig
 
 2. In the second `rt_sigreturn` syscall, I just do an `execve` syscall with the now existing '/bin/sh\x00' string in memory.
 
+You may need to run the exploit remotely a couple of times. Doesn't seem to be completely reliable due to network lag? It works perfectly locally.
 ```python
 #!/usr/bin/env python2
 
@@ -340,6 +341,7 @@ After that it was just a tcache poisoning attack to get a chunk on `__free_hook`
 
 Again there really isn't much to explain regarding the leak. I just viewed the heap a couple times, did some trial and error with creating messages and messing around with the LSB of the fd pointer after the double free, and for some reason the last `message('A'*0x30)` puts a libc address into the heap. No idea why, but I'll take what I can get.
 
+Exploit doesn't seem to be completely reliable remotely, but works perfectly fine locally. Might have to run it a couple times to get it to work remotely.
 ```python
 #!/usr/bin/env python2
 
@@ -536,6 +538,8 @@ log.info('system: ' + hex(system))
 ```
 
 Then I chose to use the format string vulnerability to write the address of `system` into `strncmp`'s GOT address. This way, whenever we type a command, when `strncmp(cmd, ...)` gets called, it will actually call `system(cmd)`.
+
+You might have to run the exploit a couple times remotely to get it to work. It works 100% locally.
 ```python
 #!/usr/bin/env python2
 
