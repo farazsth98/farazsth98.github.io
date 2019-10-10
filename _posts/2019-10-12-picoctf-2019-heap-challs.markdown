@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "picoCTF 2019: Heap Exploitation Challenges"
+title:  "picoCTF 2019: Heap Exploitation Challenges (Glibc 2.23, 2.27, 2.29)"
 date:   2019-10-12 00:00:00 +0800
 categories: pwn
 tags: picoCTF-2019
@@ -23,7 +23,7 @@ Please use the links below to jump straight to whichever challenge you want to h
 
 # ghost_diary
 
-Disclaimer: This writeup goes into extreme detail, so if you want to instead have a look at zero_to_hero or sice_cream, I'd suggest clicking to those from above. Otherwise you'll have a lot of scrolling to do.
+Disclaimer: This writeup goes into extreme detail, so if you want to instead have a look at `zero_to_hero` or `sice_cream`, I'd suggest clicking to those from above. Otherwise you'll have a lot of scrolling to do.
 
 This is a glibc-2.27 heap exploitation challenge with a single NULL byte overflow vulnerability. We have to utilize that to create overlapped chunks in order to be able to get a libc leak as well as perform a double free. The double free will let us to overwrite `__free_hook` to `system` and get a shell.
 
