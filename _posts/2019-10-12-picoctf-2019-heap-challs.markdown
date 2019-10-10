@@ -31,7 +31,7 @@ This is a glibc-2.27 heap exploitation challenge with a single NULL byte overflo
 
 * **Category:** pwn
 * **Points:** 500
-* **Solves:** 15
+* **Solves:** 63
 
 >Try writing in this [ghost diary](https://2019shell1.picoctf.com/static/2136859eaddb15400ec3328f017e1df8/ghostdiary). Its also found in /problems/ghost-diary_4_f7e6ee76ec07e6866ddc813917b94545 on the shell server.
 
@@ -941,7 +941,7 @@ This is essentially a tcache poisoning attack using a double free. We just have 
 
 * **Category:** pwn
 * **Points:** 500
-* **Solves:** 15
+* **Solves:** 31
 
 >Now you're really cooking. Can you pwn [this](https://2019shell1.picoctf.com/static/40beb534349dda031d3c84a1ac1b4710/zero_to_hero) service?. Connect with `nc 2019shell1.picoctf.com 49929`. [libc.so.6](https://2019shell1.picoctf.com/static/40beb534349dda031d3c84a1ac1b4710/libc.so.6) [ld-2.29.so](https://2019shell1.picoctf.com/static/40beb534349dda031d3c84a1ac1b4710/ld-2.29.so)
 
@@ -1366,7 +1366,7 @@ I usually put a TL;DR here, but no TL;DR will sufficiently show how amazing this
 
 * **Category:** pwn
 * **Points:** 500
-* **Solves:** 14
+* **Solves:** 25
 
 >Just pwn this [program](https://2019shell1.picoctf.com/static/b53566a7a55dd9ef5954e859d56c143d/sice_cream) and get a flag. Connect with `nc 2019shell1.picoctf.com` 6552 . [libc.so.6](https://2019shell1.picoctf.com/static/b53566a7a55dd9ef5954e859d56c143d/libc.so.6) [ld-2.23.so](https://2019shell1.picoctf.com/static/b53566a7a55dd9ef5954e859d56c143d/sice_cream)
 
