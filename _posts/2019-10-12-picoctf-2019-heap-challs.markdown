@@ -978,9 +978,19 @@ It has the following functionality:
 
 4. Each chunk is stored in a global array, and when you `free` a chunk, its pointer in that array is not nulled out. Therefore, we can do double frees on these chunks.
 
+When providing a description for a superpower, there is a single null byte overflow. The code does something like this:
+```c
+puts("What is the length of your description?")
+printf("> ");
+scanf("%u", &size);
+...
+description = globalArray[nextIdx];
+description[read(0, globalArray[nextIdx], size)] = 0 // NULL byte overflow here
+```
+
 This challenge is actually really simple, but it requires some background knowledge about how the tcache works and how the mitigation that was introduced in glibc-2.28 works as well.
 
-For an introduction on how the tcache works, I would suggest reading my writeup of [Ghost_Diary](/2019-10-12-picoctf-2019-ghostdiary/) from picoCTF 2019. I will only talk about the new mitigations here.
+For an introduction on how the tcache works, I would suggest reading my writeup of [Ghost_Diary](/2019-10-12-picoctf-2019-heap-challs/#ghost_diary) from picoCTF 2019. I will only talk about the new mitigations here.
 
 #### Tcache double free mitigation post glibc-2.28
 
