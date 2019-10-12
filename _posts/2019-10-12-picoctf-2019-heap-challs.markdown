@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "picoCTF 2019: Heap Exploitation Challenges (Glibc 2.23, 2.27, 2.29)"
-date:   2019-11-30 00:00:00 +0800
+date:   2019-10-12 00:00:00 +0800
 categories: pwn
 tags: picoCTF-2019
 ---
