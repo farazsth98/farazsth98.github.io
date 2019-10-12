@@ -28,8 +28,8 @@ I played this CTF with the team `warlock_rootx`. The pwn challenges were pretty 
 ### **Challenge**
 
 * **Category:** pwn
-* **Points:** 463
-* **Solves:** 30
+* **Points:** 254
+* **Solves:** 75
 
 >Mommy what is stack overflow?
 >
@@ -39,6 +39,8 @@ I played this CTF with the team `warlock_rootx`. The pwn challenges were pretty 
 
 
 ### **Solution**
+
+Glibc version is 2.27 which was found out by using the leak + niklasb's libc database.
 
 This was a very simple ret2libc exploit with ASLR enabled. I won't go into too much detail as there are already tons of writeups and tutorials on how to do a ret2libc attack. You may refer to my comments below for some explanation.
 ```python
@@ -149,8 +151,8 @@ $
 ### **Challenge**
 
 * **Category:** pwn
-* **Points:** 463
-* **Solves:** 30
+* **Points:** 462
+* **Solves:** 32
 
 >Secure ROP anyone?
 >
@@ -277,8 +279,8 @@ $
 ### **Challenge**
 
 * **Category:** pwn
-* **Points:** 499
-* **Solves:** 7
+* **Points:** 493
+* **Solves:** 15
 
 >We created a super secure user administration system can you guys help us find the unknown vulnerability.
 >
@@ -287,6 +289,8 @@ $
 >Author: codacker
 
 ### **Solution**
+
+Glibc version for this challenge is libc 2.27.
 
 To be honest, I don't really know how I came up with the solution for this challenge. I trial and errored my way to getting the leak. After that, it was very easy.
 
@@ -489,8 +493,8 @@ This challenge originally had Full RELRO set. I was almost finished solving it b
 ### **Challenge**
 
 * **Category:** pwn
-* **Points:** 499
-* **Solves:** 6
+* **Points:** 464
+* **Solves:** 31
 
 >xsh is an sh-compatible command language interpreter that executes commands read from the standard input or from a file. xsh also incorporates useful features from the Korn and C shells (ksh and csh).
 >
