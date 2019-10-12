@@ -25,7 +25,7 @@ Please use the links below to jump straight to whichever challenge you want to h
 
 Disclaimer: This writeup goes into extreme detail, so if you want to instead have a look at `zero_to_hero` or `sice_cream`, I'd suggest clicking to those from above. Otherwise you'll have a lot of scrolling to do.
 
-This is a glibc-2.27 heap exploitation challenge with a single NULL byte overflow vulnerability. We have to utilize that to create overlapped chunks in order to be able to get a libc leak as well as perform a double free. The double free will let us to overwrite `__free_hook` to `system` and get a shell.
+This is a glibc-2.27 heap exploitation challenge with a single NULL byte overflow vulnerability. We have to utilize that to create overlapped chunks in order to be able to get a libc leak as well as perform a double free. The double free will let us to overwrite `__free_hook` to a one gadget and get a shell.
 
 ### **Challenge**
 
