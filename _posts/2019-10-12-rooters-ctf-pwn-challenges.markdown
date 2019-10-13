@@ -3,7 +3,7 @@ layout: post
 title:  "Rooters CTF: Pwn Challenges"
 date:   2019-10-12 14:30:00 +0800
 categories: pwn
-tags: picoCTF-2019
+tags: Rooters-CTF
 ---
 
 I played this CTF with the team `warlock_rootx`. The pwn challenges were pretty good, I solved all of them except for one.
