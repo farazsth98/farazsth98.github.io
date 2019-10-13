@@ -60,7 +60,7 @@ url-pretty: "syedfarazabrar.com"  # eg. "deanattali.com/beautiful-jekyll"
 #disqus: "murraysblog2016"
 
 # Fill in your Google Analytics ID to track your website using GA
-#google_analytics: "UA-80550432-1"
+google_analytics: "UA-144659970-1"
 
 # --- Don't need to touch anything below here (but you can if you want) --- #
 
