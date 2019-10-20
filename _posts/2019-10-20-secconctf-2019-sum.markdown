@@ -170,10 +170,6 @@ def debug(breakpoints):
         script += "b *0x%x\n"%(bp)
     gdb.attach(p,gdbscript=script)
 
-def overwrite(src, dest):
-    p.recv()
-    p.sendline('{} -1 -1 1 1 {}'.format(dest - src, src))
-
 context.terminal = ['tmux', 'new-window']
 
 p = start()
