@@ -56,7 +56,7 @@ First, the heap leak is easy. I added one chunk and freed it four times to get t
 After the four frees, simply showing this chunk will give us a heap leak since its FD pointer will point to itself:
 ```python
 # ----------- Heap Leak ------------
-# Four chunks to prep
+# Prepare
 add('A'*0x3e)
 
 # We do four frees to keep the 0x40 tcache bin count correct
@@ -233,7 +233,7 @@ if args.GDB:
     debug([])
 
 # ----------- Heap Leak ------------
-# Four chunks to prep
+# Prepare
 add('A'*0x3e)
 
 # We do four frees to set the 0x40 tcache bin count to 4
