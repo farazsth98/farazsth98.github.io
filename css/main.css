@@ -9,6 +9,7 @@ body {
   color: #404040;
   position: relative;
   background: #FFF;
+  background-image: url("/images/bg-net.png");
 }
 p {
   line-height: 1.5;
