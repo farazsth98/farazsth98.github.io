@@ -6,11 +6,13 @@ categories: pwn
 tags: BackdoorCTF
 ---
 
-I played this CTF with 0x1 and got 6th place.
+I played this CTF with 0x1 and got 9th place.
 
 This was almost the exact same challenge as HITCON CTF 2019 Qualifer's Trick or Treat. Only 5 people solved it including me. I am not sure why..
 
 ### Challenge
+
+**Points**: 405
 
 >Trick-or-treat Revenge.
 >

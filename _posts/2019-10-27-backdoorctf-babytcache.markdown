@@ -21,6 +21,8 @@ TL;DR:
 
 ### Challenge
 
+**Points**: 201
+
 > At least let me free 7 tcaches.
 >
 > [http://backdoor.static.beast.sdslabs.co/static/babytcache/babytcache](http://backdoor.static.beast.sdslabs.co/static/babytcache/babytcache)
@@ -33,7 +35,7 @@ TL;DR:
 >
 >Created by: [Nipun Gupta](https://backdoor.sdslabs.co/users/fs0ciety)
 >
->No. of Correct Submissions: 18
+>No. of Correct Submissions: 22
 
 ### Solution
 

@@ -24,6 +24,8 @@ TL;DR:
 
 ### Challenge
 
+**Points**: 286
+
 >Just another babyheap challenge.
 >
 >[http://backdoor.static.beast.sdslabs.co/static/babyheap/babyheap](http://backdoor.static.beast.sdslabs.co/static/babyheap/babyheap)
@@ -36,7 +38,7 @@ TL;DR:
 >
 >Created by: [Nipun Gupta](https://backdoor.sdslabs.co/users/fs0ciety)
 >
->No. of Correct Submissions: 8
+>No. of Correct Submissions: 12
 
 ### Solution
 
