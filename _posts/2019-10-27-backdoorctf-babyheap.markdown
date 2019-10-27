@@ -6,7 +6,7 @@ categories: pwn
 tags: BackdoorCTF
 ---
 
-I played this CTF with 0x1 and got 6th place.
+I played this CTF with 0x1 and got 9th place.
 
 This was a Glibc 2.23 challenge with `global_max_fast` set to 0x10, meaning we have no access to the fastbin.
 
