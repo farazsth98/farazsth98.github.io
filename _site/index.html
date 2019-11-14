@@ -152,7 +152,7 @@
     </p>
 
 <!--    <div class="post-entry">
-      I played this CTF with 0x1 and got 6th place. This was almost the exact same challenge as HITCON CTF 2019 Qualifer’s Trick or Treat. Only 5 people solved it including me. I am not sure why.. I won’t go into much detail about this challenge since you can just...
+      I played this CTF with 0x1 and got 9th place. This was almost the exact same challenge as HITCON CTF 2019 Qualifer’s Trick or Treat. Only 5 people solved it including me. I am not sure why.. Challenge Points: 405 Trick-or-treat Revenge. http://backdoor.static.beast.sdslabs.co/static/trick-repeat/miscpwn http://backdoor.static.beast.sdslabs.co/static/trick-repeat/libc.so.6 nc 51.158.118.84 17004 Flag format: CTF{…}...
 	  <a href="/2019-10-27-backdoorctf-miscpwn/" class="post-read-more">[Read&nbsp;More]</a>
     </div>
 --!>
@@ -170,7 +170,7 @@
     </p>
 
 <!--    <div class="post-entry">
-      I played this CTF with 0x1 and got 6th place. This was a Glibc 2.23 challenge with global_max_fast set to 0x10, meaning we have no access to the fastbin. TL;DR: Free a chunk into the unsorted bin One byte brute force to overwrite the bk pointer of the free unsorted...
+      I played this CTF with 0x1 and got 9th place. This was a Glibc 2.23 challenge with global_max_fast set to 0x10, meaning we have no access to the fastbin. TL;DR: Free a chunk into the unsorted bin One byte brute force to overwrite the bk pointer of the free unsorted...
 	  <a href="/2019-10-27-backdoorctf-babyheap/" class="post-read-more">[Read&nbsp;More]</a>
     </div>
 --!>
@@ -188,7 +188,7 @@
     </p>
 
 <!--    <div class="post-entry">
-      I played this CTF with 0x1 and got 6th place. This was a very trivial tcache challenge. TL;DR: Leak a heap address using double free. Tcache poisoning attack to get a chunk right in the tcache_perthread_struct structure at the beginning of the heap. Overwrite the count of 0x80 tcache bin...
+      I played this CTF with 0x1 and got 9th place. This was a very trivial tcache challenge. TL;DR: Leak a heap address using double free. Tcache poisoning attack to get a chunk right in the tcache_perthread_struct structure at the beginning of the heap. Overwrite the count of 0x80 tcache bin...
 	  <a href="/2019-10-27-backdoorctf-babytcache/" class="post-read-more">[Read&nbsp;More]</a>
     </div>
 --!>
@@ -230,17 +230,296 @@
 --!>
    </article>
   
+  <article class="post-preview">
+    <a href="/2019-10-20-secconctf-2019-one/">
+	  <h2 class="post-title">SECCON 2019 Online CTF: one (pwn, heap, glibc-2.27)</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on October 20, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      I didn’t get much time this weekend for this CTF due to having to study for two tests. I only spent a couple hours and managed to solve one and sum, the two easy pwn challenges. one was a glibc 2.27 heap exploitation challenge. It has a UAF vulnerability when...
+	  <a href="/2019-10-20-secconctf-2019-one/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-10-14-hitconctf-2019-trick-or-treat/">
+	  <h2 class="post-title">HITCON CTF 2019: Trick or Treat (pwn+misc)</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on October 14, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      HITCON CTF 2019 Qualifiers just finished this weekend, and it was fun! I played with my team 0x1 and got 59th place. I’ve only been really participating in CTFs for about 4.5 months now, and this was my first “hard” level CTF where I actually solved a challenge! Credits to...
+	  <a href="/2019-10-14-hitconctf-2019-trick-or-treat/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-10-12-rooters-ctf-pwn-challenges/">
+	  <h2 class="post-title">Rooters CTF: Pwn Challenges</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on October 12, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      I played this CTF with the team warlock_rootx. The pwn challenges were pretty good, I solved all of them except for one. Challenges baby pwn Secure ROP USER ADMINISTRATION xsh baby pwn Challenge Category: pwn Points: 254 Solves: 75 Mommy what is stack overflow? nc 35.188.73.186 1111 Author: codacker Solution...
+	  <a href="/2019-10-12-rooters-ctf-pwn-challenges/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-10-12-picoctf-2019-heap-challs/">
+	  <h2 class="post-title">picoCTF 2019: Heap Exploitation Challenges (Glibc 2.23, 2.27, 2.29)</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on October 12, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      I wasn’t initially planning on playing picoCTF 2019, as the challenges are generally extremely easy. That was until one of my friends told me about ghost_diary. Of course I’m down if there are some heap exploitation challenges! Please use the links below to jump straight to whichever challenge you want...
+	  <a href="/2019-10-12-picoctf-2019-heap-challs/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-09-30-bsides-delhi-message-saver/">
+	  <h2 class="post-title">BSides Delhi 2019: message_saver (Glibc-2.23 Heap Exploitation)</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on September 30, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      BSides Delhi 2019 turned up with some amazing pwn challenges this year. I was only able to solve this one, but big props to the organizers and challenge authors for an amazing CTF! This is a glibc 2.23 heap exploitation challenge. There is a UAF (use-after-free) vulnerability in the program....
+	  <a href="/2019-09-30-bsides-delhi-message-saver/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-09-16-csaw-quals-small-boi/">
+	  <h2 class="post-title">CSAW Qualifiers 2019: small_boi</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on September 16, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      Very tiny binary. I used SigReturn Oriented Programming (SROP) to exploit it. Challenge Category: pwn Points: 100 Solves: ~150 you were a baby boi earlier, can you be a small boi now? nc pwn.chal.csaw.io 1002 Solution We get given a very tiny binary with only three functions. We have start...
+	  <a href="/2019-09-16-csaw-quals-small-boi/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-09-16-csaw-quals-baby-boi/">
+	  <h2 class="post-title">CSAW Qualifiers 2019: baby_boi</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on September 16, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      This binary had a very simple stack buffer overflow with NX enabled. It required a ret2libc attack, however calling system once didn’t work because of the condition the stack was in, so I had to add more input into the payload to create a valid stack frame. More information in...
+	  <a href="/2019-09-16-csaw-quals-baby-boi/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-09-08-defcamp-secret/">
+	  <h2 class="post-title">DefCamp Qualifiers 2019: secret</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on September 8, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      This binary had a format string vulnerability + a stack buffer overflow vulnerability. We use the format string vulnerability to leak the stack canary and a libc address from the stack. Calculate libc base address then find the address of system and a /bin/sh string, then call system(&quot;/bin/sh&quot;) to get...
+	  <a href="/2019-09-08-defcamp-secret/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-09-08-defcamp-get-access/">
+	  <h2 class="post-title">DefCamp Qualifiers 2019: get-access</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on September 8, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      A classic blind format string challenge where you had to dump the entire binary to get the flag. Challenge Category: pwn Points: 105 Solves: 68 Can you pwn this? Target: 206.81.24.129:1337 Author: Andrei Solution Before continuing, I highly suggest watching LiveOverflow’s video of the ESPR challenge from 33c3ctf if you...
+	  <a href="/2019-09-08-defcamp-get-access/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-08-26-hackcon-babypwn/">
+	  <h2 class="post-title">HackCon 2019: babypwn</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on August 26, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      A binary that doesn’t require EIP control to exploit it. It has none of the obvious vulnerabilities (buffer overflow, format string, etc) but does have a very specific vulnerability that you had to find through reverse engineering. Disclaimer: I didn’t solve this challenge during the ctf. After it was over,...
+	  <a href="/2019-08-26-hackcon-babypwn/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-08-23-hackcon-not-so-easy-b0f/">
+	  <h2 class="post-title">HackCon 2019: Not So Easy Bof</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on August 23, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      A binary with a format string and a stack buffer overflow vulnerability with all protection mechanisms enabled. Challenge Category: pwn Points: 469 Solves: 29 I have stack canaries enabled, Can you still B0f me ? Service : nc 68.183.158.95 8991 The challenge provided the following files. q3 libc.so.6 Solution To...
+	  <a href="/2019-08-23-hackcon-not-so-easy-b0f/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-07-28-regex-based-blind-sql-injection-attacks/">
+	  <h2 class="post-title">Regex-based Blind SQL Injection Attacks</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on July 28, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      A guide detailing how a blind SQL injection attack works. It uses my Philips and Over challenge writeup from PeaCTF 2019 Qualifiers as an example. Introduction I recently participated in PeaCTF and came across a very well made web exploitation challenge. It required participants to perform a blind SQL injection...
+	  <a href="/2019-07-28-regex-based-blind-sql-injection-attacks/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-07-28-peactf-all-challenges/">
+	  <h2 class="post-title">PeaCTF Qualifiers (13th Place): All Challenges</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on July 28, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      PeaCTF was a CTF created for high school students, so it’s a little bit on the easier side. I ended at 13th place, finishing all challenges. Breakfast Challenge Solution Broken Keyboard Challenge Solution Worth Challenge Solution Hide and Seek Challenge Solution School Challenge Solution Choose your Pokemon Challenge Solution Coffee...
+	  <a href="/2019-07-28-peactf-all-challenges/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-07-19-rop-emporium-challenges/">
+	  <h2 class="post-title">ROP Emporium Challenges</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on July 19, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      I started doing the challenges from ROP Emporium because I wanted to start really learning about Return Oriented Programming. These are my writeups for the challenges. More will be added as I do them. ret2win 32-bit 64-bit split 32-bit 64-bit callme 32-bit 64-bit write4 32-bit 64-bit Introduction ROP Emporium is...
+	  <a href="/2019-07-19-rop-emporium-challenges/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-07-14-picoctf-2018-be-quick-or-be-dead-3/">
+	  <h2 class="post-title">PicoCTF 2018 be-quick-or-be-dead-3 (Reversing)</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on July 14, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      I thought this was an interesting challenge as I had to learn a new concept called dynamic programming which is used to optimize many different algorithms. Category: reversing Points: 350 Challenge As the song draws closer to the end, another executable be-quick-or-be-dead-3 suddenly pops up. This one requires even faster...
+	  <a href="/2019-07-14-picoctf-2018-be-quick-or-be-dead-3/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
+  <article class="post-preview">
+    <a href="/2019-06-23-hsctf-binary-exploitation-challenges/">
+	  <h2 class="post-title">HSCTF 2019</h2>
+
+	  
+    </a>
+
+    <p class="post-meta">
+      Posted on June 23, 2019
+    </p>
+
+<!--    <div class="post-entry">
+      These are my writeups for the first 5 pwn challenges from HSCTF 2019. Intro To Netcat Challenge Solution Return To Sender Challenge Solution Combo Chain Lite Challenge Solution Storytime Challenge Solution Combo Chain Challenge Solution Intro To Netcat Challenge Written by: Ptomerty Hey there! This challenge is a quick introduction...
+	  <a href="/2019-06-23-hsctf-binary-exploitation-challenges/" class="post-read-more">[Read&nbsp;More]</a>
+    </div>
+--!>
+   </article>
+  
 </div>
 
-
-<ul class="pager main-pager">
-  
-  
-  <li class="next">
-    <a href="/page2">Older Posts &rarr;</a>
-  </li>
-  
-</ul>
 
 
 	    
