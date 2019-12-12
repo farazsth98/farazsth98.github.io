@@ -11,6 +11,13 @@ body {
   background: #FFF;
   background-image: url("/images/bg-net.png");
 }
+
+article {
+    background: #FFF;
+    background-image: 0;
+    padding: 10px;
+}
+
 p {
   line-height: 1.5;
   margin: 30px 0;
