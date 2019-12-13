@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Exploiting v8: *CTF 2019 oob-v8"
-date:   2019-12-13 23:59:00 +0800
+date:   2019-12-13 23:30:00 +0800
 categories: pwn
 tags: *CTF-2019
 ---
