@@ -604,6 +604,8 @@ You can find the final exploit script at the end of this blog post.
 
 Although the previous technique works well, it is very CTF like, usually used to read a single flag file, or etc, and only works on UNIX style machines. If we could somehow execute our own shellcode, it would give us much more control over the code that we can execute. It will also let us target multiple operating systems simply by just changing the shellcode.
 
+**Update**: As a side note, now that I've gotten my exploit to work through Chrome, it seems like the WebAssembly route is more reliable than the `__free_hook` route. The `__free_hook` route just does not want to work through Chrome. I suspect it is because of the way I leaked the addresses. Perhaps when ran through chrome, the leaks just don't exist at those offsets anymore. I'd investigate further but it is really hard to debug with the Chrome binary. Maybe I'll do it at a later date and update this writeup.
+
 With other browsers like Firefox and Safari, you can cause a function to become "hot" and get JIT compiled, which results in the creation of an RWX JIT page which you can overwrite with your own shellcode. However, in Chrome, this exploitation technique was mitigated in early 2018. JIT pages are switched between RW and RX as required. They are never RWX.
 
 The only other way (that I know of) to get an RWX page in v8 is to use WebAssembly. If you create a wasm function, it will allocate an RWX page whose address can be leaked. Let's first create a wasm page. Note that the wasm code used doesn't matter so long as it compiles and creates an RWX page for us:
@@ -681,6 +683,19 @@ I debugged this for a bit, and it seems like (to the best of my knowledge) that 
 I've attached gdb to both the browser process and the renderer process, and I can confirm that they have different memory mappings, which would explain why my arbitrary reads return 0. The browser process simply does not have those memory regions mapped.
 
 If anyone knows how to fix this, feel free to DM me. This is the only thing I'm missing that's preventing me from fully completing this challenge.
+
+**Update**: I've figured out how to fix it. It was a problem with my html file. Essentially, the html file needs to look like the following:
+```html
+<html>
+  <head>
+    <script src="pwn.js"></script>
+  </head>
+</html>
+```
+
+The reason it wasn't working was because I didn't put the script into a separate file. I embedded the entire script in between `<script>...</script>` tags. Putting it in a separate file fixes this issue.
+
+Run chrome with `./chrome --no-sandbox ./index.html` to trigger the script. Only the WebAssembly version of the exploit works. I believe the way I leaked the addresses for the `__free_hook` version doesn't bode well when Chrome is ran.
 
 ## Final exploit scripts
 
