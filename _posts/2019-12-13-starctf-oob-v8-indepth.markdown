@@ -174,7 +174,7 @@ function itof(val) { // typeof(val) = BigInt
 
 Essentially, you create an 8 byte `ArrayBuffer` and create two TypedArrays that share this buffer, a `Float64Array` and a `Uint32Array`. You then have two functions:
 1. `ftoi` takes in a float value and converts it into a `BigInt` value, taking care of little endianness as well. You can print this as a hex representation by doing something like the following: `"0x" + ftoi(val).toString(16)`
-2. `itof` takes in a BigInt value and converts it into a float value. This is used when you want to write an address to memory (you can't simply write a BigInt value into memory. There is a way write integers using an `ArrayBuffer` and a `DataView` object, but in order to get to that stage, you have to first do direct floating point writes. More on this later).
+2. `itof` takes in a BigInt value and converts it into a float value. This is used when you want to write an address to memory (you can't simply write a BigInt value into memory. There ***is*** a way to write integers as is using an `ArrayBuffer` and a `DataView` object, but in order to get to that stage, you have to first do direct floating point writes. More on this later).
 
 Put the above code into a file, say `file.js`. You can run `d8` with it like `./d8 --shell ./file.js` to get access to the functions through the REPL.
 
@@ -448,9 +448,10 @@ gef➤  x/10gx 0x7be69511d69-0x30-1
 0x7be69511d78:	0x000007be69511d39	0x0000000400000000
 
 Right now, if we place a fake object at 0x7be69511d48, we can control the value at
-0x7be69511d58, which would be the fake object's elements pointer. This only works because
-we set the Map to be that of a float array. A different object map would not work here as
-it may not treat the value at 0x7be69511d58 as the elements pointer.
+0x7be69511d58 (index 2 of crafted_arr), which would be the fake object's elements pointer. 
+This only works because we set the Map to be that of a float array (index 0 of crafted_arr). 
+A different object map would not work here as it may not treat the value at 0x7be69511d58 as 
+the elements pointer.
 
 d8> var fake = fakeobj(addrof(crafted_arr)-0x20n);
 undefined
