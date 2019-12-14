@@ -450,7 +450,7 @@ gef➤  x/10gx 0x7be69511d69-0x30-1
 Right now, if we place a fake object at 0x7be69511d48, we can control the value at
 0x7be69511d58, which would be the fake object's elements pointer. This only works because
 we set the Map to be that of a float array. A different object map would not work here as
-it may not treat the value at 0x7be69511d48 as the elements pointer.
+it may not treat the value at 0x7be69511d58 as the elements pointer.
 
 d8> var fake = fakeobj(addrof(crafted_arr)-0x20n);
 undefined
