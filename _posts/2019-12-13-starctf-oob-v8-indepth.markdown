@@ -448,7 +448,7 @@ gef➤  x/10gx 0x7be69511d69-0x30-1
 0x7be69511d78:	0x000007be69511d39	0x0000000400000000
 
 Right now, if we place a fake object at 0x7be69511d48, we can control the value at
-0x7be69511d48, which would be the fake object's elements pointer. This only works because
+0x7be69511d58, which would be the fake object's elements pointer. This only works because
 we set the Map to be that of a float array. A different object map would not work here as
 it may not treat the value at 0x7be69511d48 as the elements pointer.
 
