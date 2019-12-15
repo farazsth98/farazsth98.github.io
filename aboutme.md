@@ -4,9 +4,9 @@ title: About
 subtitle: Vulnerability Research and Exploit Development
 ---
 
-* I am a Cyber Security Undergraduate at Curtin University.
-* I've been playing CTFs since June 2019 (starting with Facebook CTF).
-* I am currently a part of the Australian CTF team [0x1](https://ctftime.org/team/83157).
-* I plan to become a security researcher specializing in native application security.
+* Cyber Security Undergraduate at Curtin University.
+* Playing CTFs since June 2019 (starting with Facebook CTF).
+* Currently a part of the Australian CTF team [0x1](https://ctftime.org/team/83157).
+* Currently doing research into JavaScript Engine exploitation with Chrome's v8.
 
-This blog is a collection of CTF writeups and other security-related things. Please contact me by twitter or e-mail if you have any questions.
+This blog is a collection of CTF writeups and other low-level exploitation related content. Please contact me by twitter or e-mail if you have any questions. Links can be found on the bottom of this page.
