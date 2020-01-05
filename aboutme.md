@@ -5,7 +5,7 @@ subtitle: Vulnerability Research and Exploit Development
 ---
 
 * Cyber Security Undergraduate at Curtin University.
-* Playing CTFs since June 2019 (starting with Facebook CTF).
+* Intern Security Researcher for InfoSect Canberra.
 * Currently a part of the Australian CTF team [0x1](https://ctftime.org/team/83157).
 * Currently doing research into JavaScript Engine exploitation with Chrome's v8.
 
