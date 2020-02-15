@@ -146,6 +146,11 @@ prose:
 
 gems:
   - jekyll-paginate
+  - wdm
+
+plugins:
+  - jekyll-paginate
+paginate: 9999
 
 future: false
 

