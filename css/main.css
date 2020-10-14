@@ -4,7 +4,7 @@
 /* --- General --- */
 
 body {
-  font-family: 'Lora', 'Times New Roman', serif;
+  font-family: 'DejaVu Sans Mono', 'Times New Roman', serif;
   font-size: 16px;
   color: #404040;
   position: relative;
@@ -15,7 +15,6 @@ body {
 article {
     background: #FFF;
     background-image: 0;
-    padding: 10px;
 }
 
 p {
@@ -572,4 +571,8 @@ table tr td :first-child {
 table tr th :last-child,
 table tr td :last-child {
   margin-bottom: 0;
+}
+
+.highlight {
+  font-family: "DejaVu Sans Mono"
 }

@@ -2,3 +2,4 @@ _site
 .sass-cache
 ebug
 .jekyll*
+.jekyll-cache*
