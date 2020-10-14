@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "File Structure Oriented Programming: SECCON CTF 2020 - lazynote"
+title:  "File Stream Oriented Programming: SECCON CTF 2020 - lazynote"
 date:   2020-10-13 14:00:00 +0800
 categories: pwn
 tags: SECCON-2020
