@@ -20,7 +20,7 @@ When I stopped playing CTFs, I had just learned about GLIBC heap exploitation, a
 
 # Throwback to HITCON CTF 2019
 
-A summary of the challenge:
+[You can find the challenge files here](https://bitbucket.org/ptr-yudai/writeups-2020/src/master/SECCON_2020_Online_CTF/lazynote/files/). A summary of the challenge:
 
 1. It essentially printed a menu and gave you four choices.
 2. Only the first choice worked, and this choice would ask you for an `allocation_size`, a `read_size`, and the `data` that you want the program to read. 
@@ -30,6 +30,18 @@ A summary of the challenge:
 5. It then reads `allocation_size` bytes into `buf`.
 6. It then sets `buf[read_size - 1] = 0`. **This leads to an out of bounds write of a NULL byte if `read_size > allocation_size`.**
 7. It lets you do all of the above exactly 4 times before exiting.
+
+```
+$ ./chall
+👶 < Hi.
+1.🧾 / 2.✏️ / 3.🗑️ / 4.👀
+> 1
+alloc size: 5
+read size: 5
+data: AA
+1.🧾 / 2.✏️ / 3.🗑️ / 4.👀
+> 
+```
 
 This reminded me of a CTF challenge I did a writeup for last year - [HITCON CTF 2019's Trick or Treat](/2019-10-14-hitconctf-2019-trick-or-treat/), which basically let you allocate a chunk of any size, and then write a quad word (8 bytes) into any index of this chunk exactly twice. The index wasn't bounds checked, which means you could overwrite past the chunk at any index.
 
