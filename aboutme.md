@@ -4,7 +4,7 @@ title: About
 subtitle: Vulnerability Research and Exploit Development
 ---
 
-* Vulnerability Researcher at [elttam](https://www.elttam.com/#team).
+* Security Researcher at [elttam](https://www.elttam.com/#team).
 * CTF player (PWN and RE) for team [Super Guesser](https://ctftime.org/team/130817).
 * Cyber Security Undergraduate at Curtin University.
 
