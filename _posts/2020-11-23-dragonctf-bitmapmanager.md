@@ -391,7 +391,7 @@ Note that in this instance, we control both `p_byte_2_repeat` and `b_rep_count`.
 6. Next, since we're at the end of the image, this means that the next byte that is outside our image's data buffer is going to be the first character of the flag (due to primitives one and two). The off by one will read this byte into `rle_flags` (scroll up to check the function for reference).
 7. Once it does this, it will do a `memcpy(&p_out_decompressed_data[qw_out_data_index], <some_src_buf>, rle_flags)`.
 
-Now, remember that `p_out_decompressed_data` buffer only has `128 - ord(guessed_char)` bytes of space left in it (the `qw_out_data_index` pointer was moved forward accordingly too). We basically have two possible situations:
+Now, remember that `p_out_decompressed_data` buffer only has `ord(guessed_char)` bytes of space left in it (the `qw_out_data_index` pointer was moved forward accordingly too). We basically have two possible situations:
 
 1. If the ordinal value of the flag's first byte is greater than `ord(guessed_char)`, then a heap overflow will occur and ASAN will crash.
 2. If the ordinal value of the flag's first byte is smaller than `ord(guessed_char)`, then we get a message saying decompression failed.
