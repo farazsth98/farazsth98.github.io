@@ -12,6 +12,7 @@ subtitle: Vulnerability Research and Exploit Development
 
 # CTFs
 
+* **HITCON CTF 2020** - 1st Place (Team Perfect ⚔️ Guesser)
 * **Dragon CTF 2020** - 1st Place (Team Perfect ⚔️ Guesser)
 * **Balsn CTF 2020** - 1st Place (Team Super⚔️ Blue)
 * **KipodAfterFree CTF 2020** - 1st Place (Team Super Guesser)
