@@ -12,6 +12,8 @@ subtitle: Vulnerability Research and Exploit Development
 
 # CTFs
 
+My first ever CTF was FacebookCTF 2019 on the 1st of June, 2019. Ever since I started, the following CTFs have been my biggest achievements:
+
 * **HITCON CTF 2020** - **1st Place** (Team Perfect ⚔️ Guesser)
 * **Dragon CTF 2020** - **1st Place** (Team Perfect ⚔️ Guesser)
 * **Balsn CTF 2020** - **1st Place** (Team Super⚔️Blue)
