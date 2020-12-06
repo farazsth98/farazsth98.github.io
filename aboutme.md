@@ -9,6 +9,7 @@ subtitle: Vulnerability Research and Exploit Development
 * Security Researcher at [elttam](https://www.elttam.com/#team).
 * CTF player (PWN and RE) for team [Super Guesser](https://ctftime.org/team/130817).
 * Cyber Security Undergraduate at Curtin University.
+* [My PGP key](/files/public_key.gpg.txt). Email is at the bottom of the page.
 
 # CTFs
 
