@@ -30,7 +30,7 @@ I wasn't able to solve this during the CTF as it was my first time doing a full 
 
 As description states, this challenge pretty much contains a userland binary, a kernel binary, and an emulator (written using the unicorn engine emulator framework) that emulates the userland and kernel together.
 
-[You can find the final exploit script here](https://github.com/Super-Guesser/ctf/blob/master/pbCTF2020/pwn/pwnception/exploit.py).
+[You can find the final exploit script here](https://github.com/Super-Guesser/ctf/blob/master/pbctf%202020/pwn/pwnception/exploit.py).
 
 #### Userland
 
@@ -408,7 +408,7 @@ Now that we've reversed everything, we can formulate a plan of attack:
 
 3. Once we have shellcode execution in the kernel, we can use `int 0x71` at will to trigger the heap bugs in the emulator. My plan of attack is to get a Libc leak, overwrite free hook with system, then free a chunk whose contents are just `"/bin/sh\x00"` to get a shell.
 
-Note that for the rest of the writeup, I'll only be showing chunks of my exploit script. If you want to see the full exploit script, you can find it [here](https://github.com/Super-Guesser/ctf/blob/master/pbCTF2020/pwn/pwnception/exploit.py).
+Note that for the rest of the writeup, I'll only be showing chunks of my exploit script. If you want to see the full exploit script, you can find it [here](https://github.com/Super-Guesser/ctf/blob/master/pbctf%202020/pwn/pwnception/exploit.py).
 
 # Userland ROP
 
@@ -707,7 +707,7 @@ This part is very self-explanatory except the `libunicorn` leak part, but I woul
 
 # The end
 
-[You can find the final exploit script here](https://github.com/Super-Guesser/ctf/blob/master/pbCTF2020/pwn/pwnception/exploit.py).
+[You can find the final exploit script here](https://github.com/Super-Guesser/ctf/blob/master/pbctf%202020/pwn/pwnception/exploit.py).
 
 ```
 $ ./exploit.py 
