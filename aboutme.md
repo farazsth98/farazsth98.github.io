@@ -13,6 +13,7 @@ subtitle: Vulnerability Research and Exploit Development
 
 # CTFs
 
+* **WACTF 2020** - **1st Place** (Team 64Bit-GuessGods)
 * **pbctf 2020** - **2nd Place** (Team Super Guesser)
 * **HITCON CTF 2020** - **1st Place** (Team Perfect ⚔️ Guesser)
 * **Dragon CTF 2020** - **1st Place** (Team Perfect ⚔️ Guesser)
