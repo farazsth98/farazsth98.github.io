@@ -6,19 +6,8 @@ subtitle: Vulnerability Research and Exploit Development
 
 # About me
 
-* Security Researcher at [elttam](https://www.elttam.com/#team).
-* CTF player (PWN and RE) for team [Super Guesser](https://ctftime.org/team/130817).
-* Cyber Security Undergraduate at Curtin University.
+I currently work as a security engineer. I do 0-day/N-day research and exploit development, focused mainly around browsers.
 
-# CTFs
+I completed my Bachelor's in Computer Science at Curtin University at the end of 2020.
 
-* **WACTF 2020** - **1st Place** (Team 64Bit-GuessGods)
-* **pbctf 2020** - **2nd Place** (Team Super Guesser)
-* **HITCON CTF 2020** - **1st Place** (Team Perfect ⚔️ Guesser)
-* **Dragon CTF 2020** - **1st Place** (Team Perfect ⚔️ Guesser)
-* **Balsn CTF 2020** - **1st Place** (Team Super⚔️Blue)
-* **KipodAfterFree CTF 2020** - **1st Place** (Team Super Guesser)
-* **Hack.lu CTF 2020** - **8th Place** (Team Super Guesser)
-* **WACTF 2019** - **3rd Place** (Team WannaDie)
-* **Backdoor CTF 2019** - **8th Place** (Team 0x1)
-* **Facebook CTF 2019** - **1068th Place** (Solo, my first CTF ever!)
+Outside of work, I also play CTFs with teams [Super Guesser](https://guesser.team) and [perfect guesser](https://ctftime.org/team/142232).
