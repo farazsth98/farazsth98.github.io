@@ -6,7 +6,7 @@ subtitle: Vulnerability Research and Exploit Development
 
 # About me
 
-I do security research.
+I do security research. Currently focused on browsers.
 
 I play CTFs with teams [Super Guesser](https://guesser.team) and [perfect guesser](https://ctftime.org/team/142232).
 
