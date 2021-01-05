@@ -23,7 +23,6 @@ description: Exploit Development and Reverse Engineering
 
 # List of links in the navigation bar
 navbar-links:
-  "New Blog": "https://blog.faraz.faith"
   About: "aboutme"
 
 # Image to show in the navigation bar - image must be a square (width = height)
