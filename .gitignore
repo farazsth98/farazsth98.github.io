@@ -3,3 +3,4 @@ _site
 ebug
 .jekyll*
 .jekyll-cache*
+.vscode*
