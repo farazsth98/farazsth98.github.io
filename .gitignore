@@ -1,6 +1,7 @@
 _site
 .sass-cache
 ebug
-.jekyll*
-.jekyll-cache*
+.jekyll*/**
+.jekyll-cache*/**
+.jekyll-cache
 .vscode*
