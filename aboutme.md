@@ -1,10 +1,8 @@
 ---
 layout: page
 title: About
-subtitle: Vulnerability Research and Exploit Development
+subtitle: What do I do?
 ---
-
-# About me
 
 I do security research. Currently focused on browsers.
 
