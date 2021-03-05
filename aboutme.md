@@ -4,7 +4,7 @@ title: About
 subtitle: What do I do?
 ---
 
-I do browser security research for a private security firm.
+I do security research for a private security firm, mostly focused on browsers and mobile operating systems.
 
 I play CTFs with teams [Super Guesser](https://ctftime.org/team/130817) and [perfect guesser](https://ctftime.org/team/142232).
 
