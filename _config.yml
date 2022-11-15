@@ -66,11 +66,12 @@ google_analytics: "UA-144659970-1"
 # Output options (more information on Jekyll's site)
 timezone: "Australia/Perth"
 markdown: kramdown
+highlighter: false
+kramdown:
+  input: GFM
 permalink: /:year-:month-:day-:title/
 paginate: 1000
 
-kramdown:
-  input: GFM
 
 # Default YAML values (more information on Jekyll's site)
 defaults:
