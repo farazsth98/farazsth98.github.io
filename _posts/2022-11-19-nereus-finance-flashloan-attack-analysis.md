@@ -280,7 +280,7 @@ describe('Nereus Finance Exploit', async () => {
     await attackerContract.exploit();
 
     const afterBalance = await usdcContract.balanceOf(attackerContract.address);
-    console.log(`[+] USDC Balance before exploit: ${afterBalance / 1e6}`);
+    console.log(`[+] USDC Balance after exploit: ${afterBalance / 1e6}`);
 
     expect(beforeBalance).to.be.lt(afterBalance);
   });
@@ -664,7 +664,7 @@ Compiled 1 Solidity file successfully
 
   Nereus Finance Exploit
 [+] USDC Balance before exploit: 0
-[+] USDC Balance before exploit: 371559.498918
+[+] USDC Balance after exploit: 371559.498918
     ✔ Exploits successfully (699ms)
 
 
